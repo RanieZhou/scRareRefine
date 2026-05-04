@@ -22,13 +22,13 @@ from scrare_refine.inductive import (
     batch_heldout_split,
     cell_stratified_split,
     make_inductive_scanvi_labels,
+    parse_rare_train_size,
     select_train_hvg_var_names,
 )
 from scrare_refine.io import write_table
 from scrare_refine.metrics import classification_tables, compute_uncertainty
 from scrare_refine.output_layout import artifact_path, stage_table_path
 from scrare_refine.resources import ResourceMonitor
-from scrare_refine.splits import parse_rare_train_size
 
 
 DEFAULT_TEMPERATURES = [0.1, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0]

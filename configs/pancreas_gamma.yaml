@@ -26,7 +26,7 @@ experiment:
     - 43
     - 44
   unlabeled_category: Unknown
-  output_dir: outputs/pancreas/p0
+  output_dir: outputs/pancreas/audit
 
 model:
   n_top_hvg: 3000

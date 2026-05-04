@@ -8,9 +8,16 @@ import pandas as pd
 from scipy import sparse
 from sklearn.model_selection import train_test_split
 
-from scrare_refine.splits import RareTrainSize, parse_rare_train_size
-
 SplitName = Literal["train", "validation", "test"]
+RareTrainSize = int | Literal["all"]
+
+
+def parse_rare_train_size(value: str | int) -> RareTrainSize:
+    if isinstance(value, int):
+        return value
+    if str(value).lower() == "all":
+        return "all"
+    return int(value)
 
 
 def _validate_fractions(train_fraction: float, validation_fraction: float, test_fraction: float) -> None:
@@ -92,9 +99,7 @@ def batch_heldout_split(
     if len(batch_counts) < 3:
         raise ValueError("batch_heldout_split requires at least 3 batches for train/validation/test")
     rng = np.random.default_rng(seed)
-    ordered_batches = batch_counts.index.to_numpy()
-    jitter = rng.random(len(ordered_batches)) * 1e-6
-    ordered_batches = ordered_batches[np.argsort(np.arange(len(ordered_batches)) + jitter)]
+    ordered_batches = rng.permutation(batch_counts.index.to_numpy())
 
     batch_to_split: dict[str, str] = {}
     split_order = ["train", "validation", "test"]

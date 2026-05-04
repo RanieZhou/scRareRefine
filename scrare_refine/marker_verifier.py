@@ -6,30 +6,6 @@ import pandas as pd
 from scrare_refine.metrics import classification_tables
 
 
-def stratified_validation_mask(
-    labels: pd.Series,
-    *,
-    seed: int,
-    validation_fraction: float = 0.5,
-) -> pd.Series:
-    if not 0.0 < validation_fraction < 1.0:
-        raise ValueError("validation_fraction must be between 0 and 1")
-
-    labels = pd.Series(labels).astype(str)
-    rng = np.random.default_rng(seed)
-    mask = pd.Series(False, index=labels.index)
-
-    for _, group in labels.groupby(labels, sort=True):
-        indices = group.index.to_numpy()
-        if len(indices) == 1:
-            continue
-        shuffled = rng.permutation(indices)
-        n_validation = int(round(len(indices) * validation_fraction))
-        n_validation = min(max(n_validation, 1), len(indices) - 1)
-        mask.loc[shuffled[:n_validation]] = True
-    return mask
-
-
 def compute_marker_signatures(
     expression: np.ndarray,
     *,
@@ -82,51 +58,6 @@ def marker_scores_for_candidates(
             }
         )
     return pd.DataFrame(rows, index=candidates.index)
-
-
-def evaluate_marker_verified_rescue(
-    predictions: pd.DataFrame,
-    prototype_candidates: pd.DataFrame,
-    expression: np.ndarray,
-    *,
-    signatures: dict[str, list[str]],
-    rare_class: str,
-    gene_names: list[str],
-) -> tuple[dict[str, float], pd.DataFrame]:
-    candidates = prototype_candidates.copy()
-    scores = marker_scores_for_candidates(
-        expression,
-        candidates,
-        signatures=signatures,
-        rare_class=rare_class,
-        gene_names=gene_names,
-    )
-    candidates = pd.concat([candidates, scores], axis=1)
-    verified = candidates["marker_verified"].fillna(False).astype(bool)
-
-    relabeled = predictions["predicted_label"].astype(str).copy()
-    relabeled.loc[candidates.index[verified]] = rare_class
-    overall, _ = classification_tables(predictions["true_label"], relabeled, rare_class=rare_class)
-
-    rare_errors = predictions["true_label"].astype(str).eq(rare_class) & predictions["predicted_label"].astype(str).ne(rare_class)
-    non_rare = predictions["true_label"].astype(str).ne(rare_class)
-    verified_indices = candidates.index[verified]
-    n_verified = int(verified.sum())
-    rescued = int(rare_errors.loc[verified_indices].sum()) if n_verified else 0
-    false_rescues = int(non_rare.loc[verified_indices].sum()) if n_verified else 0
-    overall.update(
-        {
-            "n_candidates": int(len(candidates)),
-            "n_marker_verified": n_verified,
-            "rescued_rare_errors": rescued,
-            "false_rescues": false_rescues,
-            "candidate_precision_for_rare_error": rescued / n_verified if n_verified else 0.0,
-            "rare_error_recall": rescued / int(rare_errors.sum()) if int(rare_errors.sum()) else 0.0,
-            "modification_rate": n_verified / len(predictions) if len(predictions) else 0.0,
-            "major_to_rare_false_rescue_rate": false_rescues / int(non_rare.sum()) if int(non_rare.sum()) else 0.0,
-        }
-    )
-    return overall, candidates.loc[verified].copy()
 
 
 def marker_threshold_curve(

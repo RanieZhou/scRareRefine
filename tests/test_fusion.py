@@ -8,7 +8,7 @@ from scrare_refine.fusion import (
     confidence_weight,
     evaluate_fusion_effect,
     fuse_predictions,
-    prototype_probabilities,
+    prototype_probabilities_from_reference,
     select_best_params,
 )
 
@@ -30,16 +30,24 @@ def _make_latent_and_labels():
 class TestPrototypeProbabilities:
     def test_output_shape_and_sums(self):
         latent, labels, is_labeled = _make_latent_and_labels()
-        probs = prototype_probabilities(
-            latent, labels=labels, is_labeled=is_labeled, temperature=1.0,
+        probs = prototype_probabilities_from_reference(
+            latent,
+            reference_latent=latent,
+            reference_labels=labels,
+            reference_is_labeled=is_labeled,
+            temperature=1.0,
         )
         assert probs.shape == (52, 2)
         np.testing.assert_allclose(probs.sum(axis=1).to_numpy(), 1.0, atol=1e-6)
 
     def test_labeled_cells_near_own_prototype(self):
         latent, labels, is_labeled = _make_latent_and_labels()
-        probs = prototype_probabilities(
-            latent, labels=labels, is_labeled=is_labeled, temperature=1.0,
+        probs = prototype_probabilities_from_reference(
+            latent,
+            reference_latent=latent,
+            reference_labels=labels,
+            reference_is_labeled=is_labeled,
+            temperature=1.0,
         )
         # Class A cells (rows 0-39) should have high prob for A
         assert (probs.iloc[:40]["A"] > 0.99).all()
@@ -102,6 +110,7 @@ class TestSelectBestParams:
              "overall_accuracy": 0.94, "major_to_rare_false_rescue_rate": 0.002},
         ]
         df = pd.DataFrame(rows)
-        t, a = select_best_params(df, baseline_accuracy=0.95, max_accuracy_drop=0.02)
+        t, a, beta = select_best_params(df, baseline_accuracy=0.95, max_accuracy_drop=0.02)
         assert t == 2.0
         assert a == 0.3
+        assert beta == 1.0

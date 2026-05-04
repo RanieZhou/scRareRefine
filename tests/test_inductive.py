@@ -46,6 +46,22 @@ class InductiveSplitTests(unittest.TestCase):
         self.assertTrue(batch_to_split.eq(1).all())
         self.assertEqual(set(split.unique()), {"train", "validation", "test"})
 
+    def test_batch_heldout_split_seed_changes_batch_assignment(self):
+        obs = pd.DataFrame(
+            {
+                "label": ["ASDC", "pDC", "cDC1", "pDC"] * 18,
+                "batch": np.repeat([f"b{i:02d}" for i in range(18)], 4),
+            },
+            index=[f"cell{i}" for i in range(72)],
+        )
+
+        first = batch_heldout_split(obs, label_key="label", batch_key="batch", seed=42)
+        second = batch_heldout_split(obs, label_key="label", batch_key="batch", seed=43)
+
+        first_by_batch = obs.assign(split=first).groupby("batch")["split"].first()
+        second_by_batch = obs.assign(split=second).groupby("batch")["split"].first()
+        self.assertFalse(first_by_batch.equals(second_by_batch))
+
     def test_batch_heldout_split_keeps_each_split_nonempty_with_few_imbalanced_batches(self):
         batch_label_counts = {
             "celseq": {"acinar": 228, "activated_stellate": 19, "alpha": 191, "beta": 161, "delta": 50, "ductal": 327, "endothelial": 5, "epsilon": 1, "gamma": 18, "macrophage": 1, "mast": 1, "quiescent_stellate": 1, "schwann": 1},

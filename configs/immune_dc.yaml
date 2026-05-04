@@ -19,7 +19,7 @@ experiment:
     - 43
     - 44
   unlabeled_category: Unknown
-  output_dir: outputs/immune_dc/p0
+  output_dir: outputs/immune_dc/audit
 
 model:
   n_top_hvg: 3000

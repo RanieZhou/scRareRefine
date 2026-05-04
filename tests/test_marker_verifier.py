@@ -9,7 +9,6 @@ from scrare_refine.marker_verifier import (
     evaluate_threshold_rescue,
     marker_scores_for_candidates,
     marker_threshold_curve,
-    stratified_validation_mask,
 )
 
 
@@ -86,17 +85,6 @@ class MarkerVerifierTests(unittest.TestCase):
         self.assertEqual(int(strict["n_marker_verified"]), 1)
         self.assertGreater(float(strict["rare_precision"]), float(loose["rare_precision"]))
         self.assertEqual(choose_marker_threshold(curve, max_false_rescue_rate=0.26), 1.5)
-
-    def test_stratified_validation_mask_is_reproducible(self):
-        labels = pd.Series(["ASDC", "ASDC", "ASDC", "ASDC", "pDC", "pDC"], index=[10, 11, 12, 13, 20, 21])
-
-        first = stratified_validation_mask(labels, seed=42, validation_fraction=0.5)
-        second = stratified_validation_mask(labels, seed=42, validation_fraction=0.5)
-
-        self.assertEqual(first.tolist(), second.tolist())
-        self.assertEqual(int(first.loc[[10, 11, 12, 13]].sum()), 2)
-        self.assertEqual(int(first.loc[[20, 21]].sum()), 1)
-        self.assertEqual(first.index.tolist(), labels.index.tolist())
 
     def test_evaluate_threshold_rescue_uses_only_selected_candidates(self):
         predictions = pd.DataFrame(
