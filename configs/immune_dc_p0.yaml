@@ -1,0 +1,38 @@
+dataset:
+  name: immune_dc
+  path: data/human_immune_health/human_immune_health_atlas_dc.h5ad
+  use_raw: true
+  label_key: AIFI_L3
+  batch_key: batch_id
+
+experiment:
+  rare_class: ASDC
+  secondary_rare_classes:
+    - cDC1
+  rare_train_sizes:
+    - 20
+    - 50
+    - 100
+    - all
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+  output_dir: outputs/immune_dc/p0
+
+model:
+  n_top_hvg: 3000
+  n_latent: 30
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 256
+
+analysis:
+  rare_threshold: 0.05
+  rare_max_cells: 200
+  review_fractions:
+    - 0.01
+    - 0.05
+    - 0.10
+    - 0.20

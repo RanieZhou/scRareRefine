@@ -1,0 +1,45 @@
+dataset:
+  name: pancreas
+  path: data/pancreas/human_pancreas_norm_complexBatch.h5ad
+  use_layer: counts
+  label_key: celltype
+  batch_key: tech
+
+experiment:
+  rare_class: epsilon
+  secondary_rare_classes:
+    - gamma
+    - activated_stellate
+    - endothelial
+    - quiescent_stellate
+    - macrophage
+    - mast
+    - schwann
+    - t_cell
+  rare_train_sizes:
+    - 5
+    - 10
+    - 20
+    - all
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+  output_dir: outputs/pancreas/epsilon
+
+model:
+  n_top_hvg: 3000
+  n_latent: 30
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 256
+
+analysis:
+  rare_threshold: 0.06
+  rare_max_cells: 1000
+  review_fractions:
+    - 0.01
+    - 0.05
+    - 0.10
+    - 0.20

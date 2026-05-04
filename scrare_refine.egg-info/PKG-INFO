@@ -1,0 +1,20 @@
+Metadata-Version: 2.4
+Name: scrare-refine
+Version: 0.1.0
+Summary: Rare-aware refinement for single-cell annotation via scANVI
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: anndata>=0.9
+Requires-Dist: matplotlib>=3.7
+Requires-Dist: numpy>=1.23
+Requires-Dist: pandas>=1.5
+Requires-Dist: psutil>=5.9
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: scanpy>=1.9
+Requires-Dist: scikit-learn>=1.2
+Requires-Dist: scipy>=1.10
+Requires-Dist: scvi-tools>=0.20
+Requires-Dist: torch>=1.13
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
