@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from scrare_refine.fusion import (
+from scrare.models.fusion import (
     confidence_weight,
     evaluate_fusion_effect,
     fuse_predictions,

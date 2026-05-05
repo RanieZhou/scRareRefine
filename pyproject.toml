@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -28,5 +28,14 @@ dev = [
     "pytest>=7.0",
 ]
 
+[project.scripts]
+scrare-audit = "scrare.cli.audit:main"
+scrare-run-inductive = "scrare.cli.run_inductive:main"
+scrare-evaluate-posthoc = "scrare.cli.evaluate_posthoc:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
-include = ["scrare_refine*"]
+where = ["src"]
+include = ["scrare*"]

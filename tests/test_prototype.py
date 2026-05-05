@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from scrare_refine.prototype import prototype_scores_from_reference
+from scrare.models.prototype import prototype_scores_from_reference
 
 
 class PrototypeTests(unittest.TestCase):

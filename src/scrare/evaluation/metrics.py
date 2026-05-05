@@ -98,4 +98,3 @@ def topk_review_recall(
             }
         )
     return pd.DataFrame(rows)
-

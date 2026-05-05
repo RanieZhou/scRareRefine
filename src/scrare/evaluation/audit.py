@@ -75,4 +75,3 @@ def audit_anndata(
         "x_integer_like": matrix_is_integer_like(matrix),
     }
     return summary, class_dist, batch_dist
-

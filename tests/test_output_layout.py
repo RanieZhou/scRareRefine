@@ -1,11 +1,7 @@
 from pathlib import Path
 import unittest
 
-from scrare_refine.output_layout import (
-    artifact_path,
-    root_table_path,
-    stage_table_path,
-)
+from scrare.infra.paths import artifact_path, root_table_path, stage_table_path
 
 
 class OutputLayoutTests(unittest.TestCase):

@@ -4,13 +4,13 @@ import anndata as ad
 import numpy as np
 import pandas as pd
 
-from scrare_refine.fusion import prototype_probabilities_from_reference
-from scrare_refine.inductive import (
+from scrare.data.preprocess import select_train_hvg_var_names
+from scrare.data.splits import (
     batch_heldout_split,
     cell_stratified_split,
     make_inductive_scanvi_labels,
-    select_train_hvg_var_names,
 )
+from scrare.models.fusion import prototype_probabilities_from_reference
 
 
 class InductiveSplitTests(unittest.TestCase):

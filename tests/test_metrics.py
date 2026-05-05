@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from scrare_refine.metrics import classification_tables, compute_uncertainty, topk_review_recall
+from scrare.evaluation.metrics import classification_tables, compute_uncertainty, topk_review_recall
 
 
 class MetricsTests(unittest.TestCase):

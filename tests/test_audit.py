@@ -4,7 +4,7 @@ import anndata as ad
 import numpy as np
 import pandas as pd
 
-from scrare_refine.audit import audit_anndata, matrix_is_integer_like
+from scrare.evaluation.audit import audit_anndata, matrix_is_integer_like
 
 
 class AuditTests(unittest.TestCase):

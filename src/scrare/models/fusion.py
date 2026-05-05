@@ -4,8 +4,50 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
 
-from scrare_refine.metrics import classification_tables
+
+def classification_tables(
+    y_true: np.ndarray | pd.Series,
+    y_pred: np.ndarray | pd.Series,
+    *,
+    rare_class: str,
+) -> tuple[dict[str, float], pd.DataFrame]:
+    y_true = np.asarray(y_true).astype(str)
+    y_pred = np.asarray(y_pred).astype(str)
+    labels = sorted(set(y_true) | set(y_pred))
+
+    precision, recall, f1, support = precision_recall_fscore_support(
+        y_true,
+        y_pred,
+        labels=labels,
+        zero_division=0,
+    )
+    per_class = pd.DataFrame(
+        {
+            "label": labels,
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
+            "support": support,
+        }
+    )
+    rare_row = per_class[per_class["label"] == rare_class]
+    if rare_row.empty:
+        rare_precision = rare_recall = rare_f1 = 0.0
+    else:
+        rare_precision = float(rare_row["precision"].iloc[0])
+        rare_recall = float(rare_row["recall"].iloc[0])
+        rare_f1 = float(rare_row["f1"].iloc[0])
+
+    overall = {
+        "overall_accuracy": float(accuracy_score(y_true, y_pred)),
+        "macro_f1": float(f1_score(y_true, y_pred, average="macro", zero_division=0)),
+        "rare_precision": rare_precision,
+        "rare_recall": rare_recall,
+        "rare_f1": rare_f1,
+    }
+    return overall, per_class
 
 
 def prototype_probabilities_from_reference(

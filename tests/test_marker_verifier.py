@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from scrare_refine.marker_verifier import (
+from scrare.models.marker import (
     choose_marker_threshold,
     compute_marker_signatures,
     evaluate_threshold_rescue,

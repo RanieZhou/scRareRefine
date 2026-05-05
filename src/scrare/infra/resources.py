@@ -54,3 +54,6 @@ class ResourceMonitor:
             "wall_time_seconds": float(end - self._start_time),
             "peak_rss_mb": float(self._peak_rss_bytes / (1024 * 1024)),
         }
+
+
+__all__ = ["ResourceMonitor"]

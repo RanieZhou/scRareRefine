@@ -31,3 +31,5 @@ def read_table(path: str | Path) -> pd.DataFrame:
         return pd.read_csv(csv_path)
     raise FileNotFoundError(path)
 
+
+__all__ = ["read_table", "write_table"]

@@ -1,7 +1,7 @@
 import time
 import unittest
 
-from scrare_refine.resources import ResourceMonitor
+from scrare.infra.resources import ResourceMonitor
 
 
 class ResourceMonitorTests(unittest.TestCase):

@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from scrare_refine.prototype_gate import evaluate_gate_rules
+from scrare.models.prototype_gate import evaluate_gate_rules
 
 
 class PrototypeGateTests(unittest.TestCase):
