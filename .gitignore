@@ -1,6 +1,7 @@
 data/
 scRareRefine.rar
 outputs/
+.worktrees/
 __pycache__/
 *.py[cod]
 *.egg-info/
