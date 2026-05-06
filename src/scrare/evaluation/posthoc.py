@@ -27,14 +27,16 @@ from scrare.models.prototype_gate import evaluate_gate_rules, gate_masks
 METHOD_ORDER = [
     "baseline",
     "baseline_plus_prototype",
-    "baseline_plus_prototype_plus_marker",
+    "baseline_plus_prototype_gate",
+    "baseline_plus_prototype_gate_plus_marker",
     "baseline_plus_fusion",
 ]
 
 METHOD_LABELS = {
     "baseline": "scANVI baseline",
-    "baseline_plus_prototype": "prototype rank1 gate",
-    "baseline_plus_prototype_plus_marker": "validation-tuned marker",
+    "baseline_plus_prototype": "prototype candidate",
+    "baseline_plus_prototype_gate": "prototype rank1 gate",
+    "baseline_plus_prototype_gate_plus_marker": "validation-tuned marker",
     "baseline_plus_fusion": "fusion",
 }
 
@@ -98,6 +100,39 @@ def _score_candidates(
         gene_names=gene_names,
     )
     return pd.concat([candidates, scores], axis=1)
+
+
+def _effect_from_mask(
+    predictions: pd.DataFrame,
+    candidate_mask: pd.Series,
+    *,
+    rare_class: str,
+) -> dict[str, float]:
+    mask = candidate_mask.fillna(False).astype(bool)
+    y_true = predictions["true_label"].astype(str)
+    baseline_pred = predictions["predicted_label"].astype(str)
+    relabeled = baseline_pred.copy()
+    relabeled.loc[mask] = rare_class
+    overall, _ = classification_tables(y_true, relabeled, rare_class=rare_class)
+    rare_errors = y_true.eq(rare_class) & baseline_pred.ne(rare_class)
+    non_rare = y_true.ne(rare_class)
+    n_candidates = int(mask.sum())
+    rescued = int((mask & rare_errors).sum())
+    false_rescues = int((mask & non_rare).sum())
+    overall.update(
+        {
+            "marker_threshold": np.nan,
+            "n_candidates": n_candidates,
+            "n_marker_verified": 0,
+            "rescued_rare_errors": rescued,
+            "false_rescues": false_rescues,
+            "candidate_precision_for_rare_error": rescued / n_candidates if n_candidates else 0.0,
+            "rare_error_recall": rescued / int(rare_errors.sum()) if int(rare_errors.sum()) else 0.0,
+            "modification_rate": n_candidates / len(predictions) if len(predictions) else 0.0,
+            "major_to_rare_false_rescue_rate": false_rescues / int(non_rare.sum()) if int(non_rare.sum()) else 0.0,
+        }
+    )
+    return overall
 
 
 def _summarize(effect_runs: pd.DataFrame) -> pd.DataFrame:
@@ -244,10 +279,41 @@ def evaluate_four_stage_methods(
     )
 
     gate_effect, gate_candidates = evaluate_gate_rules(test_pred, proto_test, rare_class=rare_class)
+    prototype_candidate_mask = pd.Series(proto_test["prototype_rescue_candidate"], index=test_pred.index)
+    prototype_candidate_effect = _effect_from_mask(test_pred, prototype_candidate_mask, rare_class=rare_class)
+    effect_rows.append(
+        {
+            **prototype_candidate_effect,
+            **common,
+            "method_key": "baseline_plus_prototype",
+            "method": METHOD_LABELS["baseline_plus_prototype"],
+            "gate_name": "candidate",
+        }
+    )
     rank1 = gate_effect[gate_effect["gate_name"].eq("rank1")].iloc[0].to_dict()
     effect_rows.append(
-        {**rank1, **common, "method_key": "baseline_plus_prototype", "method": METHOD_LABELS["baseline_plus_prototype"]}
+        {
+            **rank1,
+            **common,
+            "method_key": "baseline_plus_prototype_gate",
+            "method": METHOD_LABELS["baseline_plus_prototype_gate"],
+        }
     )
+    prototype_candidates = test_pred.loc[prototype_candidate_mask.fillna(False).astype(bool), ["cell_id", "true_label", "predicted_label", "margin", "entropy"]].copy()
+    if not prototype_candidates.empty:
+        for col in [f"prototype_rank_{rare_class}", f"d_pred_minus_d_{rare_class}", f"distance_to_{rare_class}", "distance_to_pred"]:
+            if col in proto_test:
+                prototype_candidates[col] = proto_test.loc[prototype_candidate_mask.fillna(False).astype(bool), col].to_numpy()
+        candidate_rows.append(
+            _with_run_metadata(
+                prototype_candidates,
+                seed=seed,
+                rare_train_size=rare_train_size,
+                rare_class=rare_class,
+                split_mode=split_mode,
+                run=run,
+            )
+        )
     if not gate_candidates.empty:
         gate_candidates = gate_candidates[gate_candidates["gate_name"].eq("rank1")].copy()
         candidate_rows.append(
@@ -320,8 +386,8 @@ def evaluate_four_stage_methods(
         {
             **marker_effect,
             **common,
-            "method_key": "baseline_plus_prototype_plus_marker",
-            "method": METHOD_LABELS["baseline_plus_prototype_plus_marker"],
+            "method_key": "baseline_plus_prototype_gate_plus_marker",
+            "method": METHOD_LABELS["baseline_plus_prototype_gate_plus_marker"],
             "gate_name": "rank1",
         }
     )

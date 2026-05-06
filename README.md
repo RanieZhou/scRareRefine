@@ -90,7 +90,15 @@ python -m pip install -e .[dev]
 python -m scrare.cli.audit --config configs/immune_dc.yaml
 ```
 
-### 2. 运行主实验：inductive scANVI + fusion
+### 2. 运行主实验：`run_inductive`
+
+默认命令会在单个入口下完成 baseline 训练，并产出 5 组方法结果：
+
+- `baseline`
+- `baseline_plus_prototype`
+- `baseline_plus_prototype_gate`
+- `baseline_plus_prototype_gate_plus_marker`
+- `baseline_plus_fusion`
 
 最常见的运行方式：
 
@@ -98,9 +106,49 @@ python -m scrare.cli.audit --config configs/immune_dc.yaml
 python -m scrare.cli.run_inductive --config configs/immune_dc.yaml
 ```
 
-### 3. 运行下游 prototype / marker 分析
+常用变体：
 
-该命令不会重新训练模型，而是复用主实验产生的 artifacts：
+```bash
+# 只跑单个 slice
+python -m scrare.cli.run_inductive \
+  --config configs/immune_dc.yaml \
+  --rare-class ASDC \
+  --split-mode batch_heldout \
+  --seed 42 \
+  --rare-train-size 20
+
+# 只重算某个方法，复用已有 baseline artifacts，不重新训练 baseline
+python -m scrare.cli.run_inductive \
+  --config configs/immune_dc.yaml \
+  --methods baseline_plus_fusion \
+  --reuse-baseline-only
+
+# 只保留 baseline 方法的汇总结果；baseline artifacts、资源表和默认图表仍会生成
+python -m scrare.cli.run_inductive \
+  --config configs/immune_dc.yaml \
+  --methods baseline
+```
+
+当前 `run_inductive` 支持的主要参数包括：
+
+- `--rare-class`
+- `--split-mode`
+- `--seed`
+- `--rare-train-size`
+- `--methods`
+- `--reuse-baseline-only`
+- `--output-dir`
+- `--max-cells`
+- `--scvi-epochs`
+- `--scanvi-epochs`
+- `--train-fraction`
+- `--validation-fraction`
+- `--test-fraction`
+- `--max-false-rescue-rate`
+
+### 3. 运行下游 posthoc 补算
+
+该命令不会重新训练模型，而是复用 `run_inductive` 已经写出的 baseline artifacts：
 
 ```bash
 python -m scrare.cli.evaluate_posthoc --config configs/immune_dc.yaml
@@ -118,7 +166,7 @@ scrare-evaluate-posthoc --config configs/immune_dc.yaml
 
 ### 数据审计输出
 
-审计命令会把结果写到配置中的 `experiment.output_dir` 下，并在对应根目录下补充表格。
+审计命令会把结果直接写到配置中的 `experiment.output_dir` 下，不再额外复制一份到其他目录。
 
 例如 `configs/immune_dc.yaml` 当前配置的是：
 
@@ -135,19 +183,44 @@ inductive workflow 默认会按如下结构自动组织输出：
 outputs/<dataset>/<inductive_cell|inductive_batch>/<rare_class>/
 ```
 
-其中通常包含：
+其中主要包含：
 
-- `runs/<run>/artifacts/`：每次运行的预测结果、latent、模型等中间产物
-- `stages/fusion/`：fusion 汇总结果
-- `tables/`：根级别汇总表
+- `runs/<run>/artifacts/`：单次运行的 baseline 原子产物
+  - `train_predictions.csv`
+  - `validation_predictions.csv`
+  - `test_predictions.csv`
+  - `train_latent.csv`
+  - `validation_latent.csv`
+  - `test_latent.csv`
+- `runs/<run>/selected_hvg_genes.csv`：该 run 基于训练集选择的 HVGs
+- `runs/<run>/split_assignments.csv`：该 run 的 train / validation / test 划分与 scanvi 标注情况
+- `runs/<run>/resource_summary.csv`：单个 slice 的总运行时间与峰值内存摘要
+- `runs/<run>/stages/inductive_methods/`：该 run 自己的方法结果缓存
+- `stages/inductive_methods/`：跨全部 runs 聚合后的 stage 结果
+- `stages/inductive_plots/`：跨全部 runs 聚合后的 root 级静态图
+
+当前主流程会在 `stages/inductive_methods/` 下写出：
+
+- `five_method_effect_runs.csv`
+- `five_method_effect_summary.csv`
+- `validation_marker_threshold_curve.csv`
+- `selected_marker_thresholds.csv`
+- `prototype_test_candidates.csv`
+- `marker_verified_test_candidates.csv`
+- `fusion_validation_grid.csv`
+- `resource_summary.csv`：跨 runs 聚合的资源表
+
+当前主流程会在 `stages/inductive_plots/` 下默认生成 5 张 PNG：
+
+- `five_method_metric_summary.png`
+- `marker_threshold_curve.png`
+- `fusion_validation_heatmap.png`
+- `runtime_summary.png`
+- `memory_summary.png`
 
 ### 下游分析输出
 
-posthoc 评估会在已有 run 目录基础上继续写入：
-
-```text
-stages/prototype_marker_validation/
-```
+`evaluate_posthoc` 会复用已有 run artifacts，并在根目录下继续写入 `stages/posthoc/`。
 
 ## 测试
 

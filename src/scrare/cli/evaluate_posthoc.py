@@ -24,3 +24,7 @@ def main(argv: Sequence[str] | None = None) -> Any:
     args = parser.parse_args(argv)
     config = load_config(args.config)
     return run_posthoc_workflow(config, args)
+
+
+if __name__ == "__main__":
+    main()

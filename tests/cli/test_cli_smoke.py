@@ -1,6 +1,9 @@
 import importlib
+import runpy
+import sys
 from importlib import metadata
 
+import pandas as pd
 import pytest
 
 from scrare.cli import audit
@@ -36,6 +39,51 @@ def test_project_scripts_point_to_cli_main_functions() -> None:
 def test_audit_cli_exposes_parser() -> None:
     parser = audit.build_parser()
     assert parser.prog is not None
+
+
+def test_python_m_audit_executes_main(tmp_path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    config_path = tmp_path / "cfg.yaml"
+    data_path = tmp_path / "demo.h5ad"
+    output_path = tmp_path / "outputs"
+    config_path.write_text(
+        "\n".join(
+            [
+                "dataset:",
+                "  path: " + str(data_path),
+                "  name: demo",
+                "  label_key: label",
+                "  batch_key: batch",
+                "experiment:",
+                "  output_dir: " + str(output_path),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    data_path.write_text("placeholder", encoding="utf-8")
+
+    class DummyFile:
+        def close(self) -> None:
+            return None
+
+    class DummyAdata:
+        shape = (2, 2)
+        X = pd.DataFrame([[1, 0], [0, 1]]).to_numpy()
+        raw = None
+        file = DummyFile()
+        obs = pd.DataFrame({"label": ["ASDC", "pDC"], "batch": ["b0", "b1"]})
+
+    monkeypatch.setattr("anndata.read_h5ad", lambda *args, **kwargs: DummyAdata())
+    monkeypatch.setattr(sys, "argv", ["python", "--config", str(config_path)])
+
+    runpy.run_module("scrare.cli.audit", run_name="__main__")
+
+    captured = capsys.readouterr()
+    assert "Wrote audit outputs to" in captured.out
+    assert (output_path / "dataset_summary.csv").exists()
+    assert (output_path / "class_distribution.csv").exists()
+    assert (output_path / "batch_distribution.csv").exists()
+    assert not (output_path / "audit").exists()
+    assert not (output_path / "tables").exists()
 
 
 @pytest.mark.parametrize(
