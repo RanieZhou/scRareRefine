@@ -2,7 +2,9 @@ import importlib
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
+import anndata as ad
 import numpy as np
 import pandas as pd
 import yaml
@@ -53,6 +55,31 @@ class ProjectStateTests(unittest.TestCase):
         self.assertEqual(predictions.loc[0, "top1_label"], "ASDC")
         self.assertEqual(predictions.loc[1, "top1_label"], "pDC")
         self.assertEqual(latent["cell_id"].tolist(), ["c0", "c1"])
+
+    def test_scanvi_query_labels_do_not_become_nan_when_unlabeled_category_is_missing_from_train_categories(self):
+        module = importlib.import_module("scrare.models.scanvi")
+        query_adata = ad.AnnData(
+            X=np.ones((2, 1), dtype=np.float32),
+            obs=pd.DataFrame(index=["q0", "q1"]),
+            var=pd.DataFrame(index=["gene0"]),
+        )
+        captured = {}
+
+        def fake_load_query_data(query, scanvi_model):
+            del scanvi_model
+            captured["labels"] = query.obs["scanvi_label"].copy()
+            return SimpleNamespace(is_trained_=False)
+
+        with patch.object(module.scvi.model.SCANVI, "load_query_data", side_effect=fake_load_query_data):
+            module.load_query_model(
+                query_adata,
+                object(),
+                unlabeled_category="Unknown",
+                label_categories=["ASDC", "pDC"],
+            )
+
+        self.assertEqual(captured["labels"].astype(str).tolist(), ["Unknown", "Unknown"])
+        self.assertFalse(captured["labels"].isna().any())
 
     def test_legacy_script_entrypoints_are_removed(self):
         legacy_scripts = [

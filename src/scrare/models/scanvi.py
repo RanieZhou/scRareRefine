@@ -119,7 +119,8 @@ def train_reference_scanvi(
 
 def load_query_model(query_adata, scanvi_model: scvi.model.SCANVI, *, unlabeled_category: str, label_categories: list[str]) -> scvi.model.SCANVI:
     query = query_adata.copy()
-    query.obs["scanvi_label"] = pd.Categorical([unlabeled_category] * query.n_obs, categories=label_categories)
+    categories = list(dict.fromkeys([*label_categories, unlabeled_category]))
+    query.obs["scanvi_label"] = pd.Categorical([unlabeled_category] * query.n_obs, categories=categories)
     query.obs["is_labeled_for_scanvi"] = False
     query_model = scvi.model.SCANVI.load_query_data(query, scanvi_model)
     query_model.is_trained_ = True
