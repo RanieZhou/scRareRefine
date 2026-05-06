@@ -85,6 +85,12 @@ def seed_everything(seed: int) -> None:
     torch.manual_seed(seed)
 
 
+def _train_device_kwargs() -> dict[str, int | str]:
+    if torch.backends.mps.is_available():
+        return {"accelerator": "mps", "devices": 1}
+    return {}
+
+
 def train_reference_scanvi(
     train_adata,
     *,
@@ -95,6 +101,7 @@ def train_reference_scanvi(
     scvi_epochs: int,
     scanvi_epochs: int,
 ) -> scvi.model.SCANVI:
+    train_device_kwargs = _train_device_kwargs()
     scvi.model.SCVI.setup_anndata(train_adata, batch_key=batch_key, labels_key="scanvi_label")
     vae = scvi.model.SCVI(train_adata, n_latent=n_latent)
     vae.train(
@@ -102,6 +109,7 @@ def train_reference_scanvi(
         batch_size=batch_size,
         enable_progress_bar=False,
         log_every_n_steps=10,
+        **train_device_kwargs,
     )
     scanvi = scvi.model.SCANVI.from_scvi_model(
         vae,
@@ -113,6 +121,7 @@ def train_reference_scanvi(
         batch_size=batch_size,
         enable_progress_bar=False,
         log_every_n_steps=10,
+        **train_device_kwargs,
     )
     return scanvi
 

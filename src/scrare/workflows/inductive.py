@@ -392,7 +392,13 @@ def _rebuild_stage_outputs(root: Path) -> None:
             path = _run_stage_table_path(run_dir, stage, filename)
             if not path.exists():
                 continue
-            parts.append(read_table(path))
+            try:
+                part = read_table(path)
+            except pd.errors.EmptyDataError:
+                continue
+            if part.empty and len(part.columns) == 0:
+                continue
+            parts.append(part)
         write_table(pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(), stage_table_path(root, stage, filename))
 
 

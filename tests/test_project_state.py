@@ -56,6 +56,47 @@ class ProjectStateTests(unittest.TestCase):
         self.assertEqual(predictions.loc[1, "top1_label"], "pDC")
         self.assertEqual(latent["cell_id"].tolist(), ["c0", "c1"])
 
+    def test_train_reference_scanvi_uses_mps_when_available(self):
+        module = importlib.import_module("scrare.models.scanvi")
+        train_calls = []
+
+        class DummySCVI:
+            @staticmethod
+            def setup_anndata(*args, **kwargs):
+                return None
+
+            def __init__(self, *args, **kwargs):
+                return None
+
+            def train(self, **kwargs):
+                train_calls.append(kwargs)
+
+        class DummySCANVI:
+            @staticmethod
+            def from_scvi_model(*args, **kwargs):
+                return DummySCANVI()
+
+            def train(self, **kwargs):
+                train_calls.append(kwargs)
+
+        with (
+            patch.object(module.torch.backends.mps, "is_available", return_value=True),
+            patch.object(module.scvi.model, "SCVI", DummySCVI),
+            patch.object(module.scvi.model, "SCANVI", DummySCANVI),
+        ):
+            module.train_reference_scanvi(
+                object(),
+                batch_key="batch",
+                unlabeled_category="Unknown",
+                n_latent=2,
+                batch_size=8,
+                scvi_epochs=1,
+                scanvi_epochs=1,
+            )
+
+        self.assertEqual([call["accelerator"] for call in train_calls], ["mps", "mps"])
+        self.assertEqual([call["devices"] for call in train_calls], [1, 1])
+
     def test_scanvi_query_labels_do_not_become_nan_when_unlabeled_category_is_missing_from_train_categories(self):
         module = importlib.import_module("scrare.models.scanvi")
         query_adata = ad.AnnData(

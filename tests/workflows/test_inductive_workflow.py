@@ -128,6 +128,28 @@ def test_run_inductive_workflow_rebuilds_plots_after_stage_and_resource_outputs(
     assert calls == ["write", "stage", "resource", "plot"]
 
 
+def test_rebuild_stage_outputs_ignores_empty_run_tables(tmp_path: Path) -> None:
+    run_stage_dir = (
+        tmp_path / "runs" / "batch_heldout_seed_42_rare_20" / "stages" / "inductive_methods"
+    )
+    run_stage_dir.mkdir(parents=True)
+    pd.DataFrame({"run": ["batch_heldout_seed_42_rare_20"], "method": ["baseline"]}).to_csv(
+        run_stage_dir / "five_method_effect_runs.csv",
+        index=False,
+    )
+    (run_stage_dir / "marker_verified_test_candidates.csv").write_text("\n")
+
+    inductive._rebuild_stage_outputs(tmp_path)
+
+    effect_runs = pd.read_csv(
+        tmp_path / "stages" / "inductive_methods" / "five_method_effect_runs.csv"
+    )
+
+    assert effect_runs.to_dict("records") == [
+        {"run": "batch_heldout_seed_42_rare_20", "method": "baseline"}
+    ]
+
+
 def test_rebuild_plot_outputs_uses_stage_plot_directory(tmp_path: Path) -> None:
     stage_dir = tmp_path / "stages" / "inductive_methods"
     stage_dir.mkdir(parents=True)

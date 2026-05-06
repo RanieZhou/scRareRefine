@@ -6,7 +6,7 @@ dataset:
   batch_key: batch_id
 
 experiment:
-  rare_class: ASDC
+  rare_class: cDC1
   secondary_rare_classes:
     - cDC1
   rare_train_sizes:
