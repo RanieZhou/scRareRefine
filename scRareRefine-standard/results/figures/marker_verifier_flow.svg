@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="720" viewBox="0 0 560 720">
+  <defs>
+    <style>
+      .title { font: 700 30px Arial, "Microsoft YaHei", sans-serif; fill: #111; }
+      .box-title { font: 700 22px Arial, "Microsoft YaHei", sans-serif; fill: #111; }
+      .box-text { font: 18px Arial, "Microsoft YaHei", sans-serif; fill: #333; }
+      .small { font: 16px Arial, "Microsoft YaHei", sans-serif; fill: #555; }
+      .formula { font: 700 19px Arial, "Microsoft YaHei", sans-serif; fill: #b00000; }
+      .box { fill: #fff; stroke: #111; stroke-width: 2; rx: 10; }
+      .soft { fill: #f7f7f7; stroke: #666; stroke-width: 1.5; rx: 10; }
+      .arrow { stroke: #111; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .red { fill: #b00000; }
+      .green { fill: #0b7a35; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#111"/>
+    </marker>
+  </defs>
+
+  <rect x="1" y="1" width="558" height="718" fill="#ffffff" stroke="#d9d9d9"/>
+  <text x="280" y="52" text-anchor="middle" class="title">Marker Verifier Flow</text>
+
+  <rect x="50" y="82" width="460" height="96" class="box"/>
+  <text x="280" y="118" text-anchor="middle" class="box-title">1. Prototype Gate</text>
+  <text x="280" y="148" text-anchor="middle" class="box-text">baseline ≠ ASDC</text>
+  <text x="280" y="172" text-anchor="middle" class="box-text">nearest prototype = ASDC</text>
+
+  <path d="M280 178 L280 216" class="arrow"/>
+
+  <rect x="50" y="216" width="460" height="96" class="soft"/>
+  <text x="280" y="252" text-anchor="middle" class="box-title">2. Candidate Pool</text>
+  <text x="280" y="282" text-anchor="middle" class="box-text">只保留可能被漏掉的 ASDC</text>
+  <text x="280" y="306" text-anchor="middle" class="small">high recall, but may include false rescue</text>
+
+  <path d="M280 312 L280 350" class="arrow"/>
+
+  <rect x="50" y="350" width="460" height="120" class="box"/>
+  <text x="280" y="386" text-anchor="middle" class="box-title">3. Marker Score</text>
+  <text x="280" y="418" text-anchor="middle" class="box-text">ASDC marker score</text>
+  <text x="280" y="446" text-anchor="middle" class="formula">− predicted-class marker score</text>
+  <text x="280" y="466" text-anchor="middle" class="small">= marker margin</text>
+
+  <path d="M280 470 L280 508" class="arrow"/>
+
+  <rect x="50" y="508" width="460" height="92" class="soft"/>
+  <text x="280" y="544" text-anchor="middle" class="box-title">4. Validation-tuned Threshold</text>
+  <text x="280" y="574" text-anchor="middle" class="box-text">choose threshold on validation set</text>
+  <text x="280" y="596" text-anchor="middle" class="small">maximize ASDC F1 under FRR constraint</text>
+
+  <path d="M280 600 L280 638" class="arrow"/>
+
+  <rect x="50" y="638" width="460" height="58" class="box"/>
+  <text x="280" y="674" text-anchor="middle" class="box-title">
+    <tspan class="green">Pass</tspan>
+    <tspan> → rescue to ASDC   </tspan>
+    <tspan class="red">Fail</tspan>
+    <tspan> → keep baseline</tspan>
+  </text>
+</svg>
