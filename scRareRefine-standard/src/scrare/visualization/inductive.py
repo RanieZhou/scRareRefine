@@ -83,6 +83,68 @@ def _numeric(frame: pd.DataFrame, column: str) -> pd.Series:
 
 
 
+def _format_metric_label(value: object) -> str:
+    numeric = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    return "" if pd.isna(numeric) else f"{float(numeric):.2f}"
+
+
+
+def _format_resource_label(value: object) -> str:
+    numeric = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(numeric):
+        return ""
+    value = float(numeric)
+    if abs(value) >= 100:
+        return f"{value:.0f}"
+    if abs(value) >= 10:
+        return f"{value:.1f}"
+    return f"{value:.2f}"
+
+
+
+def _add_bar_labels(ax, formatter) -> None:
+    for container in ax.containers:
+        labels = [formatter(bar.get_height()) for bar in container]
+        ax.bar_label(container, labels=labels, padding=2, fontsize=7)
+
+
+
+def _add_line_point_labels(ax) -> None:
+    for line in ax.lines:
+        for x, y in zip(line.get_xdata(), line.get_ydata()):
+            if pd.isna(y):
+                continue
+            ax.annotate(
+                _format_metric_label(y),
+                xy=(x, y),
+                xytext=(0, 5),
+                textcoords="offset points",
+                ha="center",
+                fontsize=7,
+                color=line.get_color(),
+            )
+
+
+
+def _add_heatmap_labels(ax, image, heatmap: pd.DataFrame) -> None:
+    for row_index in range(len(heatmap.index)):
+        for column_index in range(len(heatmap.columns)):
+            value = heatmap.iloc[row_index, column_index]
+            if pd.isna(value):
+                continue
+            color = "white" if image.norm(float(value)) > 0.55 else "black"
+            ax.text(
+                column_index,
+                row_index,
+                _format_metric_label(value),
+                ha="center",
+                va="center",
+                color=color,
+                fontsize=8,
+            )
+
+
+
 def _resource_size_sort_key(value: object) -> tuple[int, float | str]:
     text = str(value)
     numeric = pd.to_numeric(pd.Series([text]), errors="coerce").iloc[0]
@@ -121,8 +183,10 @@ def _build_metric_summary(root: str | Path) -> Path:
     ax.set_title("Five-method metric summary")
     ax.set_xlabel("Method")
     ax.set_ylabel("Mean score")
+    ax.set_ylim(0, 1.08)
     ax.legend(title="Metric", loc="best")
     ax.grid(axis="y", alpha=0.25)
+    _add_bar_labels(ax, _format_metric_label)
     ax.figure.tight_layout()
     ax.figure.savefig(out_path, dpi=150)
     plt.close(ax.figure)
@@ -161,13 +225,15 @@ def _build_marker_threshold_curve(root: str | Path) -> Path:
         return _save_empty_figure(out_path, "Marker threshold curve", f"No numeric thresholds in {csv_name}.")
 
     grouped = plot_frame.groupby("marker_threshold", sort=True)[metric_columns].mean(numeric_only=True)
-    ax = grouped.rename(
+    labeled_grouped = grouped.rename(
         columns={
             "rare_f1": "Rare F1",
             "rare_recall": "Rare recall",
             "major_to_rare_false_rescue_rate": "False rescue rate",
         }
-    ).plot(marker="o", figsize=(8, 5))
+    )
+    ax = labeled_grouped.plot(marker="o", figsize=(8, 5))
+    _add_line_point_labels(ax)
 
     selected = _selected_marker_thresholds(root)
     for index, threshold in enumerate(sorted(selected["selected_marker_threshold"].unique()) if not selected.empty else []):
@@ -178,6 +244,7 @@ def _build_marker_threshold_curve(root: str | Path) -> Path:
     ax.set_xlabel("Marker threshold")
     ax.set_ylabel("Validation metric")
     ax.set_ylim(bottom=0)
+    ax.margins(y=0.15)
     ax.grid(alpha=0.25)
     if not selected.empty:
         ax.legend(title="Metric", loc="best")
@@ -217,6 +284,7 @@ def _build_fusion_heatmap(root: str | Path) -> Path:
     ax.set_xticklabels([f"{value:g}" for value in heatmap.columns])
     ax.set_yticks(range(len(heatmap.index)))
     ax.set_yticklabels(heatmap.index)
+    _add_heatmap_labels(ax, image, heatmap)
     fig.colorbar(image, ax=ax, label="Rare F1")
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
@@ -252,6 +320,8 @@ def _build_resource_summary(root: str | Path, *, value_column: str, ylabel: str,
     ax.legend(title="Split mode", loc="best")
     ax.tick_params(axis="x", labelrotation=0)
     ax.grid(axis="y", alpha=0.25)
+    ax.margins(y=0.15)
+    _add_bar_labels(ax, _format_resource_label)
     ax.figure.tight_layout()
     ax.figure.savefig(out_path, dpi=150)
     plt.close(ax.figure)

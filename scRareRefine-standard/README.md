@@ -113,7 +113,7 @@ results/reports/
 results/figures/
 ```
 
-当前代码中的部分配置仍可能写入 `outputs/`。这是兼容当前实现的过渡状态；将运行输出完全切换到 `results/` 应作为后续单独任务处理。
+当前代码默认将 audit、inductive 和 posthoc 运行输出写入 `results/`；CLI 的 `--output-dir` 仅用于临时覆盖单次输出根目录。
 
 ## 核心约束
 

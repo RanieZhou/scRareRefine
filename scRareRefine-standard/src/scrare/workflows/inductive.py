@@ -10,7 +10,7 @@ import pandas as pd
 from scrare.data.loading import adata_from_config
 from scrare.data.preprocess import ensure_unique_names, select_train_hvg_var_names, subset_cells
 from scrare.data.splits import batch_heldout_split, cell_stratified_split, make_inductive_scanvi_labels, parse_rare_train_size
-from scrare.evaluation.posthoc import evaluate_four_stage_methods
+from scrare.evaluation.posthoc import evaluate_four_stage_methods, summarize_four_stage_methods
 from scrare.infra.io import read_table, write_table
 from scrare.infra.paths import artifact_path, stage_table_path
 from scrare.infra.resources import ResourceMonitor
@@ -63,7 +63,7 @@ def _output_root(config: dict[str, Any], *, rare_class: str, split_mode: str, ou
         return Path(output_dir)
     dataset_name = config["dataset"].get("name", "dataset")
     split_name = "inductive_cell" if split_mode == "cell_stratified" else "inductive_batch"
-    return Path("outputs") / dataset_name / split_name / _safe_class_name(rare_class)
+    return Path("results") / dataset_name / split_name / _safe_class_name(rare_class)
 
 
 def _run_name(seed: int, rare_train_size: str | int, split_mode: str) -> str:
@@ -281,10 +281,6 @@ def _run_dirs(root: Path) -> list[Path]:
     return sorted(path for path in runs.iterdir() if path.is_dir()) if runs.exists() else []
 
 
-def _run_stage_table_path(run_dir: Path, stage: str, filename: str) -> Path:
-    return run_dir / "stages" / stage / filename
-
-
 def _run_resource_summary_path(run_dir: Path) -> Path:
     return run_dir / RESOURCE_SUMMARY_FILENAME
 
@@ -375,31 +371,37 @@ def _evaluate_method_outputs(
     )
 
 
-def _write_run_method_outputs(outputs: dict[str, pd.DataFrame], *, run_dir: Path) -> None:
+def _read_stage_table(path: Path) -> pd.DataFrame:
+    try:
+        return read_table(path)
+    except (FileNotFoundError, pd.errors.EmptyDataError):
+        return pd.DataFrame()
+
+
+def _replace_stage_run_rows(path: Path, frame: pd.DataFrame, *, run_name: str) -> pd.DataFrame:
+    existing = _read_stage_table(path)
+    if "run" in existing.columns:
+        existing = existing[existing["run"].astype(str) != run_name]
+    parts = [part for part in [existing, frame] if not part.empty or len(part.columns) > 0]
+    updated = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
+    write_table(updated, path)
+    return updated
+
+
+def _write_stage_outputs(outputs: dict[str, pd.DataFrame], *, root: Path, run_name: str) -> None:
     stage = "inductive_methods"
+    root_effect_runs: pd.DataFrame | None = None
     for key, filename in METHOD_OUTPUT_FILES.items():
+        if key == "effect_summary":
+            continue
         frame = outputs.get(key)
         if frame is None:
             continue
-        write_table(frame, _run_stage_table_path(run_dir, stage, filename))
-
-
-def _rebuild_stage_outputs(root: Path) -> None:
-    stage = "inductive_methods"
-    for key, filename in METHOD_OUTPUT_FILES.items():
-        parts: list[pd.DataFrame] = []
-        for run_dir in _run_dirs(root):
-            path = _run_stage_table_path(run_dir, stage, filename)
-            if not path.exists():
-                continue
-            try:
-                part = read_table(path)
-            except pd.errors.EmptyDataError:
-                continue
-            if part.empty and len(part.columns) == 0:
-                continue
-            parts.append(part)
-        write_table(pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(), stage_table_path(root, stage, filename))
+        updated = _replace_stage_run_rows(stage_table_path(root, stage, filename), frame, run_name=run_name)
+        if key == "effect_runs":
+            root_effect_runs = updated
+    summary = summarize_four_stage_methods(root_effect_runs) if root_effect_runs is not None and not root_effect_runs.empty else pd.DataFrame()
+    write_table(summary, stage_table_path(root, stage, METHOD_OUTPUT_FILES["effect_summary"]))
 
 
 def _rebuild_resource_summary(root: Path) -> None:
@@ -453,7 +455,7 @@ def run_inductive_workflow(config: dict[str, Any], args: argparse.Namespace) -> 
                 baseline_bundle=baseline_bundle,
             )
             selected_outputs = _select_method_rows(outputs, methods)
-            _write_run_method_outputs(selected_outputs, run_dir=run_dir)
+            _write_stage_outputs(selected_outputs, root=root, run_name=run_dir.name)
         write_table(
             _resource_summary_row(
                 run_name=run_dir.name,
@@ -465,6 +467,5 @@ def run_inductive_workflow(config: dict[str, Any], args: argparse.Namespace) -> 
             ),
             _run_resource_summary_path(run_dir),
         )
-        _rebuild_stage_outputs(root)
         _rebuild_resource_summary(root)
         _rebuild_plot_outputs(root)

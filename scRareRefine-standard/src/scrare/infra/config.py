@@ -16,4 +16,4 @@ def load_config(path: str | Path) -> dict[str, Any]:
 
 def output_dir(config: dict[str, Any]) -> Path:
     experiment = config.get("experiment", {})
-    return Path(experiment.get("output_dir", config.get("output_dir", "outputs")))
+    return Path(experiment.get("output_dir", config.get("output_dir", "results")))

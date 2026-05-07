@@ -26,7 +26,7 @@ def _safe_class_name(name: str) -> str:
 def _output_root(config: dict[str, Any], *, rare_class: str, split_mode: str) -> Path:
     dataset_name = config["dataset"].get("name", "dataset")
     split_name = "inductive_cell" if split_mode == "cell_stratified" else "inductive_batch"
-    return Path("outputs") / dataset_name / split_name / _safe_class_name(rare_class)
+    return Path("results") / dataset_name / split_name / _safe_class_name(rare_class)
 
 
 def _run_dirs(root: Path) -> list[Path]:

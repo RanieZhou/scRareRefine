@@ -206,4 +206,4 @@ environment.txt
 run.log
 ```
 
-当前代码仍有过渡性 `outputs/` 写入逻辑。将运行输出完全切换到 `results/` 需要单独设计和测试。
+当前代码默认将 audit、inductive 和 posthoc 运行输出写入 `results/`；如需临时覆盖输出根目录，应使用 CLI 参数或配置中的 `output_dir`。

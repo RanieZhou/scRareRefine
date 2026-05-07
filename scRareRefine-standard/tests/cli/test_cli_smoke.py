@@ -44,7 +44,7 @@ def test_audit_cli_exposes_parser() -> None:
 def test_python_m_audit_executes_main(tmp_path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     config_path = tmp_path / "cfg.yaml"
     data_path = tmp_path / "demo.h5ad"
-    output_path = tmp_path / "outputs"
+    output_path = tmp_path / "results"
     config_path.write_text(
         "\n".join(
             [

@@ -142,18 +142,12 @@ class ProjectStateTests(unittest.TestCase):
         legacy_dir = REPO_ROOT / "scrare_refine"
         self.assertFalse(legacy_dir.exists(), "scrare_refine")
 
-    def test_configs_do_not_use_legacy_p0_output_roots(self):
-        legacy_roots = {
-            "outputs/immune_dc/p0",
-            "outputs/immune_dc/cdc1",
-            "outputs/pancreas/p0",
-            "outputs/pancreas/epsilon",
-        }
-
+    def test_configs_use_results_output_roots(self):
         for path in (REPO_ROOT / "configs").glob("*.yaml"):
             config = yaml.safe_load(path.read_text(encoding="utf-8"))
-            output_dir = str(config.get("experiment", {}).get("output_dir", ""))
-            self.assertNotIn(output_dir.replace("\\", "/"), legacy_roots, path.name)
+            output_dir = str(config.get("experiment", {}).get("output_dir", "")).replace("\\", "/")
+            self.assertTrue(output_dir.startswith("results/"), path.name)
+            self.assertNotIn("outputs/", output_dir, path.name)
 
 
 if __name__ == "__main__":

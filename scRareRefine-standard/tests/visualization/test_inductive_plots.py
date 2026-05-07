@@ -108,6 +108,59 @@ def test_rebuild_inductive_plots_creates_expected_pngs_for_minimal_inputs(tmp_pa
 
 
 
+def test_rebuild_inductive_plots_adds_bar_value_labels(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    _write_minimal_inputs(tmp_path)
+    recorded_labels: list[str] = []
+
+    def record_bar_label(self, container, labels=None, *args, **kwargs):  # type: ignore[no-untyped-def]
+        del self, container, args, kwargs
+        recorded_labels.extend(label for label in (labels or []) if label)
+        return []
+
+    monkeypatch.setattr(plt.Axes, "bar_label", record_bar_label)
+
+    rebuild_inductive_plots(tmp_path)
+
+    assert "0.80" in recorded_labels
+    assert "10.0" in recorded_labels
+    assert "512" in recorded_labels
+
+
+
+def test_rebuild_inductive_plots_adds_marker_curve_value_labels(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    _write_minimal_inputs(tmp_path)
+    labels: list[str] = []
+
+    def record_annotate(self, text, *args, **kwargs):  # type: ignore[no-untyped-def]
+        del self, args, kwargs
+        labels.append(str(text))
+        return None
+
+    monkeypatch.setattr(plt.Axes, "annotate", record_annotate)
+
+    rebuild_inductive_plots(tmp_path)
+
+    assert {"0.40", "0.48", "0.60", "0.01"}.issubset(set(labels))
+
+
+
+def test_rebuild_inductive_plots_adds_heatmap_cell_labels(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    _write_minimal_inputs(tmp_path)
+    labels: list[str] = []
+    original_text = plt.Axes.text
+
+    def record_text(self, x, y, s, *args, **kwargs):  # type: ignore[no-untyped-def]
+        labels.append(str(s))
+        return original_text(self, x, y, s, *args, **kwargs)
+
+    monkeypatch.setattr(plt.Axes, "text", record_text)
+
+    rebuild_inductive_plots(tmp_path)
+
+    assert {"0.45", "0.50", "0.42", "0.49"}.issubset(set(labels))
+
+
+
 def test_rebuild_inductive_plots_raises_clear_error_for_missing_required_columns(tmp_path: Path) -> None:
     _write_minimal_inputs(tmp_path)
     write_table(

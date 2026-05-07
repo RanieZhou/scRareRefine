@@ -55,13 +55,48 @@ def _args(tmp_path: Path, **overrides) -> argparse.Namespace:
         "rare_train_size": None,
         "methods": "baseline_plus_fusion",
         "reuse_baseline_only": True,
-        "output_dir": str(tmp_path / "outputs"),
+        "output_dir": str(tmp_path / "results"),
         "max_false_rescue_rate": 0.001,
         "top_n": 25,
         "min_cells": 5,
     }
     values.update(overrides)
     return argparse.Namespace(**values)
+
+
+def _method_effect_row(run: str, rare_f1: float = 0.5) -> dict:
+    return {
+        "run": run,
+        "method_key": "baseline_plus_fusion",
+        "method": "fusion",
+        "split_mode": "batch_heldout",
+        "rare_class": "ASDC",
+        "rare_train_size": "20",
+        "overall_accuracy": 0.9,
+        "macro_f1": 0.8,
+        "rare_precision": 0.7,
+        "rare_recall": 0.6,
+        "rare_f1": rare_f1,
+        "n_candidates": 1,
+        "n_marker_verified": 1,
+        "rescued_rare_errors": 1,
+        "false_rescues": 0,
+        "candidate_precision_for_rare_error": 1.0,
+        "rare_error_recall": 0.5,
+        "modification_rate": 0.1,
+        "major_to_rare_false_rescue_rate": 0.0,
+    }
+
+
+def test_inductive_default_output_root_uses_results() -> None:
+    root = inductive._output_root(
+        _config(),
+        rare_class="ASDC",
+        split_mode="batch_heldout",
+        output_dir=None,
+    )
+
+    assert root == Path("results/demo/inductive_batch/asdc")
 
 
 def test_run_inductive_workflow_fails_when_reuse_requested_but_baseline_missing(tmp_path: Path) -> None:
@@ -76,8 +111,7 @@ def test_run_inductive_workflow_reuses_existing_baseline_for_nonbaseline_methods
     monkeypatch.setattr(inductive, "_run_baseline_slice", lambda *args, **kwargs: calls.append("baseline"))
     monkeypatch.setattr(inductive, "_load_baseline_bundle", lambda *args, **kwargs: calls.append("load") or {})
     monkeypatch.setattr(inductive, "_evaluate_method_outputs", lambda *args, **kwargs: calls.append("evaluate") or {})
-    monkeypatch.setattr(inductive, "_write_run_method_outputs", lambda *args, **kwargs: calls.append("write"))
-    monkeypatch.setattr(inductive, "_rebuild_stage_outputs", lambda *args, **kwargs: calls.append("rebuild_stage"))
+    monkeypatch.setattr(inductive, "_write_stage_outputs", lambda *args, **kwargs: calls.append("write"))
     monkeypatch.setattr(inductive, "_rebuild_resource_summary", lambda *args, **kwargs: calls.append("rebuild_resource"))
     monkeypatch.setattr(inductive, "_rebuild_plot_outputs", lambda *args, **kwargs: calls.append("rebuild_plot"))
 
@@ -86,7 +120,7 @@ def test_run_inductive_workflow_reuses_existing_baseline_for_nonbaseline_methods
         _args(tmp_path, methods="baseline_plus_fusion", reuse_baseline_only=False),
     )
 
-    assert calls == ["load", "evaluate", "write", "rebuild_stage", "rebuild_resource", "rebuild_plot"]
+    assert calls == ["load", "evaluate", "write", "rebuild_resource", "rebuild_plot"]
 
 
 def test_run_inductive_workflow_trains_baseline_when_requested(monkeypatch, tmp_path: Path) -> None:
@@ -96,8 +130,7 @@ def test_run_inductive_workflow_trains_baseline_when_requested(monkeypatch, tmp_
     monkeypatch.setattr(inductive, "_run_baseline_slice", lambda *args, **kwargs: calls.append("baseline"))
     monkeypatch.setattr(inductive, "_load_baseline_bundle", lambda *args, **kwargs: calls.append("load") or {})
     monkeypatch.setattr(inductive, "_evaluate_method_outputs", lambda *args, **kwargs: calls.append("evaluate") or {})
-    monkeypatch.setattr(inductive, "_write_run_method_outputs", lambda *args, **kwargs: calls.append("write"))
-    monkeypatch.setattr(inductive, "_rebuild_stage_outputs", lambda *args, **kwargs: calls.append("rebuild_stage"))
+    monkeypatch.setattr(inductive, "_write_stage_outputs", lambda *args, **kwargs: calls.append("write"))
     monkeypatch.setattr(inductive, "_rebuild_resource_summary", lambda *args, **kwargs: calls.append("rebuild_resource"))
     monkeypatch.setattr(inductive, "_rebuild_plot_outputs", lambda *args, **kwargs: calls.append("rebuild_plot"))
 
@@ -106,7 +139,7 @@ def test_run_inductive_workflow_trains_baseline_when_requested(monkeypatch, tmp_
         _args(tmp_path, methods="baseline", reuse_baseline_only=False),
     )
 
-    assert calls == ["baseline", "load", "evaluate", "write", "rebuild_stage", "rebuild_resource", "rebuild_plot"]
+    assert calls == ["baseline", "load", "evaluate", "write", "rebuild_resource", "rebuild_plot"]
 
 
 def test_run_inductive_workflow_rebuilds_plots_after_stage_and_resource_outputs(monkeypatch, tmp_path: Path) -> None:
@@ -115,8 +148,7 @@ def test_run_inductive_workflow_rebuilds_plots_after_stage_and_resource_outputs(
     monkeypatch.setattr(inductive, "_missing_baseline_artifacts", lambda run_dir: [])
     monkeypatch.setattr(inductive, "_load_baseline_bundle", lambda *args, **kwargs: {})
     monkeypatch.setattr(inductive, "_evaluate_method_outputs", lambda *args, **kwargs: {})
-    monkeypatch.setattr(inductive, "_write_run_method_outputs", lambda *args, **kwargs: calls.append("write"))
-    monkeypatch.setattr(inductive, "_rebuild_stage_outputs", lambda *args, **kwargs: calls.append("stage"))
+    monkeypatch.setattr(inductive, "_write_stage_outputs", lambda *args, **kwargs: calls.append("write"))
     monkeypatch.setattr(inductive, "_rebuild_resource_summary", lambda *args, **kwargs: calls.append("resource"))
     monkeypatch.setattr(inductive, "_rebuild_plot_outputs", lambda *args, **kwargs: calls.append("plot"))
 
@@ -125,29 +157,41 @@ def test_run_inductive_workflow_rebuilds_plots_after_stage_and_resource_outputs(
         _args(tmp_path, methods="baseline_plus_fusion", reuse_baseline_only=False),
     )
 
-    assert calls == ["write", "stage", "resource", "plot"]
+    assert calls == ["write", "resource", "plot"]
 
 
-def test_rebuild_stage_outputs_ignores_empty_run_tables(tmp_path: Path) -> None:
-    run_stage_dir = (
-        tmp_path / "runs" / "batch_heldout_seed_42_rare_20" / "stages" / "inductive_methods"
+def test_write_stage_outputs_replaces_existing_run_rows_without_run_stage_directory(tmp_path: Path) -> None:
+    stage_dir = tmp_path / "stages" / "inductive_methods"
+    stage_dir.mkdir(parents=True)
+    pd.DataFrame(
+        [
+            _method_effect_row("batch_heldout_seed_42_rare_20", rare_f1=0.2),
+            _method_effect_row("batch_heldout_seed_43_rare_20", rare_f1=0.4),
+        ]
+    ).to_csv(stage_dir / "five_method_effect_runs.csv", index=False)
+
+    outputs = {
+        "effect_runs": pd.DataFrame([_method_effect_row("batch_heldout_seed_42_rare_20", rare_f1=0.9)]),
+        "threshold_curve": pd.DataFrame({"run": ["batch_heldout_seed_42_rare_20"], "marker_threshold": [0.1]}),
+        "selected_thresholds": pd.DataFrame({"run": ["batch_heldout_seed_42_rare_20"], "selected_marker_threshold": [0.1]}),
+        "prototype_candidates": pd.DataFrame({"run": ["batch_heldout_seed_42_rare_20"], "cell_id": ["candidate"]}),
+        "marker_verified_candidates": pd.DataFrame(columns=["run", "cell_id"]),
+        "fusion_grid": pd.DataFrame({"run": ["batch_heldout_seed_42_rare_20"], "temperature": [1.0]}),
+    }
+
+    inductive._write_stage_outputs(
+        outputs,
+        root=tmp_path,
+        run_name="batch_heldout_seed_42_rare_20",
     )
-    run_stage_dir.mkdir(parents=True)
-    pd.DataFrame({"run": ["batch_heldout_seed_42_rare_20"], "method": ["baseline"]}).to_csv(
-        run_stage_dir / "five_method_effect_runs.csv",
-        index=False,
-    )
-    (run_stage_dir / "marker_verified_test_candidates.csv").write_text("\n")
 
-    inductive._rebuild_stage_outputs(tmp_path)
+    effect_runs = pd.read_csv(stage_dir / "five_method_effect_runs.csv")
+    summary = pd.read_csv(stage_dir / "five_method_effect_summary.csv")
 
-    effect_runs = pd.read_csv(
-        tmp_path / "stages" / "inductive_methods" / "five_method_effect_runs.csv"
-    )
-
-    assert effect_runs.to_dict("records") == [
-        {"run": "batch_heldout_seed_42_rare_20", "method": "baseline"}
-    ]
+    assert set(effect_runs["run"]) == {"batch_heldout_seed_42_rare_20", "batch_heldout_seed_43_rare_20"}
+    assert effect_runs.loc[effect_runs["run"].eq("batch_heldout_seed_42_rare_20"), "rare_f1"].item() == 0.9
+    assert "rare_f1_mean" in summary.columns
+    assert not (tmp_path / "runs" / "batch_heldout_seed_42_rare_20" / "stages").exists()
 
 
 def test_rebuild_plot_outputs_uses_stage_plot_directory(tmp_path: Path) -> None:
@@ -299,7 +343,7 @@ def test_run_baseline_slice_writes_standard_artifacts(monkeypatch, tmp_path: Pat
 
 
 def test_run_inductive_workflow_rebuilds_stage_outputs_across_multiple_runs(monkeypatch, tmp_path: Path) -> None:
-    root = tmp_path / "outputs"
+    root = tmp_path / "results"
 
     monkeypatch.setattr(
         inductive,
@@ -318,8 +362,7 @@ def test_run_inductive_workflow_rebuilds_stage_outputs_across_multiple_runs(monk
     def fake_evaluate(*args, run_dir: Path, **kwargs):
         run = run_dir.name
         return {
-            "effect_runs": pd.DataFrame({"run": [run], "method_key": ["baseline_plus_fusion"], "method": ["fusion"]}),
-            "effect_summary": pd.DataFrame({"run": [run], "method": ["fusion"]}),
+            "effect_runs": pd.DataFrame([_method_effect_row(run)]),
             "threshold_curve": pd.DataFrame({"run": [run], "threshold": [0.1]}),
             "selected_thresholds": pd.DataFrame({"run": [run], "selected_marker_threshold": [0.1]}),
             "prototype_candidates": pd.DataFrame({"run": [run], "cell_id": [f"{run}_candidate"]}),
@@ -340,7 +383,7 @@ def test_run_inductive_workflow_rebuilds_stage_outputs_across_multiple_runs(monk
 
 
 def test_run_inductive_workflow_writes_run_and_root_resource_summary(monkeypatch, tmp_path: Path) -> None:
-    root = tmp_path / "outputs"
+    root = tmp_path / "results"
     summaries = iter(
         [
             {"wall_time_seconds": 12.5, "peak_rss_mb": 256.0},
@@ -371,11 +414,12 @@ def test_run_inductive_workflow_writes_run_and_root_resource_summary(monkeypatch
     )
     monkeypatch.setattr(inductive, "_missing_baseline_artifacts", lambda run_dir: [])
     monkeypatch.setattr(inductive, "_load_baseline_bundle", lambda run_dir: {})
+    monkeypatch.setattr(inductive, "_rebuild_plot_outputs", lambda root: None)
     monkeypatch.setattr(
         inductive,
         "_evaluate_method_outputs",
         lambda *args, run_dir, **kwargs: {
-            "effect_runs": pd.DataFrame({"run": [run_dir.name], "method_key": ["baseline_plus_fusion"], "method": ["fusion"]}),
+            "effect_runs": pd.DataFrame([_method_effect_row(run_dir.name)]),
         },
     )
 
