@@ -1,0 +1,8 @@
+dataset_name: tabula_sapiens
+raw_path: TODO
+label_column: TODO
+batch_column: TODO
+rare_definition:
+  type: frequency_threshold
+  threshold: 0.05
+notes: "Confirm actual .h5ad file and subset before formal experiments."

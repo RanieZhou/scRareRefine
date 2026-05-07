@@ -1,0 +1,8 @@
+dataset_name: immune_dc
+raw_path: data/raw/human_immune_health_atlas_dc.h5ad
+label_column: TODO
+batch_column: TODO
+rare_definition:
+  type: frequency_threshold
+  threshold: 0.05
+notes: "label_column and batch_column must be confirmed by data inspection."

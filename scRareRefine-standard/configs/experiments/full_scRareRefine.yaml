@@ -1,0 +1,17 @@
+experiment_name: full_scRareRefine
+dataset: TODO
+seed: 42
+method: scRareRefine
+base_outputs: TODO
+prototype:
+  distance_metric: cosine
+  use_train_only: true
+fusion:
+  alpha: TODO
+uncertainty_gate:
+  enabled: true
+  strategy: TODO
+rare_adjustment:
+  enabled: true
+  strategy: TODO
+notes: "Template only. Fill after ablation experiments."

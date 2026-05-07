@@ -1,0 +1,8 @@
+dataset_name: pancreas
+raw_path: data/raw/human_pancreas_norm_complexBatch.h5ad
+label_column: TODO
+batch_column: TODO
+rare_definition:
+  type: frequency_threshold
+  threshold: 0.05
+notes: "label_column and batch_column must be confirmed by data inspection."
