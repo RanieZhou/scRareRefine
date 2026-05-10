@@ -7,8 +7,6 @@ dataset:
 
 experiment:
   rare_class: ASDC
-  secondary_rare_classes:
-    - cDC1
   rare_train_sizes:
     - 20
     - 50
