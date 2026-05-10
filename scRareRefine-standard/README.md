@@ -1,131 +1,211 @@
 # scRareRefine
 
-scRareRefine 是一个面向单细胞注释场景的稀有细胞修正项目。当前实现以 scANVI 为基础模型，使用 scANVI 的预测概率和 latent embedding，结合 prototype、fusion、prototype gate 和 marker verification 来评估稀有细胞类型识别效果。
+基于 scANVI 预测概率和 latent embedding 的稀有细胞识别 refinement 项目。
 
-本目录是当前标准项目根目录。后续开发、测试和实验运行应优先在本目录下进行。
+通过 prototype、gate、marker verification、probability fusion 四个可独立组合的模块，提升 scANVI 对稀有细胞类型的识别效果。
 
-## 当前实现状态
+---
 
-- 当前 Python 包名：`scrare`
-- 当前核心代码：`src/scrare/`
-- 当前 CLI：`src/scrare/cli/`
-- 当前测试：`tests/`
-- 当前可运行配置：`configs/*.yaml`
-- 原始数据位置：`data/raw/`
-- 当前报告归档：`results/reports/`
-- 当前报告图表归档：`results/figures/`
+## 目录结构
 
-模板中曾出现过的 `sc_rare_refine` 包名不是当前实现包名；当前运行、测试和打包都以 `scrare` 为准。
+```
+scRareRefine-standard/
+├── src/
+│   ├── utils.py                      # 共享工具：IO、metrics、seed、路径
+│   ├── 01_split.py                   # Stage 1：生成 train/val/test split
+│   ├── 02_baseline_scanvi.py         # Stage 2：训练 scANVI，输出 embeddings（支持 --force）
+│   ├── 03_prototype.py               # Stage 3：计算 prototype 距离得分
+│   ├── 04_prototype_gate.py          # Stage 4：应用 prototype gate 规则
+│   ├── 05_prototype_gate_marker.py   # Stage 5：marker 验证（threshold 在 val 选）
+│   ├── 06_fusion.py                  # Stage 6：概率融合（参数在 val 选）
+│   ├── 07_evaluate.py                # Stage 7：汇总各方法 test 指标
+│   └── 08_visualize.py               # Stage 8：生成方法对比可视化图表
+├── configs/
+│   ├── immune_dc.yaml
+│   ├── pancreas_epsilon.yaml
+│   └── pancreas_gamma.yaml
+├── data/
+│   ├── raw/                          # 原始数据（只读）
+│   └── splits/                       # Stage 1 输出的 split CSV
+├── outputs/                          # Stage 2-8 的所有输出
+│   └── {dataset}/{run_id}/
+│       ├── split_assignments.csv
+│       ├── selected_hvg_genes.csv
+│       ├── resource_summary.csv
+│       ├── embeddings/               # Stage 2 输出
+│       ├── prototype/                # Stage 3 输出
+│       ├── gate/                     # Stage 4 输出
+│       ├── gate_marker/              # Stage 5 输出
+│       ├── fusion/                   # Stage 6 输出
+│       └── metrics/                  # Stage 7-8 输出（含图表）
+├── notebooks/
+├── logs/
+├── _legacy/                          # 旧版 scrare 包代码备份（不再使用）
+└── CLAUDE.md
+```
 
-## 安装
+`run_id` 格式：`{split_mode}_seed{seed}_{rare_class}_rare{rare_train_size}`
+例：`batch_heldout_seed42_asdc_rare20`
 
-推荐在本目录下安装：
+---
+
+## 安装依赖
 
 ```bash
-python -m pip install -e .[dev]
+pip install scvi-tools anndata pandas numpy scipy scikit-learn pyyaml psutil
 ```
 
-## 常用命令
+---
 
-### 数据审计
+## 运行流程
+
+各阶段独立运行，每个阶段读取上一阶段的输出。Stage 3-6 是四个并列的 refinement 模块，可单独与 baseline 组合使用。
+
+### Stage 1：生成 split（每个 seed 只需跑一次）
 
 ```bash
-python -m scrare.cli.audit --config configs/immune_dc.yaml
+python src/01_split.py --config configs/immune_dc.yaml --seed 42
+# 支持 --split_mode batch_heldout（默认）或 cell_stratified
 ```
 
-### 主 inductive 实验
+输出：`data/splits/immune_dc/batch_heldout_seed42/split.csv`
+
+### Stage 2：训练 scANVI baseline
 
 ```bash
-python -m scrare.cli.run_inductive --config configs/immune_dc.yaml
+python src/02_baseline_scanvi.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
 ```
 
-常用单个 slice 示例：
+输出：`outputs/immune_dc/batch_heldout_seed42_asdc_rare20/embeddings/`
+
+> **Embedding 复用**：若 `embeddings/train_predictions.csv` 已存在，Stage 2 会自动跳过训练，直接复用已有结果。  
+> 需要强制重新训练时，加 `--force` 参数：
+> ```bash
+> python src/02_baseline_scanvi.py ... --force
+> ```
+> Stage 3-8 每次都会重新计算（运行很快，无需缓存）。
+
+### Stage 3：Prototype 得分
 
 ```bash
-python -m scrare.cli.run_inductive \
-  --config configs/immune_dc.yaml \
-  --rare-class cDC1 \
-  --split-mode batch_heldout \
-  --seed 42 \
-  --rare-train-size 20
+python src/03_prototype.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
 ```
 
-### posthoc 评估
+输出：`outputs/.../prototype/`
+
+### Stage 4：Prototype Gate 规则
 
 ```bash
-python -m scrare.cli.evaluate_posthoc --config configs/immune_dc.yaml
+python src/04_prototype_gate.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
 ```
 
-### 测试
+输出：`outputs/.../gate/`（5 种 gate 规则的 val/test 指标）
+
+### Stage 5：Prototype Gate + Marker 验证
 
 ```bash
-pytest tests/test_project_state.py tests/cli/test_cli_smoke.py -v
-pytest -v
+python src/05_prototype_gate_marker.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
 ```
 
-## 配置说明
+输出：`outputs/.../gate_marker/`（threshold 在 val 选，应用到 test）
 
-当前保留可运行的扁平配置：
+### Stage 6：Probability Fusion
 
-```text
-configs/immune_dc.yaml
-configs/pancreas_epsilon.yaml
-configs/pancreas_gamma.yaml
+```bash
+python src/06_fusion.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
 ```
 
-标准子目录 `configs/datasets/`、`configs/experiments/`、`configs/paths/` 会保留，但当前代码入口仍使用上面的扁平配置。后续如要拆分配置，需要单独设计和验证。
+输出：`outputs/.../fusion/`（参数在 val 格点搜索，最优参数应用到 test）
+
+### Stage 7：汇总评估
+
+```bash
+python src/07_evaluate.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
+```
+
+输出：`outputs/.../metrics/final_metrics.csv`，包含每个方法的 rare_F1 / precision / recall 等指标。
+
+### Stage 8：可视化结果对比
+
+```bash
+python src/08_visualize.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
+```
+
+输出：`outputs/.../metrics/` 下三张图：
+
+| 文件 | 内容 |
+|---|---|
+| `method_comparison.png` | 4 格子图：Rare F1 / Recall / Precision / Overall Acc，虚线标 baseline |
+| `rescue_effect.png` | Rescued 细胞数 / False Rescue 数 / False Rescue Rate |
+| `metrics_heatmap.png` | 全指标热力图（绿=高，红=低） |
+
+---
+
+## 完整示例（immune_dc，seed=42，rare_train_size=20）
+
+> `--rare_class` 不传时自动使用 config 中的默认值；传了则以命令行参数为准。
+
+```bash
+python src/01_split.py                  --config configs/immune_dc.yaml --seed 42
+python src/02_baseline_scanvi.py        --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+python src/03_prototype.py              --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+python src/04_prototype_gate.py         --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+python src/05_prototype_gate_marker.py  --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+python src/06_fusion.py                 --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+python src/07_evaluate.py               --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+python src/08_visualize.py              --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+```
+
+重跑时，Stage 2 自动跳过（embedding 已存在）；如需重新训练：
+
+```bash
+python src/02_baseline_scanvi.py ... --force
+```
+
+---
+
+## 各方法说明
+
+| 方法 | 来源阶段 | 说明 |
+|---|---|---|
+| baseline | Stage 2 | 原始 scANVI 预测，不做任何改动 |
+| prototype | Stage 3 | prototype_rescue_candidate 候选强制改标为 rare_class |
+| prototype_gate | Stage 4 | rank1 gate（prototype rank ≤ 1）候选改标 |
+| prototype_gate_marker | Stage 5 | rank1 候选经 marker 得分过滤后改标，precision 最高 |
+| fusion | Stage 6 | scANVI 概率与 prototype 概率加权融合，rare_F1 综合最优 |
+
+---
+
+## 核心 inductive 约束
+
+以下约束必须保持，确保评估不泄漏测试信息：
+
+1. val/test cell 不进入训练 reference
+2. HVG 仅基于训练集选择
+3. prototype reference 仅来自训练集标注 cell
+4. marker signature 仅由训练集有标注 cell 计算
+5. 所有调参（fusion 参数、marker threshold）仅基于 validation 集
+6. test 标签不用于任何调参或阈值选择
+
+---
 
 ## 数据规则
 
-原始数据位于：
-
-```text
-data/raw/
-```
-
-硬规则：
-
-1. 不修改 `data/raw/`。
-2. 不覆盖原始 `.h5ad` 文件。
-3. 不删除原始数据。
-4. 任何处理后数据应写入 `data/processed/`、`data/splits/` 或 `data/embeddings/`。
-
-## 结果目录
-
-标准结果目录为：
-
-```text
-results/raw/
-results/tables/
-results/figures/
-results/reports/
-```
-
-本次迁移已将当前实验报告归档到：
-
-```text
-results/reports/
-```
-
-并将报告图表归档到：
-
-```text
-results/figures/
-```
-
-当前代码默认将 audit、inductive 和 posthoc 运行输出写入 `results/`；CLI 的 `--output-dir` 仅用于临时覆盖单次输出根目录。
-
-## 核心约束
-
-当前 workflow 是 inductive evaluation。修改代码时必须保持：
-
-1. held-out cells 不进入训练 reference。
-2. HVG 选择只基于训练集。
-3. prototype reference 只来自训练集或合法 reference。
-4. fusion 参数选择只基于 validation。
-5. marker signature 和阈值选择不能使用 test 标签。
-6. 指标报告不能只看 accuracy，必须关注 rare macro-F1、rare recall、rare precision、macro-F1 和 balanced accuracy。
-
-## 不在本目录内继续扩散的内容
-
-论文草稿、论文专用图、备份目录和历史输出缓存不应随意放在项目根目录。需要归档时，应先明确放入 `docs/`、`results/`、`tmp/` 或单独设计论文产物归档任务。
+- `data/raw/` 只读，禁止修改
+- split 结果写入 `data/splits/`
+- 所有模型输出写入 `outputs/`
+- 旧版 scrare 包代码备份在 `_legacy/`（不再使用）

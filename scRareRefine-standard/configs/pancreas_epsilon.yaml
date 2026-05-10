@@ -7,15 +7,6 @@ dataset:
 
 experiment:
   rare_class: epsilon
-  secondary_rare_classes:
-    - gamma
-    - activated_stellate
-    - endothelial
-    - quiescent_stellate
-    - macrophage
-    - mast
-    - schwann
-    - t_cell
   rare_train_sizes:
     - 5
     - 10
