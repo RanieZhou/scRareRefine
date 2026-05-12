@@ -1,204 +1,190 @@
 # scRareRefine
 
-基于 scANVI 预测概率和 latent embedding 的稀有细胞识别 refinement 项目。
+基于 scANVI latent embedding 的稀有细胞识别 post-hoc rescue 框架。
 
-通过 prototype、gate、marker verification、probability fusion 四个可独立组合的模块，提升 scANVI 对稀有细胞类型的识别效果。
+在已有 scANVI 输出的基础上，通过 prototype 距离 → gate → marker 验证三阶段 pipeline，修正 scANVI 在极小训练样本和 batch-heldout 场景下对稀有细胞类型的漏检问题。
+
+**不替代** scANVI/CellTypist/Seurat label transfer，而是在其之后作为 refinement layer 使用。
+
+---
+
+## 核心结果
+
+immune_dc cDC1，`rare_train_size=5`，3 seeds，batch-heldout split：
+
+| 方法                            | rare-class F1            |
+| ------------------------------- | ------------------------ |
+| scANVI baseline                 | 0.003 ± 0.005           |
+| kNN k=15                        | 0.000 ± 0.000           |
+| **Gate+Marker（本方法）** | **0.986 ± 0.004** |
+
+rescue 是否有效由 **separability ratio** 预测（训练集推断前可算）：
+
+- `sep ≥ 1.3`：rescue 显著有效
+- `sep < 1.1`：方法自动 abstain，不改变 baseline 输出
+
+---
+
+## 快速开始
+
+### 前提
+
+```bash
+pip install scvi-tools anndata pandas numpy scipy scikit-learn matplotlib pyyaml psutil
+```
+
+### 主入口
+
+已有 scANVI embeddings，直接跑主方法：
+
+```bash
+python src/main.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
+
+# --force 强制重算 prototype scores 和 marker threshold
+```
+
+输出（仅 baseline vs scRareRefine）：
+
+- `metrics/scRareRefine_metrics.csv`
+- `metrics/scRareRefine_comparison.png`
+
+控制台摘要：
+
+```
+method        rare_f1  rare_recall  rare_precision  overall_accuracy
+baseline        0.003        0.002           0.500             0.985
+scRareRefine    0.986        0.987           0.986             0.999
+
+sep_ratio=1.408 [HIGH]  n_rescued=142  false_rescues=1
+```
+
+### 对比 baselines（可选，独立运行）
+
+```bash
+python src/03b_knn_baseline.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+# 输出：knn/test_metrics.csv（含 baseline 行 + knn 行）
+
+python src/03c_celltypist_baseline.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+# 输出：celltypist/test_metrics.csv（含 baseline 行 + lr 行）
+```
+
+### 三个 seed 汇总 + 对比图
+
+三个 seed 的 main / kNN / LR 都跑完后：
+
+```bash
+python src/07_evaluate.py \
+    --config configs/immune_dc.yaml \
+    --rare_class ASDC --rare_train_size 20 \
+    --seeds 42 43 44
+```
+
+默认 `--seeds 42 43 44`，所以也可简写：
+
+```bash
+python src/07_evaluate.py \
+    --config configs/immune_dc.yaml \
+    --rare_class ASDC --rare_train_size 20
+```
+
+输出目录：`outputs/{dataset}/evaluate_{split_mode}_{rare_class}_rare{rare_train_size}/`
+
+输出文件：
+
+- `all_seeds_metrics.csv`：每行一个 `(method, seed)`
+- `comparison_bar.png`：三个 seed 均值柱状图，误差线为 ±std
+- `comparison_box.png`：三个 seed 箱线图 + 单个 seed 散点
+
+对比方法固定为：`baseline`、`knn_k15`、`lr`、`scRareRefine`。
 
 ---
 
 ## 目录结构
 
 ```
-scRareRefine-standard/
-├── src/
-│   ├── utils.py                      # 共享工具：IO、metrics、seed、路径
-│   ├── 01_split.py                   # Stage 1：生成 train/val/test split
-│   ├── 02_baseline_scanvi.py         # Stage 2：训练 scANVI，输出 embeddings（支持 --force）
-│   ├── 03_prototype.py               # Stage 3：计算 prototype 距离得分
-│   ├── 04_prototype_gate.py          # Stage 4：应用 prototype gate 规则
-│   ├── 05_prototype_gate_marker.py   # Stage 5：marker 验证（threshold 在 val 选）
-│   ├── 06_fusion.py                  # Stage 6：概率融合（参数在 val 选）
-│   ├── 07_evaluate.py                # Stage 7：汇总各方法 test 指标
-│   └── 08_visualize.py               # Stage 8：生成方法对比可视化图表
-├── configs/
-│   ├── immune_dc.yaml
-│   ├── pancreas_epsilon.yaml
-│   └── pancreas_gamma.yaml
-├── data/
-│   ├── raw/                          # 原始数据（只读）
-│   └── splits/                       # Stage 1 输出的 split CSV
-├── outputs/                          # Stage 2-8 的所有输出
-│   └── {dataset}/{run_id}/
-│       ├── split_assignments.csv
-│       ├── selected_hvg_genes.csv
-│       ├── resource_summary.csv
-│       ├── embeddings/               # Stage 2 输出
-│       ├── prototype/                # Stage 3 输出
-│       ├── gate/                     # Stage 4 输出
-│       ├── gate_marker/              # Stage 5 输出
-│       ├── fusion/                   # Stage 6 输出
-│       └── metrics/                  # Stage 7-8 输出（含图表）
-├── notebooks/
-├── logs/
-├── _legacy/                          # 旧版 scrare 包代码备份（不再使用）
-└── CLAUDE.md
+src/
+├── main.py                       # scRareRefine 主入口（baseline vs scRareRefine）
+├── utils.py                      # 共享工具：IO、metrics、路径
+├── 01_split.py                   # 生成 train/val/test split
+├── 02_baseline_scanvi.py         # 训练 scANVI，输出 embeddings
+├── 03_prototype.py               # prototype 距离得分 + separability ratio（被 main.py 调用）
+├── 03b_knn_baseline.py           # kNN baseline（输出 baseline + knn）
+├── 03c_celltypist_baseline.py    # LR baseline（输出 baseline + lr）
+├── 05_prototype_gate_marker.py   # scRareRefine 核心逻辑（被 main.py 调用）
+├── 06_fusion.py                  # fusion 扩展（可选，独立运行）
+├── 07_evaluate.py                # 全方法汇总 + 可视化
+├── 09_aggregate_plot.py          # 多数据集聚合图表
+└── 10_paper_table.py             # 论文 LaTeX 表格生成
+outputs/
+└── {dataset}/{run_id}/
+    ├── embeddings/               # 02 输出
+    ├── prototype/                # 03 输出（separability.csv）
+    ├── knn/                      # 03b 输出
+    ├── celltypist/               # 03c 输出（LR）
+    ├── gate_marker/              # 05 输出（main.py 写入）
+    ├── fusion/                   # 06 输出（可选）
+    └── metrics/                  # final_metrics.csv、图表
 ```
 
 `run_id` 格式：`{split_mode}_seed{seed}_{rare_class}_rare{rare_train_size}`
-例：`batch_heldout_seed42_asdc_rare20`
 
 ---
 
-## 安装依赖
+## 完整流程
 
 ```bash
-pip install scvi-tools anndata pandas numpy scipy scikit-learn pyyaml psutil
-```
-
----
-
-## 运行流程
-
-各阶段独立运行，每个阶段读取上一阶段的输出。Stage 3-6 是四个并列的 refinement 模块，可单独与 baseline 组合使用。
-
-### Stage 1：生成 split（每个 seed 只需跑一次）
-
-```bash
+# 1. 生成 split（每个 seed 一次）
 python src/01_split.py --config configs/immune_dc.yaml --seed 42
-# 支持 --split_mode batch_heldout（默认）或 cell_stratified
-```
 
-输出：`data/splits/immune_dc/batch_heldout_seed42/split.csv`
-
-### Stage 2：训练 scANVI baseline
-
-```bash
+# 2. 训练 scANVI（已有 embedding 自动跳过；--force 强制重训）
 python src/02_baseline_scanvi.py \
-    --config configs/immune_dc.yaml \
-    --seed 42 --rare_class ASDC --rare_train_size 20
-```
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
 
-输出：`outputs/immune_dc/batch_heldout_seed42_asdc_rare20/embeddings/`
+# 3. 主方法
+python src/main.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
 
-> **Embedding 复用**：若 `embeddings/train_predictions.csv` 已存在，Stage 2 会自动跳过训练，直接复用已有结果。  
-> 需要强制重新训练时，加 `--force` 参数：
-> ```bash
-> python src/02_baseline_scanvi.py ... --force
-> ```
-> Stage 3-8 每次都会重新计算（运行很快，无需缓存）。
+# 4. （可选）对比 baselines
+python src/03b_knn_baseline.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+python src/03c_celltypist_baseline.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
 
-### Stage 3：Prototype 得分
-
-```bash
-python src/03_prototype.py \
-    --config configs/immune_dc.yaml \
-    --seed 42 --rare_class ASDC --rare_train_size 20
-```
-
-输出：`outputs/.../prototype/`
-
-### Stage 4：Prototype Gate 规则
-
-```bash
-python src/04_prototype_gate.py \
-    --config configs/immune_dc.yaml \
-    --seed 42 --rare_class ASDC --rare_train_size 20
-```
-
-输出：`outputs/.../gate/`（5 种 gate 规则的 val/test 指标）
-
-### Stage 5：Prototype Gate + Marker 验证
-
-```bash
-python src/05_prototype_gate_marker.py \
-    --config configs/immune_dc.yaml \
-    --seed 42 --rare_class ASDC --rare_train_size 20
-```
-
-输出：`outputs/.../gate_marker/`（threshold 在 val 选，应用到 test）
-
-### Stage 6：Probability Fusion
-
-```bash
-python src/06_fusion.py \
-    --config configs/immune_dc.yaml \
-    --seed 42 --rare_class ASDC --rare_train_size 20
-```
-
-输出：`outputs/.../fusion/`（参数在 val 格点搜索，最优参数应用到 test）
-
-### Stage 7：汇总评估
-
-```bash
+# 5. 三个 seed 汇总 + 出图
 python src/07_evaluate.py \
-    --config configs/immune_dc.yaml \
-    --seed 42 --rare_class ASDC --rare_train_size 20
-```
-
-输出：`outputs/.../metrics/final_metrics.csv`，包含每个方法的 rare_F1 / precision / recall 等指标。
-
-### Stage 8：可视化结果对比
-
-```bash
-python src/08_visualize.py \
-    --config configs/immune_dc.yaml \
-    --seed 42 --rare_class ASDC --rare_train_size 20
-```
-
-输出：`outputs/.../metrics/` 下三张图：
-
-| 文件 | 内容 |
-|---|---|
-| `method_comparison.png` | 4 格子图：Rare F1 / Recall / Precision / Overall Acc，虚线标 baseline |
-| `rescue_effect.png` | Rescued 细胞数 / False Rescue 数 / False Rescue Rate |
-| `metrics_heatmap.png` | 全指标热力图（绿=高，红=低） |
-
----
-
-## 完整示例（immune_dc，seed=42，rare_train_size=20）
-
-> `--rare_class` 不传时自动使用 config 中的默认值；传了则以命令行参数为准。
-
-```bash
-python src/01_split.py                  --config configs/immune_dc.yaml --seed 42
-python src/02_baseline_scanvi.py        --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-python src/03_prototype.py              --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-python src/04_prototype_gate.py         --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-python src/05_prototype_gate_marker.py  --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-python src/06_fusion.py                 --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-python src/07_evaluate.py               --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-python src/08_visualize.py              --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-```
-
-重跑时，Stage 2 自动跳过（embedding 已存在）；如需重新训练：
-
-```bash
-python src/02_baseline_scanvi.py ... --force
+    --config configs/immune_dc.yaml --rare_class ASDC --rare_train_size 20 \
+    --seeds 42 43 44
 ```
 
 ---
 
-## 各方法说明
+## 方法说明
 
-| 方法 | 来源阶段 | 说明 |
-|---|---|---|
-| baseline | Stage 2 | 原始 scANVI 预测，不做任何改动 |
-| prototype | Stage 3 | prototype_rescue_candidate 候选强制改标为 rare_class |
-| prototype_gate | Stage 4 | rank1 gate（prototype rank ≤ 1）候选改标 |
-| prototype_gate_marker | Stage 5 | rank1 候选经 marker 得分过滤后改标，precision 最高 |
-| fusion | Stage 6 | scANVI 概率与 prototype 概率加权融合，rare_F1 综合最优 |
+| 方法名                 | 脚本                | 说明                                               |
+| ---------------------- | ------------------- | -------------------------------------------------- |
+| baseline               | 02                  | scANVI softmax 原始输出                            |
+| knn_k15                | 03b                 | scANVI latent 上 kNN（k=15）                       |
+| lr                     | 03c                 | HVG expression 上 logistic regression              |
+| **scRareRefine** | **main / 05** | **prototype rank-1 + marker 验证（主方法）** |
+| fusion_gated           | 06                  | 概率融合扩展（可选）                               |
+
+**sep_ratio**：诊断指标，反映稀有细胞在 latent space 中的可分性。`sep ≥ 1.3` 时 rescue 效果显著；`sep < 1.1` 时方法自动 abstain，不修改 baseline 输出。
 
 ---
 
 ## 核心 inductive 约束
 
-以下约束必须保持，确保评估不泄漏测试信息：
+所有 reference、threshold、signature 均来自 train/validation，不使用 test 标签：
 
 1. val/test cell 不进入训练 reference
 2. HVG 仅基于训练集选择
 3. prototype reference 仅来自训练集标注 cell
 4. marker signature 仅由训练集有标注 cell 计算
-5. 所有调参（fusion 参数、marker threshold）仅基于 validation 集
+5. 所有调参（marker threshold、fusion 参数）仅基于 validation
 6. test 标签不用于任何调参或阈值选择
 
 ---
@@ -206,6 +192,8 @@ python src/02_baseline_scanvi.py ... --force
 ## 数据规则
 
 - `data/raw/` 只读，禁止修改
-- split 结果写入 `data/splits/`
-- 所有模型输出写入 `outputs/`
-- 旧版 scrare 包代码备份在 `_legacy/`（不再使用）
+- 实验输出写入 `outputs/`
+- 旧版代码备份在 `_legacy/`（不再使用）
+
+
+![1778494407424](image/README/1778494407424.png)
