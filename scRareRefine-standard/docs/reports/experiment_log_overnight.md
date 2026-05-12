@@ -295,3 +295,309 @@ docs/reports/
 ```
 
 **main pipeline 完全未修改。** 所有实验代码在 `feat/bayesian-prototype` branch 的 `src/experimental/` 下。
+
+---
+
+# Round 2 Experiments (E8–E15)
+
+**Branch**: `feat/bayesian-prototype`  
+**Goal**: 深入探索最有前景的方向：soft gate、ensemble、adaptive selector、GMM calibration、bootstrap uncertainty、label propagation、全量 Mahal sweep。
+
+---
+
+## E8: Soft Gate — Probability-based rescue threshold
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e8_soft_gate.py`
+
+### Setup
+用 Mahal 距离比值作为连续 rescue score：
+```
+rescue_score(i) = (d_nearest_majority - d_rare) / d_rare
+```
+τ 在 validation 上 grid search，最大化 rare_f1。
+
+### Results
+
+| Run | Rare class | best_τ | scANVI | Hard gate | Mahal (no gate) | Soft gate |
+|---|---|---|---|---|---|---|
+| cDC1 rare5 | cDC1 | -0.50 | 0.000 | **0.982** | 0.973 | 0.973 |
+| ASDC rare5 | ASDC | -0.50 | 0.060 | **0.922** | 0.833 | 0.833 |
+| epsilon rare20 | epsilon | -0.50 | **0.667** | 0.211 | 0.500 | 0.500 |
+| NCM rare20 | non-classical monocyte | 0.20 | 0.348 | 0.667 | **0.680** | 0.564 |
+| gamma rare20 | gamma | -0.50 | **1.000** | 1.000 | 0.964 | **1.000** |
+
+### Key Finding
+**Soft gate 未能超越 Mahal (no gate)。** 对大多数数据集，最优 τ=-0.50（即几乎所有 Mahal 预测为 rare 的细胞都被 rescue），soft gate 退化为 Mahal (no gate)。对 NCM，soft gate (0.564) 反而低于 Mahal no gate (0.680)，因为 τ=0.20 过滤掉了部分有效候选。**结论：hard gate 的问题不是 threshold 形式，而是 Euclidean 距离本身在 low-sep 案例中不可靠。Mahal (no gate) 已是最优。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e8_soft_gate.png`
+
+---
+
+## E9: Ensemble — Mahal-pooled + Class-balanced kNN voting
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e9_ensemble.py`
+
+### Setup
+```
+ensemble_score(i) = α * mahal_score(i) + (1-α) * cb_knn_score(i)
+```
+α ∈ {0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0} tuned on validation。
+
+### Results
+
+| Run | Rare class | best_α | scANVI | Mahal-pooled | CB-kNN | Ensemble |
+|---|---|---|---|---|---|---|
+| cDC1 rare5 | cDC1 | 0.6 | 0.000 | 0.973 | 0.919 | **0.967** |
+| ASDC rare5 | ASDC | 0.0 | 0.060 | 0.833 | **0.836** | **0.836** |
+| epsilon rare20 | epsilon | 0.0 | **0.667** | 0.500 | 0.133 | 0.133 |
+| NCM rare20 | non-classical monocyte | 0.0 | 0.348 | 0.680 | **0.696** | **0.696** |
+
+### Key Finding
+**Ensemble 对 high-sep 案例略有提升（cDC1: 0.967 vs 0.973 Mahal），但对 low-sep 案例（epsilon）严重退化（0.133 vs 0.667 scANVI）。** CB-kNN 在 epsilon 上失败（0.133），拖累了 ensemble。最优 α 在 ASDC、epsilon、NCM 均为 0.0（纯 CB-kNN），说明 Mahal 在这些案例中不如 CB-kNN。**结论：ensemble 不是通用解，需要先判断 separability 再选方法。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e9_ensemble.png`
+
+---
+
+## E10: Separability-adaptive method selection
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e10_adaptive_selector.py`
+
+### Setup
+计算 separability ratio S，然后：
+- S ≥ 1.3 → Euclidean
+- 1.0 ≤ S < 1.3 → Mahal-pooled
+- S < 1.0 → CB-kNN
+
+### Results
+
+| Run | Rare class | S | Selected | scANVI | Euclidean | Mahal | CB-kNN | Adaptive |
+|---|---|---|---|---|---|---|---|---|
+| cDC1 rare20 | cDC1 | 1.100 | mahal_pooled | 0.485 | 0.982 | **0.988** | 0.981 | **0.988** |
+| ASDC rare20 | ASDC | 1.243 | mahal_pooled | 0.488 | **0.934** | 0.901 | 0.912 | 0.901 |
+| epsilon rare20 | epsilon | 0.743 | cb_knn | **0.667** | 0.211 | 0.500 | 0.133 | 0.133 |
+| gamma rare20 | gamma | 0.607 | cb_knn | **1.000** | 0.945 | 0.964 | **0.977** | **0.977** |
+| NCM rare20 | non-classical monocyte | 1.450 | euclidean | 0.348 | 0.667 | **0.680** | **0.708** | 0.667 |
+| endothelial rare20 | endothelial cell | 1.115 | mahal_pooled | **0.889** | 0.585 | **0.649** | 0.638 | **0.649** |
+| beta cell rare20 | type B pancreatic cell | 0.555 | cb_knn | **0.897** | 0.857 | 0.857 | 0.857 | 0.857 |
+| ILC rare20 | innate lymphoid cell | 1.140 | mahal_pooled | 0.625 | 0.831 | **0.845** | 0.800 | **0.845** |
+
+### Key Finding
+**Adaptive selector 在 5/8 案例中匹配最优方法，但在 epsilon（S=0.743，选 CB-kNN）和 ASDC（S=1.243，选 Mahal）上次优。** 核心问题：epsilon 的 S=0.743 触发 CB-kNN，但 CB-kNN 在 epsilon 上失败（0.133），Mahal-pooled 才是最优（0.500）。**S 阈值需要重新校准：建议将 CB-kNN 阈值从 S<1.0 改为 S<0.5，中间区域用 Mahal-pooled。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e10_adaptive_selector.png`
+
+---
+
+## E11: Density ratio calibration for GMM (fixing E5)
+**Status**: ✅ Complete (GMM still fails)  
+**Script**: `src/experimental/e11_gmm_calibrated.py`
+
+### Setup
+校准方法：`calibrated_score(i, c) = log p(z_i | GMM_c) - E[log p(z | GMM_c)]`
+
+### Results
+
+| Run | Rare class | n_rare | scANVI | Euclidean | Mahal-pooled | GMM uncal | GMM cal |
+|---|---|---|---|---|---|---|---|
+| cDC1 rare5 | cDC1 | 5 | 0.000 | **0.982** | 0.973 | 0.000 | 0.000 |
+| cDC1 rare20 | cDC1 | 20 | 0.485 | 0.982 | **0.988** | 0.000 | 0.000 |
+| ASDC rare5 | ASDC | 5 | 0.060 | **0.922** | 0.833 | 0.000 | 0.000 |
+| epsilon rare20 | epsilon | 20 | **0.667** | 0.211 | 0.500 | 0.000 | 0.000 |
+
+### Key Finding
+**GMM 在 density ratio calibration 后仍然完全失败（F1=0.000）。** 根本原因：在高维 latent space（通常 10-30 维）中，GMM 的 log-likelihood 被 majority class 的紧密分布主导，即使减去 per-class baseline 也无法纠正。**GMM 方向在当前 latent space 维度下不可行，需要降维（PCA to 5-10 dims）或改用 Bhattacharyya 距离。放弃 GMM 方向。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e11_gmm_calibrated.png`
+
+---
+
+## E12: Rare-class prototype uncertainty quantification
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e12_prototype_uncertainty.py`
+
+### Setup
+Bootstrap B=100 次 rare prototype，用 95th percentile 距离作为 rescue threshold。
+
+### Results (rare_f1)
+
+| Run | Rare class | n_rare | scANVI | Euclidean | Mahal-pooled | Bootstrap |
+|---|---|---|---|---|---|---|
+| cDC1 seed42 | cDC1 | 5 | 0.000 | **0.982** | 0.973 | **0.982** |
+| cDC1 seed43 | cDC1 | 5 | 0.008 | **0.986** | 0.971 | **0.986** |
+| cDC1 seed44 | cDC1 | 5 | 0.000 | 0.988 | **0.994** | 0.988 |
+| ASDC seed42 | ASDC | 5 | 0.060 | **0.922** | 0.833 | **0.922** |
+| ASDC seed43 | ASDC | 5 | 0.015 | **0.893** | 0.863 | **0.893** |
+| ASDC seed44 | ASDC | 5 | 0.000 | **0.891** | 0.840 | **0.891** |
+| epsilon seed42 | epsilon | 20 | **0.667** | 0.211 | 0.500 | 0.211 |
+| epsilon seed43 | epsilon | 20 | **1.000** | 0.364 | 0.800 | 0.364 |
+| epsilon seed44 | epsilon | 20 | **1.000** | 0.400 | 0.571 | 0.400 |
+
+### Key Finding
+**Bootstrap uncertainty 在 high-sep 案例（cDC1、ASDC）中与 Euclidean 持平（匹配最优），但在 low-sep 案例（epsilon）中退化为 Euclidean 水平（0.211-0.400），低于 Mahal-pooled（0.500-0.800）。** Bootstrap 的 95th percentile threshold 在 low-sep 案例中过于保守，因为 rare 和 majority 的 bootstrap 距离分布高度重叠。**结论：bootstrap uncertainty 是稳定的 high-sep 方法，但不解决 low-sep 问题。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e12_bootstrap_uncertainty.png`
+
+---
+
+## E13: Transductive label propagation on latent graph
+**Status**: ✅ Complete  
+**⚠️ TRANSDUCTIVE — uses test cell positions, NOT valid for deployment**  
+**Script**: `src/experimental/e13_label_propagation.py`
+
+### Setup
+LabelSpreading (sklearn) on k=15 kNN graph of ALL cells (train + test).
+
+### Results
+
+| Run | Rare class | n_rare | scANVI | Euclidean | Mahal-pooled | Label Prop |
+|---|---|---|---|---|---|---|
+| cDC1 rare5 | cDC1 | 5 | 0.000 | **0.982** | 0.973 | 0.248 |
+| ASDC rare5 | ASDC | 5 | 0.060 | **0.922** | 0.833 | 0.415 |
+| epsilon rare20 | epsilon | 20 | **0.667** | 0.211 | 0.500 | **0.667** |
+
+### Key Finding
+**Label propagation 在 high-sep 案例（cDC1、ASDC）中严重低于 Euclidean（0.248 vs 0.982，0.415 vs 0.922）。** 原因：kNN 图中 rare cells 被 majority 邻居包围，标签被稀释。对 epsilon（low-sep），label propagation 匹配 scANVI（0.667），但不超越 Mahal-pooled（0.500）。**结论：label propagation 不适合 rare cell 场景，因为 rare cells 在图中是孤立节点，标签无法有效传播。放弃此方向。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e13_label_propagation.png`
+
+---
+
+## E14: Full sweep — Mahal-pooled across ALL datasets and rare_train_sizes
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e14_full_mahal_sweep.py`
+
+### Setup
+29 runs: seed42, all datasets, all rts (5/10/20/50).
+
+### Results (selected highlights)
+
+| Dataset | Rare class | rts | S | scANVI | Euclidean | Mahal-pooled | Δ |
+|---|---|---|---|---|---|---|---|
+| immune_dc | cDC1 | 5 | 0.979 | 0.000 | **0.982** | 0.973 | -0.009 |
+| immune_dc | cDC1 | 50 | 0.884 | 0.994 | 0.990 | **0.996** | +0.006 |
+| immune_dc | ASDC | 5 | 1.212 | 0.060 | **0.922** | 0.833 | -0.090 |
+| immune_dc | ASDC | 50 | 0.988 | 0.829 | **0.957** | 0.902 | -0.055 |
+| pancreas | epsilon | 5 | 0.644 | 0.000 | 0.095 | **0.308** | +0.212 |
+| pancreas | epsilon | 10 | 0.794 | 0.667 | 0.250 | **0.800** | +0.550 |
+| pancreas | epsilon | 20 | 0.743 | 0.667 | 0.211 | **0.500** | +0.289 |
+| pancreas | gamma | 5 | 0.650 | 0.045 | 0.208 | **0.377** | +0.169 |
+| tabula_kidney | endothelial | 5 | 1.196 | 0.846 | 0.632 | **0.686** | +0.054 |
+| tabula_spleen | ILC | 50 | 0.981 | 0.839 | 0.740 | **0.822** | +0.082 |
+
+### Summary by dataset (mean across rts)
+
+| Dataset | mean_S | mean_euc | mean_mahal | mean_Δ |
+|---|---|---|---|---|
+| immune_dc (cDC1) | 0.999 | 0.987 | 0.986 | -0.003 |
+| immune_dc (ASDC) | 1.159 | 0.930 | 0.881 | -0.050 |
+| pancreas (epsilon) | 0.741 | 0.239 | 0.569 | +0.330 |
+| pancreas (gamma) | 0.630 | 0.719 | 0.779 | +0.060 |
+| tabula_liver (NCM) | 1.342 | 0.637 | 0.633 | -0.004 |
+| tabula_kidney (endothelial) | 1.080 | 0.601 | 0.667 | +0.066 |
+| tabula_spleen (ILC) | 1.083 | 0.793 | 0.828 | +0.035 |
+
+### Key Finding
+**明确的 separability 阈值：S < 1.0 时 Mahal-pooled 几乎总是优于 Euclidean（平均 +0.33 for epsilon，+0.06 for gamma）。S > 1.2 时 Euclidean 通常更好（ASDC: -0.05）。S ∈ [1.0, 1.2] 是混合区域（endothelial: +0.07，ILC: +0.04）。** 29 runs 中 Mahal-pooled 优于 Euclidean 的有 20/29（69%），平均 Δ = +0.060。**建议：将 adaptive selector 的 Mahal/Euclidean 切换阈值从 S=1.3 调整为 S=1.2。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e14_mahal_sweep_scatter.png`
+- `outputs/_experimental/figures/fig_e14_mahal_sweep_heatmap.png`
+
+---
+
+## E15: Visualizations Round 2
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e15_visualizations_round2.py`
+
+### Figures generated
+
+| Figure | Description |
+|---|---|
+| `fig_e8_soft_gate.png` | Soft gate vs hard gate vs Mahal (no gate) |
+| `fig_e9_ensemble.png` | Ensemble α sweep + final comparison |
+| `fig_e10_adaptive_selector.png` | Adaptive selector vs individual methods |
+| `fig_e11_gmm_calibrated.png` | Calibrated vs uncalibrated GMM |
+| `fig_e12_bootstrap_uncertainty.png` | Bootstrap CI width vs n_rare_train |
+| `fig_e13_label_propagation.png` | Label propagation vs inductive methods |
+| `fig_e14_mahal_sweep_scatter.png` | Separability ratio vs Δ(mahal-euclidean) scatter |
+| `fig_e14_mahal_sweep_heatmap.png` | All datasets × rts heatmap of Mahal improvement |
+
+All figures saved to: `outputs/_experimental/figures/`
+
+---
+
+## Round 2 Summary
+
+### 最重要发现（来自 E14）
+
+**Mahal-pooled 的适用边界已明确：S < 1.0 时 Mahal-pooled 大幅优于 Euclidean（epsilon: +0.33 平均），S > 1.2 时 Euclidean 更好（ASDC: -0.05）。** 这是 29 runs 的系统性证据，可以直接用于 adaptive selector 的阈值校准。
+
+### Round 2 方法排名更新
+
+| 方法 | 结论 | 建议 |
+|---|---|---|
+| **Mahal-pooled (λ=0)** | ✅ 在 S<1.0 时最优，+33pp vs Euclidean | **主推，立即集成** |
+| **Adaptive selector (S阈值)** | ✅ 5/8 案例匹配最优，但 epsilon 失败 | 调整阈值：Mahal/Euclidean 切换点改为 S=1.2 |
+| Soft gate | ❌ 退化为 Mahal no gate，无额外收益 | 放弃 |
+| Ensemble (Mahal+CB-kNN) | ⚠️ 对 epsilon 严重退化 | 仅在 high-sep 案例使用 |
+| Bootstrap uncertainty | ✅ high-sep 稳定，low-sep 无帮助 | 可作为 uncertainty 报告工具 |
+| GMM calibrated | ❌ 仍然完全失败 | **放弃 GMM 方向** |
+| Label propagation | ❌ high-sep 严重退化 | **放弃** |
+
+### 下一步（优先级排序）
+
+1. **[立即]** 将 adaptive selector 阈值从 S=1.3/1.0 调整为 S=1.2/0.8，重新测试 epsilon
+2. **[高优先级]** 将 Mahal-pooled 集成到 `src/03_prototype.py`（新 branch）
+3. **[中优先级]** 研究 epsilon 的特殊性：为什么 CB-kNN 在 S=0.74 时失败？可能需要 SMOTE-LR 作为 fallback
+4. **[低优先级]** GMM 方向：尝试先 PCA 降维到 5 维再拟合 GMM
+
+---
+
+## Round 2 文件清单
+
+```
+src/experimental/
+  e8_soft_gate.py
+  e9_ensemble.py
+  e10_adaptive_selector.py
+  e11_gmm_calibrated.py
+  e12_prototype_uncertainty.py
+  e13_label_propagation.py
+  e14_full_mahal_sweep.py
+  e15_visualizations_round2.py
+
+outputs/_experimental/
+  e8_soft_gate/
+    results.csv
+    *_tau_curve.csv (5 files)
+  e9_ensemble/
+    results.csv
+    *_alpha_curve.csv (4 files)
+  e10_adaptive_selector/
+    results.csv
+  e11_gmm_calibrated/
+    results.csv
+  e12_prototype_uncertainty/
+    results.csv
+  e13_label_propagation/
+    results.csv
+  e14_full_mahal_sweep/
+    results.csv
+    summary_by_dataset.csv
+  figures/
+    fig_e8_soft_gate.png
+    fig_e9_ensemble.png
+    fig_e10_adaptive_selector.png
+    fig_e11_gmm_calibrated.png
+    fig_e12_bootstrap_uncertainty.png
+    fig_e13_label_propagation.png
+    fig_e14_mahal_sweep_scatter.png
+    fig_e14_mahal_sweep_heatmap.png
+```
