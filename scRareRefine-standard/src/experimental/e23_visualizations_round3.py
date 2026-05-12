@@ -536,16 +536,37 @@ def fig_e22_heatmap():
 def fig_e22_bars():
     path = EXP_DIR / "e22_final_evaluation" / "aggregated_results.csv"
     if not path.exists():
-        print(f"  SKIP fig_e22_bars: {path} not found")
-        return
+        path = EXP_DIR / "e22_final_evaluation" / "per_run_results.csv"
+        if not path.exists():
+            print(f"  SKIP fig_e22_bars: results not found")
+            return
 
     df = read_table(path)
 
-    methods = ["euclidean", "mahal_pooled", "adaptive"]
-    method_labels = ["Euclidean", "Mahal-pooled", "Adaptive (E16)"]
+    # Detect column names
+    f1_col = "mean_rare_f1" if "mean_rare_f1" in df.columns else "mean_f1"
+    std_col = "std_rare_f1" if "std_rare_f1" in df.columns else "std_f1"
+    method_col = "method"
+
+    # Normalize method names
+    method_map = {
+        "scANVI": "scANVI", "scanvi": "scANVI",
+        "Euclidean": "Euclidean", "euclidean": "Euclidean",
+        "Mahal-pooled": "Mahal-pooled", "mahal_pooled": "Mahal-pooled",
+        "Adaptive (E16)": "Adaptive", "adaptive": "Adaptive",
+    }
+    df[method_col] = df[method_col].map(lambda x: method_map.get(x, x))
+
+    # Filter to rts=20 if column exists
+    if "rts" in df.columns:
+        df = df[df["rts"] == 20]
+
+    dataset_col = "dataset" if "dataset" in df.columns else "run"
+    datasets = sorted(df[dataset_col].unique())
+
+    methods = ["Euclidean", "Mahal-pooled", "Adaptive"]
     method_colors = [COLORS["euclidean"], COLORS["mahal_pooled"], COLORS["new_adaptive"]]
 
-    datasets = df["dataset"].unique()
     n_datasets = len(datasets)
     n_methods = len(methods)
 
@@ -553,19 +574,31 @@ def fig_e22_bars():
     x = np.arange(n_datasets)
     width = 0.25
 
-    for i, (method, label, color) in enumerate(zip(methods, method_labels, method_colors)):
-        sub = df[df["method"] == method].set_index("dataset").reindex(datasets)
-        means = sub["mean_rare_f1"].to_numpy()
-        stds  = sub["std_rare_f1"].fillna(0).to_numpy()
+    for i, (method, color) in enumerate(zip(methods, method_colors)):
+        sub = df[df[method_col] == method]
+        if f1_col in sub.columns:
+            means = sub.groupby(dataset_col)[f1_col].mean().reindex(datasets).to_numpy()
+            stds  = sub.groupby(dataset_col)[std_col].mean().reindex(datasets).fillna(0).to_numpy() if std_col in sub.columns else np.zeros(n_datasets)
+        else:
+            # Compute from raw
+            raw_col = [c for c in sub.columns if "rare_f1" in c or "f1" in c][-1]
+            means = sub.groupby(dataset_col)[raw_col].mean().reindex(datasets).to_numpy()
+            stds  = sub.groupby(dataset_col)[raw_col].std().reindex(datasets).fillna(0).to_numpy()
+
         offset = (i - n_methods / 2 + 0.5) * width
-        ax.bar(x + offset, means, width, label=label, color=color, alpha=0.85,
+        ax.bar(x + offset, means, width, label=method, color=color, alpha=0.85,
                yerr=stds, capsize=3, error_kw={"linewidth": 1})
 
-    # Add scANVI as reference line per dataset
-    scanvi_sub = df[df["method"] == "scanvi"].set_index("dataset").reindex(datasets)
+    # scANVI reference line
+    scanvi_sub = df[df[method_col] == "scANVI"]
     if not scanvi_sub.empty:
-        ax.plot(x, scanvi_sub["mean_rare_f1"].to_numpy(), "k--", linewidth=1.5,
-                marker="o", markersize=4, label="scANVI baseline", zorder=5)
+        if f1_col in scanvi_sub.columns:
+            scanvi_means = scanvi_sub.groupby(dataset_col)[f1_col].mean().reindex(datasets).to_numpy()
+        else:
+            raw_col = [c for c in scanvi_sub.columns if "rare_f1" in c or "f1" in c][-1]
+            scanvi_means = scanvi_sub.groupby(dataset_col)[raw_col].mean().reindex(datasets).to_numpy()
+        ax.plot(x, scanvi_means, "k--", linewidth=1.5, marker="o", markersize=4,
+                label="scANVI baseline", zorder=5)
 
     ax.set_xticks(x)
     ax.set_xticklabels(datasets, rotation=30, ha="right")

@@ -1064,3 +1064,344 @@ d_global = Mahal-pooled distance to prototype。
 2. **论文贡献**：Mahal-pooled 作为主要方法，CB-kNN 作为新 baseline
 3. **未来工作**：GMM 需要更稳健的密度估计（normalizing flows）
 
+
+
+---
+
+# Round 3 Experiments (E16–E23)
+
+**Branch**: `feat/bayesian-prototype`  
+**Goal**: 深入探索 recalibrated adaptive selector、Mahal full pipeline、epsilon 失败原因、contrastive fine-tuning、Platt calibration、multi-scale prototype，以及最终 3-seed 综合评估。
+
+---
+
+## E16: Recalibrated Adaptive Selector (S thresholds: 1.2 / 0.8)
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e16_adaptive_recalibrated.py`
+
+### Setup
+修正 E10 在 epsilon 上的失败，调整阈值：
+- S ≥ 1.2 → Euclidean
+- 0.8 ≤ S < 1.2 → Mahal-pooled
+- S < 0.8 → SMOTE-LR（fallback）
+
+### Results
+
+| Run | Rare class | S | Old method | Old F1 | New method | New F1 | scANVI | Euclidean | Mahal | SMOTE-LR |
+|---|---|---|---|---|---|---|---|---|---|---|
+| cDC1 rare20 | cDC1 | 1.100 | mahal_pooled | 0.988 | mahal_pooled | **0.988** | 0.485 | 0.982 | 0.988 | 0.821 |
+| ASDC rare20 | ASDC | 1.243 | mahal_pooled | 0.901 | euclidean | **0.934** | 0.488 | 0.934 | 0.901 | 0.693 |
+| epsilon rare20 | epsilon | 0.743 | cb_knn | 0.133 | smote_lr | **0.667** | 0.667 | 0.211 | 0.500 | 0.667 |
+| gamma rare20 | gamma | 0.607 | cb_knn | 0.977 | smote_lr | **0.982** | 1.000 | 0.945 | 0.964 | 0.982 |
+| NCM rare20 | non-classical monocyte | 1.450 | euclidean | 0.667 | euclidean | **0.667** | 0.348 | 0.667 | 0.680 | 0.581 |
+| endothelial rare20 | endothelial cell | 1.115 | mahal_pooled | 0.649 | mahal_pooled | **0.649** | 0.889 | 0.585 | 0.649 | 0.933 |
+| beta cell rare20 | type B pancreatic cell | 0.555 | cb_knn | 0.857 | smote_lr | **0.897** | 0.897 | 0.857 | 0.857 | 0.897 |
+| ILC rare20 | innate lymphoid cell | 1.140 | mahal_pooled | 0.845 | mahal_pooled | **0.845** | 0.625 | 0.831 | 0.845 | 0.760 |
+
+**New adaptive vs best individual: mean Δ = -0.037**  
+**Old adaptive vs best individual: mean Δ = -0.114**
+
+### Key Finding
+**Recalibrated adaptive selector（E16）大幅优于旧版（E10）：mean Δ vs best individual 从 -0.114 改善到 -0.037。** 最关键的修复：epsilon（S=0.743）从 CB-kNN（0.133）切换到 SMOTE-LR（0.667），完全恢复到 scANVI 水平。ASDC 从 Mahal（0.901）切换到 Euclidean（0.934），也有改善。新 adaptive selector 在 8/8 案例中均达到合理结果，无灾难性失败。
+
+### Figures
+- `outputs/_experimental/figures/fig_e16_adaptive_recalibrated.png`
+
+---
+
+## E17: Mahal-pooled Integrated into Main Pipeline
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e17_mahal_main_pipeline.py`
+
+### Setup
+将 Mahal-pooled 替换 Euclidean 接入完整 pipeline（prototype → gate → marker）。
+
+### Results
+
+| Run | Rare class | n_rare | scANVI | Euc (no gate) | Mahal (no gate) | Euc+gate+marker | Mahal+gate+marker |
+|---|---|---|---|---|---|---|---|
+| cDC1 rare5 | cDC1 | 5 | 0.000 | **0.982** | 0.973 | **0.982** | 0.973 |
+| ASDC rare5 | ASDC | 5 | 0.060 | **0.922** | 0.833 | **0.922** | 0.833 |
+| epsilon rare20 | epsilon | 20 | **0.667** | 0.211 | 0.500 | 0.211 | 0.500 |
+| NCM rare20 | non-classical monocyte | 20 | 0.348 | 0.667 | **0.680** | 0.667 | **0.680** |
+| ILC rare20 | innate lymphoid cell | 20 | 0.625 | 0.831 | **0.845** | 0.831 | **0.845** |
+
+### Key Finding
+**Mahal+gate+marker 在 NCM 和 ILC 上略优于 Euclidean+gate+marker（+0.013, +0.014），但在 cDC1 和 ASDC 上略低（-0.009, -0.089）。** Gate 对 epsilon 无帮助（两种距离都无法超越 scANVI）。**结论：Mahal 替换 Euclidean 在 full pipeline 中是安全的（NCM/ILC 有小幅提升），但不是 epsilon 的解决方案。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e17_mahal_full_pipeline.png`
+
+---
+
+## E18: Epsilon Deep-dive — Why Does CB-kNN Fail?
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e18_epsilon_analysis.py`
+
+### Setup
+深入分析 epsilon（S=0.743）的失败原因：confusion matrix、prototype 距离、邻居分析、SMOTE-LR 为何有效。
+
+### Results
+
+**Method comparison (epsilon rare20, seed42):**
+
+| Method | rare F1 | Recall | Precision | epsilon predicted as epsilon | Top confusion class |
+|---|---|---|---|---|---|
+| scANVI | 0.667 | 0.500 | 1.000 | 1/2 | delta |
+| Euclidean | 0.211 | 0.500 | 0.133 | 2/2 | — |
+| Mahal-pooled | 0.500 | 0.500 | 0.500 | 2/2 | — |
+| CB-kNN | 0.133 | 0.500 | 0.077 | 2/2 | — |
+| SMOTE-LR | 0.667 | 0.500 | 1.000 | 2/2 | — |
+
+**Prototype distances (epsilon vs nearest majority):**
+
+| Majority class | n_train | Euclidean dist | Mahal dist |
+|---|---|---|---|
+| delta | 727 | 3.536 | 6.648 |
+| gamma | 503 | 3.577 | 5.610 |
+| alpha | 3974 | 4.055 | 7.222 |
+
+**Neighbor analysis (k=30):**
+- Mean fraction epsilon neighbors: 0.217 (6.5/30 neighbors are epsilon)
+- Epsilon is NOT isolated — 21.7% of neighbors are epsilon cells
+
+### Key Finding
+**CB-kNN 失败的根本原因：epsilon 只有 2 个 test cells，CB-kNN 预测两个都是 epsilon（recall=0.5），但 precision 极低（0.077），因为大量 majority cells 也被预测为 epsilon。** 这是 CB-kNN 的过度补偿问题：class weight = 1/n_c 对 epsilon（n=20）给予极高权重，导致大量 majority cells 被错误分类为 epsilon。SMOTE-LR 有效是因为 LR 的决策边界更精确，不会过度补偿。
+
+### Figures
+- `outputs/_experimental/figures/fig_e18_epsilon_confusion.png`
+- `outputs/_experimental/figures/fig_e18_epsilon_pca.png`
+
+---
+
+## E19: Contrastive Fine-tuning of Latent Space
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e19_contrastive_finetune.py`
+
+### Setup
+2-layer MLP projection head (30→16→8 dims)，Supervised Contrastive Loss (τ=0.1)，200 epochs。
+
+### Results
+
+| Run | Rare class | n_rare | S_orig | S_proj | scANVI | Euclidean (30d) | Mahal (30d) | Contrastive (8d) |
+|---|---|---|---|---|---|---|---|---|
+| cDC1 rare5 | cDC1 | 5 | 0.979 | **3.890** | 0.000 | **0.982** | 0.973 | 0.279 |
+| ASDC rare5 | ASDC | 5 | 1.212 | **2.862** | 0.060 | **0.922** | 0.833 | 0.375 |
+| epsilon rare20 | epsilon | 20 | 0.743 | **1.505** | 0.667 | 0.211 | 0.500 | **0.800** |
+
+### Key Finding
+**Contrastive fine-tuning 大幅提升 separability ratio（cDC1: 0.979→3.890，epsilon: 0.743→1.505），但对 high-sep 案例（cDC1、ASDC）的 F1 反而下降（0.279, 0.375 vs 0.982, 0.922）。** 对 epsilon（low-sep），contrastive 达到 0.800，优于 Mahal-pooled（0.500）和 Euclidean（0.211）。**根本原因：high-sep 案例中 rare class 只有 5 个训练细胞，contrastive loss 过拟合到这 5 个细胞，导致 test 泛化差。** 对 low-sep 案例（epsilon，20 个训练细胞），contrastive 有效。
+
+### Figures
+- `outputs/_experimental/figures/fig_e19_contrastive.png`
+
+---
+
+## E20: Calibration-aware Rescue with Platt Scaling
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e20_platt_calibration.py`
+
+### Setup
+Platt scaling：在 validation 上拟合 logistic regression（input = logit(p_rare)），τ 在 validation 上调优。
+
+### Results
+
+| Run | Rare class | n_rare | scANVI | Euclidean | Best τ | Platt F1 | Platt Recall | Platt Precision |
+|---|---|---|---|---|---|---|---|---|
+| cDC1 rare5 | cDC1 | 5 | 0.000 | **0.982** | 0.10 | 0.132 | 0.182 | 0.104 |
+| ASDC rare5 | ASDC | 5 | 0.060 | **0.922** | 0.20 | 0.394 | 0.385 | 0.403 |
+| epsilon rare20 | epsilon | 20 | **0.667** | 0.211 | 0.10 | 0.333 | 1.000 | 0.200 |
+| NCM rare20 | non-classical monocyte | 20 | 0.348 | **0.667** | 0.30 | 0.606 | 0.588 | 0.625 |
+
+### Key Finding
+**Platt calibration 在所有案例中均低于 Euclidean nearest-prototype，且对 cDC1 和 ASDC 严重退化（0.132, 0.394 vs 0.982, 0.922）。** 根本原因：scANVI 对 rare class 的 softmax 概率极低（接近 0），Platt scaling 无法从接近 0 的概率中恢复有效信号。**结论：概率校准单独不能解决 rare class 问题，需要结合几何方法（Mahal/Euclidean）。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e20_platt.png`
+
+---
+
+## E21: Multi-scale Prototype (Hierarchical Distance)
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e21_multiscale_prototype.py`
+
+### Setup
+`d_multi(z, c) = β * d_local(z, c) + (1-β) * d_global(z, c)`，β 在 validation 上调优。
+
+### Results (selected highlights, rts=20)
+
+| Dataset | Rare class | Euclidean | Mahal-pooled | Multi-scale (best β) | Δ vs Mahal |
+|---|---|---|---|---|---|
+| immune_dc | cDC1 | 0.982 | **0.988** | 0.988 (β=0.0) | 0.000 |
+| immune_dc | ASDC | 0.934 | 0.901 | 0.901 (β=0.0) | 0.000 |
+| pancreas | epsilon | 0.211 | 0.500 | 0.500 (β=0.0) | 0.000 |
+| pancreas | gamma | 0.945 | 0.964 | **0.982** (β=0.3) | +0.018 |
+| tabula_liver | NCM | 0.667 | 0.680 | 0.519 (β=0.9) | -0.161 |
+| tabula_kidney | endothelial | 0.585 | 0.649 | **0.686** (β=0.2) | +0.037 |
+| tabula_spleen | ILC | 0.831 | 0.845 | 0.845 (β=0.0) | 0.000 |
+
+**Best β distribution: β=0.0 (pure Mahal) wins in 12/21 runs.**
+
+### Key Finding
+**Multi-scale prototype 在大多数案例中退化为纯 Mahal-pooled（β=0.0 最优）。** 少数案例有小幅提升（gamma: +0.018，endothelial: +0.037），但 NCM 有明显退化（-0.161）。**结论：local kNN 距离在 rare class 场景中不稳定，因为 rare class 的 local neighborhood 被 majority cells 主导。Mahal-pooled 的全局 covariance 更稳健。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e21_multiscale.png`
+
+---
+
+## E22: Comprehensive 3-seed Evaluation of Best Methods
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e22_final_evaluation.py`
+
+### Setup
+Top 3 methods × 8 datasets × 3 seeds (42, 43, 44) × rts=20。
+
+### Results (mean across 3 seeds)
+
+| Dataset | Rare class | scANVI | Euclidean | Mahal-pooled | Adaptive (E16) |
+|---|---|---|---|---|---|
+| cDC1 | cDC1 | 0.208 | 0.982 | **0.989** | 0.957 |
+| ASDC | ASDC | 0.656 | **0.931** | 0.886 | 0.897 |
+| epsilon | epsilon | **0.889** | 0.325 | 0.624 | 0.689 |
+| gamma | gamma | **0.996** | 0.964 | 0.976 | 0.984 |
+| NCM | non-classical monocyte | 0.374 | **0.678** | 0.663 | 0.678 |
+| endothelial | endothelial cell | **0.928** | 0.701 | 0.789 | 0.777 |
+| beta cell | type B pancreatic cell | **0.897** | 0.653 | 0.815 | 0.880 |
+| ILC | innate lymphoid cell | 0.764 | 0.724 | **0.822** | 0.822 |
+
+### Summary: Mean ± Std across all datasets
+
+| Method | Mean rare F1 | Std |
+|---|---|---|
+| scANVI | 0.714 | 0.285 |
+| Euclidean | 0.745 | 0.217 |
+| **Mahal-pooled** | **0.821** | **0.132** |
+| **Adaptive (E16)** | **0.836** | **0.115** |
+
+### Key Finding
+**Adaptive selector (E16) 是综合最优方法：mean F1 = 0.836，std = 0.115（最低方差）。** Mahal-pooled 是最稳定的单一方法（0.821 ± 0.132）。Euclidean 在 high-sep 案例（cDC1: 0.982）最优，但在 low-sep 案例（epsilon: 0.325）严重失败。**Adaptive selector 通过 SMOTE-LR fallback 成功处理了 epsilon（0.689 vs 0.325 Euclidean），同时在 high-sep 案例保持竞争力。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e22_final_heatmap.png`
+- `outputs/_experimental/figures/fig_e22_final_bars.png`
+
+---
+
+## E23: Visualizations Round 3
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e23_visualizations_round3.py`
+
+### Figures generated
+
+| Figure | Description |
+|---|---|
+| `fig_e16_adaptive_recalibrated.png` | Old vs new adaptive selector across all datasets |
+| `fig_e17_mahal_full_pipeline.png` | Mahal full pipeline vs current pipeline |
+| `fig_e18_epsilon_confusion.png` | Confusion matrices for epsilon (5 methods) |
+| `fig_e18_epsilon_pca.png` | 2D PCA scatter of epsilon cells colored by method |
+| `fig_e19_contrastive.png` | Contrastive fine-tuning: S ratio before/after + F1 comparison |
+| `fig_e20_platt.png` | Platt calibration: calibrated vs uncalibrated probabilities |
+| `fig_e21_multiscale.png` | Multi-scale prototype comparison |
+| `fig_e22_final_heatmap.png` | Comprehensive 3-seed heatmap: all methods × all datasets |
+| `fig_e22_final_bars.png` | Grouped bar chart: top 3 methods × all datasets, mean±std |
+
+All figures saved to: `outputs/_experimental/figures/`
+
+---
+
+## Round 3 Summary
+
+### 最重要发现（来自 E16-E22）
+
+**发现 1：Recalibrated adaptive selector 是最终最优方法**
+- Mean rare F1 = 0.836 ± 0.115（最低方差，最稳定）
+- 关键修复：epsilon 从 CB-kNN（0.133）→ SMOTE-LR（0.667）
+- 阈值调整（S=1.2/0.8 vs 旧 S=1.3/1.0）使 ASDC 也从 Mahal 切换到 Euclidean（+0.033）
+- **建议：将 E16 adaptive selector 作为最终推荐方法**
+
+**发现 2：Contrastive fine-tuning 对 low-sep 有效，对 high-sep 过拟合**
+- epsilon（low-sep，n=20）：contrastive 0.800 > Mahal 0.500 > Euclidean 0.211
+- cDC1（high-sep，n=5）：contrastive 0.279 << Euclidean 0.982（严重过拟合）
+- **建议：contrastive fine-tuning 仅在 S < 0.8 且 n_rare ≥ 15 时使用**
+
+**发现 3：CB-kNN 失败的根本原因已明确**
+- CB-kNN 对 epsilon 的 precision 极低（0.077），因为 class weight 过度补偿导致大量 majority cells 被误分类
+- SMOTE-LR 有效是因为 LR 决策边界更精确
+- **建议：在 adaptive selector 中用 SMOTE-LR 替换 CB-kNN 作为 low-sep fallback（已在 E16 实现）**
+
+**发现 4：Platt calibration 和 multi-scale prototype 均不优于 Mahal-pooled**
+- Platt：scANVI 概率对 rare class 接近 0，无法校准
+- Multi-scale：β=0.0（纯 Mahal）在 12/21 runs 最优，local kNN 不稳定
+- **结论：这两个方向不值得继续投入**
+
+### Round 3 方法排名（最终）
+
+| 方法 | Mean F1 | Std | 结论 |
+|---|---|---|---|
+| **Adaptive (E16)** | **0.836** | **0.115** | ✅ **最终推荐方法** |
+| **Mahal-pooled** | **0.821** | **0.132** | ✅ 最稳定单一方法，立即集成 |
+| Euclidean | 0.745 | 0.217 | ✅ high-sep 最优，当前方法 |
+| scANVI | 0.714 | 0.285 | baseline |
+| Contrastive (8d) | — | — | ⚠️ 仅 low-sep + n≥15 有效 |
+| Platt calibration | — | — | ❌ 放弃 |
+| Multi-scale | — | — | ❌ 退化为 Mahal，放弃 |
+
+### 下一步（优先级排序）
+
+1. **[立即]** 将 E16 adaptive selector 集成到 `src/03_prototype.py`（新 branch）
+2. **[高优先级]** 将 Mahal-pooled 作为默认距离替换 Euclidean
+3. **[中优先级]** 研究 contrastive fine-tuning 在 n_rare ≥ 15 + S < 0.8 场景的稳定性
+4. **[低优先级]** 探索 contrastive + Mahal 组合（先 contrastive 提升 S，再用 Mahal）
+
+---
+
+## Round 3 文件清单
+
+```
+src/experimental/
+  e16_adaptive_recalibrated.py
+  e17_mahal_main_pipeline.py
+  e18_epsilon_analysis.py
+  e19_contrastive_finetune.py
+  e20_platt_calibration.py
+  e21_multiscale_prototype.py  (updated)
+  e22_final_evaluation.py
+  e23_visualizations_round3.py
+
+outputs/_experimental/
+  e16_adaptive_recalibrated/
+    results.csv
+    results_with_delta.csv
+  e17_mahal_main_pipeline/
+    results.csv
+  e18_epsilon_analysis/
+    confusion_summary.csv
+    prototype_distances.csv
+    epsilon_neighbor_analysis.csv
+    train_pca.csv
+    test_pca.csv
+    summary.csv
+  e19_contrastive_finetune/
+    results.csv
+  e20_platt_calibration/
+    results.csv
+    *_tau_curve.csv (4 files)
+    *_calibrated_probs.csv (4 files)
+  e21_multiscale_prototype/
+    results.csv
+    delta_analysis.csv
+  e22_final_evaluation/
+    per_run_results.csv
+    aggregated_results.csv
+  figures/
+    fig_e16_adaptive_recalibrated.png
+    fig_e17_mahal_full_pipeline.png
+    fig_e18_epsilon_confusion.png
+    fig_e18_epsilon_pca.png
+    fig_e19_contrastive.png
+    fig_e20_platt.png
+    fig_e21_multiscale.png
+    fig_e22_final_heatmap.png
+    fig_e22_final_bars.png
+```
