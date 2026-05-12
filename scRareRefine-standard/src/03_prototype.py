@@ -80,6 +80,55 @@ def prototype_scores(
     })
 
 
+def separability_metrics(
+    reference_latent: np.ndarray,
+    reference_labels: pd.Series,
+    reference_is_labeled: np.ndarray,
+    rare_class: str,
+) -> dict:
+    """Quantify how well the rare class is separated from majority classes in prototype space."""
+    labeled_mask = np.asarray(reference_is_labeled, dtype=bool)
+    labels = pd.Series(reference_labels).astype(str).reset_index(drop=True)
+    ref = np.asarray(reference_latent, dtype=float)
+    classes = sorted(labels[labeled_mask].unique())
+
+    prototypes = {
+        cls: ref[labeled_mask & labels.eq(cls).to_numpy()].mean(axis=0)
+        for cls in classes
+    }
+    rare_proto = prototypes[rare_class]
+    rare_cells = ref[labeled_mask & labels.eq(rare_class).to_numpy()]
+    intra_radius = float(np.sqrt(((rare_cells - rare_proto) ** 2).sum(axis=1)).mean())
+
+    inter_dists = {
+        cls: float(np.sqrt(((rare_proto - p) ** 2).sum()))
+        for cls, p in prototypes.items()
+        if cls != rare_class
+    }
+    nearest_class = min(inter_dists, key=inter_dists.get)
+    dist_nearest = inter_dists[nearest_class]
+    mean_dist = float(np.mean(list(inter_dists.values())))
+
+    sep_ratio = round(dist_nearest / max(intra_radius, 1e-10), 4)
+    if sep_ratio >= 1.5:
+        rescue_confidence = "HIGH"
+    elif sep_ratio >= 1.0:
+        rescue_confidence = "MEDIUM"
+    else:
+        rescue_confidence = "LOW"
+
+    return {
+        "rare_class": rare_class,
+        "n_rare_train": int((labeled_mask & labels.eq(rare_class).to_numpy()).sum()),
+        "intra_rare_radius": round(intra_radius, 4),
+        "dist_to_nearest_majority": round(dist_nearest, 4),
+        "nearest_majority_class": nearest_class,
+        "mean_dist_to_majority": round(mean_dist, 4),
+        "separability_ratio": sep_ratio,
+        "rescue_confidence": rescue_confidence,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Stage 3: compute prototype scores")
     parser.add_argument("--config", required=True)
@@ -98,6 +147,19 @@ def main() -> None:
 
     train_pred = read_table(emb_dir / "train_predictions.csv")
     train_latent = read_table(emb_dir / "train_latent.csv")
+
+    sep = separability_metrics(
+        _latent_matrix(train_latent),
+        reference_labels=train_pred["true_label"],
+        reference_is_labeled=train_pred["is_labeled_for_scanvi"].astype(bool).to_numpy(),
+        rare_class=rare_class,
+    )
+    sep_df = pd.DataFrame([sep])
+    write_table(sep_df, proto_dir / "separability.csv")
+    print(f"  Separability ratio: {sep['separability_ratio']:.3f}  "
+          f"[rescue_confidence={sep['rescue_confidence']}]  "
+          f"(intra_radius={sep['intra_rare_radius']:.3f}, "
+          f"nearest={sep['nearest_majority_class']} d={sep['dist_to_nearest_majority']:.3f})")
 
     for split_name in ["validation", "test"]:
         pred = read_table(emb_dir / f"{split_name}_predictions.csv")

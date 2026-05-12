@@ -1,8 +1,9 @@
 # immune_dc / ASDC inductive validation 实验报告
 
-日期：2026-05-06
+日期：2026-05-07
 结果目录：[outputs/immune_dc/inductive_batch/asdc/](../../outputs/immune_dc/inductive_batch/asdc/)
 报告图目录：[docs/reports/figures/](figures/)
+结果版本：基于当前 stage-level CSV 重新复核；包含 12 个 runs（3 seeds × 4 rare-label budgets）和 5 个方法。
 
 ## 1. 实验目的
 
@@ -39,6 +40,8 @@
 5. **fusion**：在 validation 上调参，将 scANVI probability 与 prototype probability 融合后应用到 test。
 
 ## 4. 主要结果
+
+本次复核读取了 [five_method_effect_summary.csv](../../outputs/immune_dc/inductive_batch/asdc/stages/inductive_methods/five_method_effect_summary.csv)、[five_method_effect_runs.csv](../../outputs/immune_dc/inductive_batch/asdc/stages/inductive_methods/five_method_effect_runs.csv)、[selected_marker_thresholds.csv](../../outputs/immune_dc/inductive_batch/asdc/stages/inductive_methods/selected_marker_thresholds.csv) 和 [resource_summary.csv](../../outputs/immune_dc/inductive_batch/asdc/stages/inductive_methods/resource_summary.csv)。当前 CSV 与报告主体结论一致：20/50/100 low-label budgets 下 validation-tuned marker 最优，`all` 条件下 fusion 略优。
 
 ### 4.1 汇总图
 
@@ -173,7 +176,7 @@ Fusion 的主要优势是保守：多数预算下 false rescue rate 约为 0，�
 
 ## 9. 结论
 
-当前 ASDC batch-heldout 实验支持以下结论：scRareRefine 在 rare-label scarce 的 inductive setting 下能显著提升 ASDC rare F1，主要增益来自 prototype rescue 加 validation-tuned marker verification。最佳结果出现在 low-label budgets：20 labels 时 rare F1 从 0.775 提升到 0.942，50 labels 时从 0.899 提升到 0.947。随着 rare labels 增加到 100/all，baseline 变强，后处理收益递减；full-label 条件下应优先使用 validation gate 决定是否启用后处理。
+当前 ASDC batch-heldout 实验支持以下结论：scRareRefine 在 rare-label scarce 的 inductive setting 下能显著提升 ASDC rare F1，主要增益来自 prototype rescue 加 validation-tuned marker verification。最佳结果出现在 low-label budgets：20 labels 时 rare F1 从 0.775 提升到 0.942，50 labels 时从 0.899 提升到 0.947，100 labels 时从 0.923 提升到 0.946。随着 rare labels 增加到 100/all，baseline 变强，后处理收益递减；full-label 条件下 fusion 以 0.951 rare F1 略优于 baseline 的 0.945，但增益很小，应优先使用 validation gate 决定是否启用后处理。
 
 ## 10. 建议下一步实验
 

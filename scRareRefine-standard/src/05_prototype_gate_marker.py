@@ -198,6 +198,11 @@ def main() -> None:
         is_labeled=train_pred["is_labeled_for_scanvi"].astype(bool).to_numpy(),
     )
     print(f"  Marker signatures computed for {len(signatures)} cell types")
+    # Save marker signatures for downstream analysis/visualization
+    sig_rows = [{"cell_type": ct, "gene": g, "rank": i + 1}
+                for ct, genes_list in signatures.items() for i, g in enumerate(genes_list)]
+    if sig_rows:
+        write_table(pd.DataFrame(sig_rows), out_dir / "marker_signatures.csv")
 
     # ── Validation: score candidates, build threshold curve, select threshold ──
     val_pred = read_table(emb_dir / "validation_predictions.csv")

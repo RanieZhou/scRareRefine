@@ -23,6 +23,22 @@ from sklearn.model_selection import train_test_split
 from utils import load_config, load_adata, make_split_path, write_table
 
 
+def _safe_strat(labels: pd.Series, min_count: int = 5) -> np.ndarray | None:
+    """Return stratification array, merging rare classes into '__minor__'.
+
+    Returns None when safe stratification is impossible (e.g. all cells same class).
+    """
+    counts = labels.value_counts()
+    small = counts[counts < min_count].index
+    strat = labels.copy()
+    if len(small):
+        strat[labels.isin(small)] = "__minor__"
+    strat_counts = strat.value_counts()
+    if strat_counts.min() < 2 or len(strat_counts) < 2:
+        return None
+    return strat.to_numpy()
+
+
 def cell_stratified_split(
     obs: pd.DataFrame,
     *,
@@ -34,13 +50,15 @@ def cell_stratified_split(
 ) -> pd.Series:
     labels = obs[label_key].astype(str)
     indices = np.arange(len(obs))
+    strat = _safe_strat(labels)
     train_idx, heldout_idx = train_test_split(
-        indices, train_size=train_fraction, random_state=seed, stratify=labels,
+        indices, train_size=train_fraction, random_state=seed, stratify=strat,
     )
     heldout_labels = labels.iloc[heldout_idx]
     val_share = validation_fraction / (validation_fraction + test_fraction)
+    heldout_strat = _safe_strat(heldout_labels)
     val_idx, test_idx = train_test_split(
-        heldout_idx, train_size=val_share, random_state=seed + 1, stratify=heldout_labels,
+        heldout_idx, train_size=val_share, random_state=seed + 1, stratify=heldout_strat,
     )
     split = pd.Series(index=obs.index, dtype=object)
     split.iloc[train_idx] = "train"

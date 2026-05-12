@@ -1,17 +1,9 @@
-"""Stage 8: Visualize final method comparison from metrics/final_metrics.csv.
+"""[DEPRECATED] Stage 8: Visualization.
 
-Reads:
-    outputs/{dataset}/{run_id}/metrics/final_metrics.csv
+Visualization is now integrated into 07_evaluate.py, which generates
+method_comparison.png and rescue_effect.png alongside final_metrics.csv.
 
-Writes:
-    outputs/{dataset}/{run_id}/metrics/
-        method_comparison.png   key classification metrics per method
-        rescue_effect.png       rescue counts and false rescue rate per method
-
-Usage:
-    python src/08_visualize.py \\
-        --config configs/immune_dc.yaml \\
-        --seed 42 --rare_class cDC1 --rare_train_size 20
+This file is kept for reference only. Use 07_evaluate.py instead.
 """
 from __future__ import annotations
 
@@ -31,20 +23,24 @@ import pandas as pd
 from utils import load_config, make_run_dir, parse_rare_train_size, read_table
 
 
-METHOD_ORDER = ["baseline", "prototype", "prototype_gate", "prototype_gate_marker", "fusion"]
+METHOD_ORDER = ["baseline", "prototype", "prototype_gate", "prototype_gate_best", "prototype_gate_marker", "fusion", "fusion_gated"]
 METHOD_LABELS = {
     "baseline":              "Baseline\n(scANVI)",
     "prototype":             "Prototype\nRescue",
     "prototype_gate":        "Proto\nGate",
-    "prototype_gate_marker": "Gate +\nMarker",
-    "fusion":                "Fusion",
+    "prototype_gate_best":   "Gate\n(best)",
+    "prototype_gate_marker": "Gate+\nMarker",
+    "fusion":                "Fusion\n(global)",
+    "fusion_gated":          "Fusion\n(gated)",
 }
 METHOD_COLORS = {
     "baseline":              "#8da0cb",
     "prototype":             "#66c2a5",
     "prototype_gate":        "#fc8d62",
+    "prototype_gate_best":   "#ff6b35",
     "prototype_gate_marker": "#e78ac3",
     "fusion":                "#a6d854",
+    "fusion_gated":          "#ffd92f",
 }
 
 
