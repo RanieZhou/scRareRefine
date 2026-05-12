@@ -379,32 +379,80 @@ def fig_e21():
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    # Left: F1 comparison
-    ax = axes[0]
-    methods = [
-        ("scANVI", "scanvi_rare_f1"),
-        ("euclidean", "euclidean_rare_f1"),
-        ("mahal_pooled", "mahal_pooled_rare_f1"),
-        ("multiscale", "multiscale_rare_f1"),
-    ]
-    labels = ["scANVI", "Euclidean (centroid)", "Mahal-pooled", "Multi-scale"]
-    _bar_group(ax, df, "rare_class", methods, COLORS, labels,
-               title="E21: Multi-scale Prototype — rare F1")
+    # Detect format: new format has scanvi_rare_f1, old format has method/rare_f1 columns
+    if "scanvi_rare_f1" in df.columns:
+        # New format
+        ax = axes[0]
+        methods = [
+            ("scANVI", "scanvi_rare_f1"),
+            ("euclidean", "euclidean_rare_f1"),
+            ("mahal_pooled", "mahal_pooled_rare_f1"),
+            ("multiscale", "multiscale_rare_f1"),
+        ]
+        labels = ["scANVI", "Euclidean (centroid)", "Mahal-pooled", "Multi-scale"]
+        _bar_group(ax, df, "rare_class", methods, COLORS, labels,
+                   title="E21: Multi-scale Prototype — rare F1")
 
-    # Right: Best weights
-    ax = axes[1]
-    if all(c in df.columns for c in ["best_w1", "best_w2", "best_w3"]):
-        x = np.arange(len(df))
-        width = 0.25
-        ax.bar(x - width, df["best_w1"], width, label="w1 (centroid)", color="#1f77b4", alpha=0.85)
-        ax.bar(x, df["best_w2"], width, label="w2 (1-NN)", color="#ff7f0e", alpha=0.85)
-        ax.bar(x + width, df["best_w3"], width, label="w3 (5-NN)", color="#2ca02c", alpha=0.85)
+        ax = axes[1]
+        if all(c in df.columns for c in ["best_w1", "best_w2", "best_w3"]):
+            x = np.arange(len(df))
+            width = 0.25
+            ax.bar(x - width, df["best_w1"], width, label="w1 (centroid)", color="#1f77b4", alpha=0.85)
+            ax.bar(x, df["best_w2"], width, label="w2 (1-NN)", color="#ff7f0e", alpha=0.85)
+            ax.bar(x + width, df["best_w3"], width, label="w3 (5-NN)", color="#2ca02c", alpha=0.85)
+            ax.set_xticks(x)
+            ax.set_xticklabels(df["rare_class"].tolist(), rotation=20, ha="right")
+            ax.set_ylabel("Weight")
+            ax.set_title("E21: Best multi-scale weights per dataset")
+            ax.legend()
+            ax.set_ylim(0, 1.1)
+    else:
+        # Old format: method/rare_f1 columns, pivot needed
+        # Filter to rts=20 for comparison
+        df_20 = df[df["rts"] == 20] if "rts" in df.columns else df
+
+        ax = axes[0]
+        method_map = {
+            "scANVI": "scANVI",
+            "Euclidean": "euclidean",
+            "Mahal-pooled": "mahal_pooled",
+        }
+        # Find multi-scale method name
+        ms_methods = [m for m in df_20["method"].unique() if "Multi" in str(m)]
+
+        datasets = df_20["dataset"].unique() if "dataset" in df_20.columns else df_20["run"].unique()
+        x = np.arange(len(datasets))
+        width = 0.2
+        all_methods = ["scANVI", "Euclidean", "Mahal-pooled"] + ms_methods[:1]
+        colors_list = [COLORS["scANVI"], COLORS["euclidean"], COLORS["mahal_pooled"], COLORS["multiscale"]]
+
+        for i, method in enumerate(all_methods):
+            sub = df_20[df_20["method"] == method]
+            if "dataset" in sub.columns:
+                sub = sub.groupby("dataset")["rare_f1"].mean().reindex(datasets)
+            else:
+                sub = sub.groupby("run")["rare_f1"].mean().reindex(datasets)
+            vals = sub.to_numpy() if hasattr(sub, "to_numpy") else np.zeros(len(datasets))
+            offset = (i - len(all_methods) / 2 + 0.5) * width
+            ax.bar(x + offset, vals, width, label=method,
+                   color=colors_list[i] if i < len(colors_list) else f"C{i}", alpha=0.85)
+
         ax.set_xticks(x)
-        ax.set_xticklabels(df["rare_class"].tolist(), rotation=20, ha="right")
-        ax.set_ylabel("Weight")
-        ax.set_title("E21: Best multi-scale weights per dataset")
-        ax.legend()
-        ax.set_ylim(0, 1.1)
+        ax.set_xticklabels(datasets, rotation=30, ha="right", fontsize=8)
+        ax.set_ylabel("rare F1")
+        ax.set_title("E21: Multi-scale Prototype — rare F1 (rts=20)")
+        ax.legend(fontsize=7)
+        ax.set_ylim(0, 1.05)
+
+        # Right: beta distribution
+        ax = axes[1]
+        if "beta" in df_20.columns:
+            beta_counts = df_20[df_20["method"].str.contains("Multi", na=False)]["beta"].value_counts().sort_index()
+            ax.bar(range(len(beta_counts)), beta_counts.values, color="#bcbd22", alpha=0.85)
+            ax.set_xticks(range(len(beta_counts)))
+            ax.set_xticklabels([f"β={b:.1f}" for b in beta_counts.index], rotation=30, ha="right")
+            ax.set_ylabel("Count")
+            ax.set_title("E21: Best β distribution across runs")
 
     plt.tight_layout()
     out = FIG_DIR / "fig_e21_multiscale.png"
@@ -417,35 +465,65 @@ def fig_e21():
 def fig_e22_heatmap():
     path = EXP_DIR / "e22_final_evaluation" / "aggregated_results.csv"
     if not path.exists():
-        print(f"  SKIP fig_e22_heatmap: {path} not found")
-        return
+        # Try per_run_results
+        path = EXP_DIR / "e22_final_evaluation" / "per_run_results.csv"
+        if not path.exists():
+            print(f"  SKIP fig_e22_heatmap: results not found")
+            return
 
     df = read_table(path)
 
-    methods = ["scanvi", "euclidean", "mahal_pooled", "adaptive"]
-    method_labels = ["scANVI", "Euclidean", "Mahal-pooled", "Adaptive (E16)"]
+    # Detect column names
+    f1_col = "mean_rare_f1" if "mean_rare_f1" in df.columns else "mean_f1"
+    method_col = "method"
 
-    pivot = df.pivot_table(index="dataset", columns="method", values="mean_rare_f1")
-    pivot = pivot.reindex(columns=methods)
+    # Normalize method names
+    method_map = {
+        "scANVI": "scANVI", "scanvi": "scANVI",
+        "Euclidean": "Euclidean", "euclidean": "Euclidean",
+        "Mahal-pooled": "Mahal-pooled", "mahal_pooled": "Mahal-pooled",
+        "Adaptive (E16)": "Adaptive", "adaptive": "Adaptive",
+    }
+    df[method_col] = df[method_col].map(lambda x: method_map.get(x, x))
+
+    # Filter to rts=20 if column exists
+    if "rts" in df.columns:
+        df = df[df["rts"] == 20]
+
+    methods = ["scANVI", "Euclidean", "Mahal-pooled", "Adaptive"]
+
+    # Aggregate if needed
+    if f1_col not in df.columns:
+        # Compute from per-run
+        f1_col_raw = "adaptive_rare_f1" if "adaptive_rare_f1" in df.columns else "rare_f1"
+        agg = df.groupby(["dataset", method_col])[f1_col_raw].mean().reset_index()
+        agg.columns = ["dataset", method_col, "mean_f1"]
+        df = agg
+        f1_col = "mean_f1"
+
+    dataset_col = "dataset" if "dataset" in df.columns else "run"
+    pivot = df.pivot_table(index=dataset_col, columns=method_col, values=f1_col, aggfunc="mean")
+    # Reorder columns
+    available_methods = [m for m in methods if m in pivot.columns]
+    pivot = pivot.reindex(columns=available_methods)
 
     fig, ax = plt.subplots(figsize=(10, 6))
     cmap = LinearSegmentedColormap.from_list("rg", ["#d62728", "#ffffff", "#2ca02c"])
     im = ax.imshow(pivot.values, cmap=cmap, vmin=0, vmax=1, aspect="auto")
 
-    ax.set_xticks(range(len(methods)))
-    ax.set_xticklabels(method_labels, rotation=20, ha="right")
+    ax.set_xticks(range(len(available_methods)))
+    ax.set_xticklabels(available_methods, rotation=20, ha="right")
     ax.set_yticks(range(len(pivot)))
     ax.set_yticklabels(pivot.index.tolist())
 
-    # Annotate cells
     for i in range(len(pivot)):
-        for j in range(len(methods)):
+        for j in range(len(available_methods)):
             val = pivot.values[i, j]
             if not np.isnan(val):
                 ax.text(j, i, f"{val:.2f}", ha="center", va="center",
                         fontsize=9, color="black" if val > 0.3 else "white")
 
-    plt.colorbar(im, ax=ax, label="Mean rare F1 (3 seeds)")
+    plt.colorbar(im, ax=ax, label="Mean rare F1")
     ax.set_title("E22: Comprehensive 3-seed Evaluation — Mean rare F1")
     plt.tight_layout()
     out = FIG_DIR / "fig_e22_final_heatmap.png"

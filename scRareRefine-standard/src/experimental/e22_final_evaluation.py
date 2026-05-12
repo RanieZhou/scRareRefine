@@ -1,15 +1,15 @@
-"""E22: Comprehensive 3-seed evaluation of best methods.
+"""E22: Final evaluation — best methods, 3 seeds, all rts.
 
-Top 3 methods:
+Consolidate findings from E8-E21. Run the top 3 methods:
 1. Mahal-pooled (λ=0) — best for low-sep
-2. Euclidean nearest-proto — best for high-sep (current method)
-3. Recalibrated adaptive selector (from E16) — meta-method
+2. CB-kNN (k=30) — best for high-sep, low rts
+3. Euclidean — strong baseline for high-sep
 
-Datasets: cDC1, ASDC, epsilon, gamma, NCM, endothelial, beta cell, ILC
-Seeds: 42, 43, 44
-rts: 20
+Run on: all datasets, rts=5/20/50, 3 seeds.
+Report: mean±std, win rates, regime analysis.
 
-Report: mean ± std across 3 seeds for each (dataset, method) pair.
+Usage:
+    python src/experimental/e22_final_evaluation.py
 """
 from __future__ import annotations
 
@@ -20,8 +20,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import LabelEncoder
+from collections import Counter
+from sklearn.neighbors import NearestNeighbors
 
 from utils import classification_tables, read_table, write_table
 from experimental.mahalanobis_poc import (
@@ -37,80 +37,46 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "outputs" / "_experimental" / "e22_final_evaluation"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-SEEDS = [42, 43, 44]
-RTS = 20
+K_CB = 30
 
-# (dataset_dir_template, rare_class, run_name_label)
-# Template uses {seed} placeholder
-DATASETS = [
-    ("outputs/immune_dc/batch_heldout_seed{seed}_cdc1_rare20",                           "cDC1",                    "cDC1"),
-    ("outputs/immune_dc/batch_heldout_seed{seed}_asdc_rare20",                           "ASDC",                    "ASDC"),
-    ("outputs/pancreas/batch_heldout_seed{seed}_epsilon_rare20",                         "epsilon",                 "epsilon"),
-    ("outputs/pancreas/batch_heldout_seed{seed}_gamma_rare20",                           "gamma",                   "gamma"),
-    ("outputs/tabula_liver/cell_stratified_seed{seed}_non-classical_monocyte_rare20",    "non-classical monocyte",  "NCM"),
-    ("outputs/tabula_kidney/cell_stratified_seed{seed}_endothelial_cell_rare20",         "endothelial cell",        "endothelial"),
-    ("outputs/tabula_pancreas/cell_stratified_seed{seed}_type_b_pancreatic_cell_rare20", "type B pancreatic cell",  "beta_cell"),
-    ("outputs/tabula_spleen/batch_heldout_seed{seed}_innate_lymphoid_cell_rare20",       "innate lymphoid cell",    "ILC"),
+DATASET_CONFIGS = [
+    ("outputs/immune_dc",       "cDC1",                    "batch_heldout",   "cdc1"),
+    ("outputs/immune_dc",       "ASDC",                    "batch_heldout",   "asdc"),
+    ("outputs/pancreas",        "epsilon",                 "batch_heldout",   "epsilon"),
+    ("outputs/pancreas",        "gamma",                   "batch_heldout",   "gamma"),
+    ("outputs/tabula_liver",    "non-classical monocyte",  "cell_stratified", "non-classical_monocyte"),
+    ("outputs/tabula_kidney",   "endothelial cell",        "cell_stratified", "endothelial_cell"),
+    ("outputs/tabula_spleen",   "innate lymphoid cell",    "batch_heldout",   "innate_lymphoid_cell"),
+    ("outputs/tabula_pancreas", "type B pancreatic cell",  "cell_stratified", "type_b_pancreatic_cell"),
 ]
 
-NEW_HIGH = 1.2
-NEW_LOW  = 0.8
+SEEDS = [42, 43, 44]
+RTS_VALUES = [5, 20, 50]
 
 
-def _separability_ratio(
-    train_z: np.ndarray,
-    train_labels: np.ndarray,
-    rare_class: str,
-    classes: list[str],
-    protos: np.ndarray,
-) -> float:
-    rare_idx = classes.index(rare_class)
-    rare_mask = train_labels == rare_class
-    rare_cells = train_z[rare_mask]
-    if len(rare_cells) < 2:
-        d_intra = 1e-6
-    else:
-        diffs = rare_cells[:, None, :] - rare_cells[None, :, :]
-        pairwise = np.sqrt((diffs * diffs).sum(axis=2))
-        n = len(rare_cells)
-        idx = np.triu_indices(n, k=1)
-        d_intra = float(pairwise[idx].mean()) if len(idx[0]) > 0 else 1e-6
-    rare_proto = protos[rare_idx]
-    majority_protos = np.delete(protos, rare_idx, axis=0)
-    diffs_inter = majority_protos - rare_proto[None, :]
-    d_inter = float(np.sqrt((diffs_inter * diffs_inter).sum(axis=1)).min())
-    return d_inter / max(d_intra, 1e-10)
+def cb_knn_predict(train_z, train_labels, test_z, k, class_counts):
+    k_eff = min(k, len(train_z))
+    nbrs = NearestNeighbors(n_neighbors=k_eff, algorithm="ball_tree", n_jobs=-1)
+    nbrs.fit(train_z)
+    nn_dists_all, nn_idx_all = nbrs.kneighbors(test_z)
+    preds = []
+    eps = 1e-10
+    for i in range(len(test_z)):
+        nn_idx    = nn_idx_all[i]
+        nn_labels = train_labels[nn_idx]
+        nn_dists  = nn_dists_all[i]
+        vote: dict[str, float] = {}
+        for lbl, d in zip(nn_labels, nn_dists):
+            n_c = class_counts.get(lbl, 1)
+            w = 1.0 / (n_c * d ** 2 + eps)
+            vote[lbl] = vote.get(lbl, 0.0) + w
+        preds.append(max(vote, key=vote.get))
+    return np.array(preds)
 
 
-def _smote_lr_predict(
-    train_z: np.ndarray,
-    train_labels: np.ndarray,
-    query_z: np.ndarray,
-) -> np.ndarray:
-    le = LabelEncoder()
-    le.fit(train_labels)
-    y_enc = le.transform(train_labels)
-    try:
-        from collections import Counter
-        from imblearn.over_sampling import SMOTE, RandomOverSampler
-        min_class_count = min(Counter(y_enc).values())
-        k_neighbors = min(5, min_class_count - 2)
-        if k_neighbors < 1:
-            sampler = RandomOverSampler(random_state=42)
-        else:
-            sampler = SMOTE(k_neighbors=k_neighbors, random_state=42)
-        X_res, y_res = sampler.fit_resample(train_z, y_enc)
-    except Exception:
-        X_res, y_res = train_z, y_enc
-    lr = LogisticRegression(max_iter=1000, random_state=42, C=1.0)
-    lr.fit(X_res, y_res)
-    return le.inverse_transform(lr.predict(query_z))
-
-
-def run_one(run_dir: Path, rare_class: str, seed: int, dataset_label: str) -> dict | None:
+def run_one(run_dir: Path, rare_class: str) -> dict | None:
     emb_dir = run_dir / "embeddings"
     if not emb_dir.exists():
-        print(f"  WARNING: {emb_dir} not found, skipping.")
         return None
 
     try:
@@ -118,122 +84,194 @@ def run_one(run_dir: Path, rare_class: str, seed: int, dataset_label: str) -> di
         train_lat  = read_table(emb_dir / "train_latent.csv")
         test_pred  = read_table(emb_dir / "test_predictions.csv")
         test_lat   = read_table(emb_dir / "test_latent.csv")
-    except FileNotFoundError as e:
-        print(f"  WARNING: missing file {e}, skipping {run_dir}")
+    except FileNotFoundError:
         return None
 
     is_labeled = train_pred["is_labeled_for_scanvi"].astype(bool).to_numpy()
     train_z = _latent(train_lat)
     test_z  = _latent(test_lat)
-    y_test  = test_pred["true_label"].astype(str)
+    y_true  = test_pred["true_label"].astype(str)
 
-    classes, protos, counts_map = _class_prototypes(train_z, train_pred["true_label"], is_labeled)
-
-    if rare_class not in classes:
-        print(f"  WARNING: rare_class '{rare_class}' not in classes, skipping.")
+    if rare_class not in y_true.values:
         return None
 
-    labeled_z = train_z[is_labeled]
-    labeled_labels = train_pred["true_label"].astype(str).to_numpy()[is_labeled]
+    classes, protos, counts_map = _class_prototypes(train_z, train_pred["true_label"], is_labeled)
+    if rare_class not in classes:
+        return None
 
-    S = _separability_ratio(labeled_z, labeled_labels, rare_class, classes, protos)
+    ref_z      = train_z[is_labeled]
+    ref_labels = train_pred["true_label"].astype(str).to_numpy()[is_labeled]
+    class_counts = dict(Counter(ref_labels))
 
-    # ── Method 1: Euclidean nearest-prototype ─────────────────────────────
+    # Euclidean
     euc_dists = _euclidean(test_z, protos)
     euc_pred  = _predict_nearest(euc_dists, classes)
-    euc_m, _  = classification_tables(y_test, pd.Series(euc_pred), rare_class=rare_class)
+    euc_m, _  = classification_tables(y_true, pd.Series(euc_pred), rare_class=rare_class)
 
-    # ── Method 2: Mahal-pooled ─────────────────────────────────────────────
+    # Mahal-pooled
     pooled = _pooled_covariance_shrunk(train_z, train_pred["true_label"], is_labeled, classes)
     pooled_covs = [pooled] * len(classes)
-    mahal_dists = _mahalanobis(test_z, protos, pooled_covs)
-    mahal_pred  = _predict_nearest(mahal_dists, classes)
-    mahal_m, _  = classification_tables(y_test, pd.Series(mahal_pred), rare_class=rare_class)
+    mah_dists = _mahalanobis(test_z, protos, pooled_covs)
+    mah_pred  = _predict_nearest(mah_dists, classes)
+    mah_m, _  = classification_tables(y_true, pd.Series(mah_pred), rare_class=rare_class)
 
-    # ── Method 3: Recalibrated adaptive selector ───────────────────────────
-    if S >= NEW_HIGH:
-        adaptive_pred = euc_pred
-        adaptive_method = "euclidean"
-    elif S >= NEW_LOW:
-        adaptive_pred = mahal_pred
-        adaptive_method = "mahal_pooled"
-    else:
-        adaptive_pred = _smote_lr_predict(labeled_z, labeled_labels, test_z)
-        adaptive_method = "smote_lr"
+    # CB-kNN
+    cb_pred = cb_knn_predict(ref_z, ref_labels, test_z, K_CB, class_counts)
+    cb_m, _ = classification_tables(y_true, pd.Series(cb_pred), rare_class=rare_class)
 
-    adaptive_m, _ = classification_tables(y_test, pd.Series(adaptive_pred), rare_class=rare_class)
+    # scANVI baseline
+    scanvi_m, _ = classification_tables(y_true, test_pred["predicted_label"], rare_class=rare_class)
 
-    # ── scANVI baseline ────────────────────────────────────────────────────
-    scanvi_m, _ = classification_tables(y_test, test_pred["predicted_label"], rare_class=rare_class)
+    name = run_dir.name
+    seed = None
+    rts  = None
+    for part in name.split("_"):
+        if part.startswith("seed"):
+            try:
+                seed = int(part[4:])
+            except ValueError:
+                pass
+        if part.startswith("rare") and part != "rareall":
+            try:
+                rts = int(part[4:])
+            except ValueError:
+                pass
 
     return {
-        "dataset": dataset_label,
+        "run": name,
         "rare_class": rare_class,
         "seed": seed,
-        "separability_ratio": S,
-        "adaptive_selected": adaptive_method,
-        "scanvi_rare_f1": scanvi_m["rare_f1"],
-        "euclidean_rare_f1": euc_m["rare_f1"],
-        "mahal_pooled_rare_f1": mahal_m["rare_f1"],
-        "adaptive_rare_f1": adaptive_m["rare_f1"],
+        "rts": rts,
+        "n_rare_train": counts_map.get(rare_class, 0),
+        "scanvi_f1":    scanvi_m["rare_f1"],
+        "euclidean_f1": euc_m["rare_f1"],
+        "mahal_f1":     mah_m["rare_f1"],
+        "cb_knn_f1":    cb_m["rare_f1"],
+        "scanvi_recall":    scanvi_m["rare_recall"],
         "euclidean_recall": euc_m["rare_recall"],
-        "mahal_recall": mahal_m["rare_recall"],
-        "adaptive_recall": adaptive_m["rare_recall"],
+        "mahal_recall":     mah_m["rare_recall"],
+        "cb_knn_recall":    cb_m["rare_recall"],
     }
 
 
 def main() -> pd.DataFrame:
-    rows = []
-    for tmpl, rare_class, dataset_label in DATASETS:
-        for seed in SEEDS:
-            run_path = tmpl.format(seed=seed)
-            run_dir = ROOT / run_path
-            print(f"Processing {run_dir.name} (seed={seed})...")
-            try:
-                result = run_one(run_dir, rare_class, seed, dataset_label)
-                if result:
-                    rows.append(result)
-            except Exception as exc:
-                import traceback
-                print(f"  ERROR in {run_dir.name}: {exc}")
-                traceback.print_exc()
+    all_rows = []
 
-    df = pd.DataFrame(rows)
+    for dataset_dir, rare_class, split_prefix, rare_slug in DATASET_CONFIGS:
+        dataset_path = ROOT / dataset_dir
+        if not dataset_path.exists():
+            continue
+
+        dataset_name = dataset_path.name
+        print(f"\n{'='*60}")
+        print(f"Dataset: {dataset_name}  rare_class: {rare_class}")
+        print(f"{'='*60}")
+
+        for seed in SEEDS:
+            for rts in RTS_VALUES:
+                run_name = f"{split_prefix}_seed{seed}_{rare_slug}_rare{rts}"
+                run_dir  = dataset_path / run_name
+                if not run_dir.exists():
+                    continue
+
+                result = run_one(run_dir, rare_class)
+                if result is None:
+                    continue
+
+                result["dataset"] = dataset_name
+                all_rows.append(result)
+                print(f"  seed={seed} rts={rts:3d}  "
+                      f"scANVI={result['scanvi_f1']:.3f}  "
+                      f"Eucl={result['euclidean_f1']:.3f}  "
+                      f"Mahal={result['mahal_f1']:.3f}  "
+                      f"CB-kNN={result['cb_knn_f1']:.3f}")
+
+    if not all_rows:
+        print("No results collected!")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(all_rows)
     write_table(df, OUT_DIR / "per_run_results.csv")
 
-    # Aggregate: mean ± std across seeds
+    # Aggregate mean±std per (dataset, rare_class, rts) across seeds
     agg_rows = []
-    for (dataset, rare_class), grp in df.groupby(["dataset", "rare_class"]):
-        for method in ["scanvi", "euclidean", "mahal_pooled", "adaptive"]:
-            col = f"{method}_rare_f1"
-            if col in grp.columns:
-                agg_rows.append({
-                    "dataset": dataset,
-                    "rare_class": rare_class,
-                    "method": method,
-                    "mean_rare_f1": grp[col].mean(),
-                    "std_rare_f1": grp[col].std(),
-                    "n_seeds": len(grp),
-                })
+    for (dataset, rare_class, rts), grp in df.groupby(["dataset", "rare_class", "rts"]):
+        for method, col in [
+            ("scANVI",       "scanvi_f1"),
+            ("Euclidean",    "euclidean_f1"),
+            ("Mahal-pooled", "mahal_f1"),
+            ("CB-kNN",       "cb_knn_f1"),
+        ]:
+            vals = grp[col].dropna().values
+            agg_rows.append({
+                "dataset": dataset,
+                "rare_class": rare_class,
+                "rts": rts,
+                "method": method,
+                "mean_f1": float(np.mean(vals)),
+                "std_f1":  float(np.std(vals)),
+                "n_seeds": len(vals),
+            })
 
-    agg_df = pd.DataFrame(agg_rows)
-    write_table(agg_df, OUT_DIR / "aggregated_results.csv")
+    agg = pd.DataFrame(agg_rows)
+    write_table(agg, OUT_DIR / "aggregated_results.csv")
 
-    print("\n=== E22 Results: 3-seed Comprehensive Evaluation ===")
-    pivot = agg_df.pivot_table(
-        index=["dataset", "rare_class"],
+    # Pivot for display
+    pivot = agg.pivot_table(
+        index=["dataset", "rare_class", "rts"],
         columns="method",
-        values="mean_rare_f1",
-    )
-    print(pivot.to_string(float_format=lambda x: f"{x:.3f}"))
+        values="mean_f1",
+        aggfunc="first",
+    ).reset_index()
+    pivot.columns.name = None
 
-    print("\n=== Mean ± Std per method ===")
-    for method in ["scanvi", "euclidean", "mahal_pooled", "adaptive"]:
-        sub = agg_df[agg_df["method"] == method]
-        if len(sub) > 0:
-            print(f"  {method}: {sub['mean_rare_f1'].mean():.3f} ± {sub['mean_rare_f1'].std():.3f}")
+    method_cols = [c for c in ["scANVI", "Euclidean", "Mahal-pooled", "CB-kNN"] if c in pivot.columns]
+    pivot["best_method"] = pivot[method_cols].idxmax(axis=1)
+    pivot["best_f1"] = pivot[method_cols].max(axis=1)
 
-    return df, agg_df
+    write_table(pivot, OUT_DIR / "best_method_summary.csv")
+
+    print("\n\n=== E22 Final Evaluation: 3-seed mean rare_f1 ===")
+    print(pivot[["dataset","rare_class","rts"] + method_cols + ["best_method","best_f1"]].to_string(
+        index=False, float_format=lambda x: f"{x:.3f}"
+    ))
+
+    print("\n\n=== E22 Best method distribution ===")
+    print(pivot["best_method"].value_counts().to_string())
+
+    # Win rates
+    if "Mahal-pooled" in pivot.columns and "Euclidean" in pivot.columns:
+        mahal_wins = (pivot["Mahal-pooled"] > pivot["Euclidean"]).sum()
+        total = len(pivot)
+        print(f"\nMahal-pooled wins vs Euclidean: {mahal_wins}/{total} ({100*mahal_wins/total:.1f}%)")
+        print(f"Mean delta: {(pivot['Mahal-pooled'] - pivot['Euclidean']).mean():.3f}")
+
+    if "CB-kNN" in pivot.columns and "Euclidean" in pivot.columns:
+        cb_wins = (pivot["CB-kNN"] > pivot["Euclidean"]).sum()
+        print(f"\nCB-kNN wins vs Euclidean: {cb_wins}/{total} ({100*cb_wins/total:.1f}%)")
+        print(f"Mean delta: {(pivot['CB-kNN'] - pivot['Euclidean']).mean():.3f}")
+
+    # Regime analysis: high-sep vs low-sep
+    # High-sep: cDC1, ASDC, gamma, ILC (Euclidean works well)
+    # Low-sep: epsilon, NCM, endothelial (Euclidean fails)
+    high_sep = ["cDC1", "ASDC", "gamma", "innate lymphoid cell"]
+    low_sep  = ["epsilon", "non-classical monocyte", "endothelial cell", "type B pancreatic cell"]
+
+    pivot_hs = pivot[pivot["rare_class"].isin(high_sep)]
+    pivot_ls = pivot[pivot["rare_class"].isin(low_sep)]
+
+    print("\n\n=== E22 Regime Analysis ===")
+    print(f"\nHigh-sep cases ({len(pivot_hs)} configs):")
+    for method in method_cols:
+        if method in pivot_hs.columns:
+            print(f"  {method:20s}: mean={pivot_hs[method].mean():.3f}  std={pivot_hs[method].std():.3f}")
+
+    print(f"\nLow-sep cases ({len(pivot_ls)} configs):")
+    for method in method_cols:
+        if method in pivot_ls.columns:
+            print(f"  {method:20s}: mean={pivot_ls[method].mean():.3f}  std={pivot_ls[method].std():.3f}")
+
+    return df, agg, pivot
 
 
 if __name__ == "__main__":

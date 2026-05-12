@@ -889,3 +889,178 @@ z_corrected = z - (mean_majority - mean_rare) * correction_factor，cf ∈ {-1.0
 
 All figures saved to: `outputs/_experimental/figures/`
 
+
+
+---
+
+# Round 5 — New Experiments (Invented)
+
+---
+
+## E18: Mahal-pooled + CB-kNN Hybrid
+**Status**: ✅ Complete
+**Script**: `src/experimental/e18_mahal_cb_knn_hybrid.py`
+
+### Setup
+Hybrid: 使用 Mahal-pooled 作为主分类器，当 Mahal 距离 margin < threshold 时切换到 CB-kNN。
+margin = dist_2nd_nearest - dist_nearest（越小 = 越不确定）。
+运行：所有数据集，rts=5/20/50，seed42。
+
+### Results (selected)
+
+| Dataset | Rare class | rts | Mahal | CB-kNN | Hybrid | Δ(Hybrid-best) |
+|---|---|---|---|---|---|---|
+| pancreas | gamma | 5 | 0.377 | 0.897 | **0.897** | 0.000 |
+| immune_dc | cDC1 | 5 | 0.973 | 0.919 | 0.973 | 0.000 |
+| tabula_kidney | endothelial | 20 | 0.649 | 0.638 | **0.684** | +0.036 |
+| tabula_liver | NCM | 5 | 0.640 | 0.714 | 0.640 | -0.074 |
+
+### Key Finding
+**Hybrid 在大多数案例中等同于 Mahal-pooled（margin_thresh=0）**，说明 Mahal-pooled 已经足够确定。对 gamma (rts=5)，Hybrid 正确切换到 CB-kNN（0.897 vs 0.377）。对 endothelial，Hybrid 略优于两者（+3.6pp）。**结论：Hybrid 是一个有趣的方向，但需要更好的不确定性估计来决定何时切换。**
+
+---
+
+## E19: Three-seed Full Sweep — Mahal-pooled vs CB-kNN vs Euclidean
+**Status**: ✅ Complete
+**Script**: `src/experimental/e19_three_seed_full_sweep.py`
+
+### Setup
+对所有数据集（除 tabula_pancreas），rts=5/20/50，3 seeds 运行 Mahal-pooled、CB-kNN、Euclidean。
+
+### Results (mean rare_f1 across 3 seeds)
+
+**Best method distribution (21 configs):**
+- scANVI: 8 (38.1%)
+- Mahal-pooled: 5 (23.8%)
+- Euclidean: 4 (19.0%)
+- CB-kNN: 4 (19.0%)
+
+**Mahal-pooled wins vs Euclidean: 14/21 (66.7%), mean delta = +0.073**
+
+### Key Finding
+**Mahal-pooled 在 rts=5 时最有优势**（epsilon: +30.9pp，ILC: +9.1pp）。CB-kNN 在 gamma (rts=5) 上最优（0.932 vs 0.710 Euclidean）。scANVI 在 rts=50 时仍是最优（8/21 cases），说明端到端训练在数据充足时无法被 post-hoc 方法超越。
+
+---
+
+## E20: Rare-class SMOTE Augmentation for CB-kNN
+**Status**: ✅ Complete
+**Script**: `src/experimental/e20_rare_class_oversampling_knn.py`
+
+### Setup
+在 latent space 用 SMOTE 生成合成 rare cells，然后运行 CB-kNN。
+n_aug ∈ {5, 10, 20, 50}，在 validation 上选最优。
+运行：所有数据集，rts=5/20/50，seed42。
+
+### Results (selected)
+
+| Dataset | Rare class | rts | CB-kNN | CB-kNN+SMOTE | Best n_aug |
+|---|---|---|---|---|---|
+| immune_dc | ASDC | 5 | 0.836 | **0.876** | 20 |
+| pancreas | gamma | 5 | 0.897 | **0.925** | 50 |
+| tabula_liver | NCM | 5 | 0.714 | **0.744** | 5 |
+| pancreas | epsilon | 5 | 0.032 | 0.032 | no improvement |
+
+### Key Finding
+**SMOTE 增强在高分离度案例（ASDC, gamma, NCM）上有小幅提升（+2-3pp）**，但对低分离度案例（epsilon）无效（SMOTE 在混合区域生成的合成样本质量差）。**结论：SMOTE+CB-kNN 是 CB-kNN 的改进，但提升幅度有限，不如直接用 Mahal-pooled。**
+
+---
+
+## E21: Multi-scale Prototype — Local + Global Distance
+**Status**: ✅ Complete
+**Script**: `src/experimental/e21_multiscale_prototype.py`
+
+### Setup
+d_multi = β * d_local + (1-β) * d_global，β 在 validation 上调优。
+d_local = mean distance to k=5 nearest labeled cells per class。
+d_global = Mahal-pooled distance to prototype。
+运行：所有数据集，rts=5/20/50，seed42。
+
+### Results
+
+**Best beta distribution: β=0.0 (12/21), β=0.1 (3/21), β=0.2 (2/21), β=0.3 (1/21), β=0.7 (2/21), β=0.9 (1/21)**
+
+| Dataset | Rare class | rts | Mahal | Multi-scale | Δ |
+|---|---|---|---|---|---|
+| pancreas | gamma | 20 | 0.964 | **0.982** | +0.018 |
+| tabula_kidney | endothelial | 5 | 0.686 | **0.727** | +0.042 |
+| tabula_liver | NCM | 50 | 0.607 | **0.756** | +0.148 |
+| tabula_liver | NCM | 5 | 0.640 | 0.500 | -0.140 |
+
+### Key Finding
+**Multi-scale 在 β=0 时最优（57% 案例）**，说明 Mahal-pooled 已是最优全局距离。对 NCM (rts=50) 有显著提升（+14.8pp），但对 NCM (rts=5) 有损害（-14pp）。**结论：局部距离在数据充足时有帮助，但在 rts=5 时噪声太大。**
+
+---
+
+## E22: Final Evaluation — Best Methods, 3 Seeds, All rts
+**Status**: ✅ Complete
+**Script**: `src/experimental/e22_final_evaluation.py`
+
+### Setup
+对所有数据集（8个），rts=5/20/50，3 seeds 运行 scANVI、Euclidean、Mahal-pooled、CB-kNN。
+共 22 个 (dataset, rare_class, rts) 配置。
+
+### Results (mean rare_f1 across 3 seeds)
+
+**Best method distribution (22 configs):**
+- scANVI: 9 (40.9%)
+- Mahal-pooled: 5 (22.7%)
+- Euclidean: 4 (18.2%)
+- CB-kNN: 4 (18.2%)
+
+**Mahal-pooled wins vs Euclidean: 15/22 (68.2%), mean delta = +0.077**
+**CB-kNN wins vs Euclidean: 13/22 (59.1%), mean delta = +0.022**
+
+### Regime Analysis
+
+| Regime | scANVI | Euclidean | Mahal-pooled | CB-kNN |
+|---|---|---|---|---|
+| High-sep (12 configs) | 0.539 ± 0.429 | 0.876 ± 0.122 | **0.897 ± 0.085** | 0.894 ± 0.087 |
+| Low-sep (10 configs) | 0.681 ± 0.346 | 0.573 ± 0.169 | **0.716 ± 0.089** | 0.599 ± 0.231 |
+
+### Key Finding
+**Mahal-pooled 是最一致的方法**：
+- 高分离度：0.897（vs Euclidean 0.876，+2.1pp）
+- 低分离度：0.716（vs Euclidean 0.573，+14.3pp）
+- 标准差最小（0.085/0.089），说明最稳定
+
+**CB-kNN 在高分离度上与 Mahal-pooled 持平（0.894 vs 0.897）**，但在低分离度上不如 Mahal-pooled（0.599 vs 0.716）。
+
+**scANVI 在 rts=50 时仍是最优**（9/22 cases），但在 rts=5 时几乎失败（mean=0.003 for cDC1）。
+
+---
+
+# 最终总结 (E8-E22)
+
+## 核心发现
+
+### 发现 1：Mahal-pooled 是最一致的改进方法
+- 高分离度：+2.1pp vs Euclidean（0.897 vs 0.876）
+- 低分离度：+14.3pp vs Euclidean（0.716 vs 0.573）
+- 68.2% 胜率，平均 +7.7pp
+- 标准差最小（最稳定）
+
+### 发现 2：CB-kNN 是高分离度案例的强力替代
+- 高分离度：0.894（与 Mahal-pooled 持平）
+- 低分离度：0.599（不如 Mahal-pooled 0.716）
+- 在 gamma (rts=5) 上有显著优势（0.932 vs 0.710 Euclidean）
+
+### 发现 3：scANVI 在 rts=50 时仍是最优
+- 9/22 cases 最优（40.9%）
+- 说明端到端训练在数据充足时无法被 post-hoc 方法超越
+- 但在 rts=5 时几乎失败（cDC1: 0.003）
+
+### 发现 4：Hybrid/Ensemble 方法不优于单一最优方法
+- E10 Ensemble: α=0.0 最优（77% cases）→ 等同于 Mahal-pooled
+- E18 Hybrid: margin_thresh=0 最优（大多数 cases）→ 等同于 Mahal-pooled
+- E21 Multi-scale: β=0.0 最优（57% cases）→ 等同于 Mahal-pooled
+
+### 发现 5：GMM 和 Latent Alignment 无效
+- E13 GMM density ratio: 0.000 everywhere（数值不稳定）
+- E15 Latent alignment: 无效（仿射变换不改变相对距离）
+
+## 建议
+
+1. **立即实施**：将 `src/03_prototype.py` 的 Euclidean 改为 Mahal-pooled（λ=0）
+2. **论文贡献**：Mahal-pooled 作为主要方法，CB-kNN 作为新 baseline
+3. **未来工作**：GMM 需要更稳健的密度估计（normalizing flows）
+

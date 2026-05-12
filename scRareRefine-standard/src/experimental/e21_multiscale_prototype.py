@@ -1,16 +1,23 @@
-"""E21: Multi-scale prototype (hierarchical distance).
+"""E21: Multi-scale prototype — combine local and global distance signals.
 
-Algorithm:
-    multiscale_score(cell_i, class_c) = w1 * d_centroid(i,c) + w2 * d_1nn(i,c) + w3 * d_5nn(i,c)
+Observation: Mahal-pooled uses a single global covariance. But the latent
+space may have different scales at different regions.
 
-where:
-  d_centroid = Euclidean distance to class centroid (current method)
-  d_1nn = distance to nearest within-class training cell
-  d_5nn = distance to 5th nearest within-class training cell
+Idea: Compute distances at multiple scales:
+  d_local(z, c) = Euclidean distance to nearest k_local labeled cells of class c
+  d_global(z, c) = Mahal-pooled distance to class prototype
 
-w1, w2, w3 tuned on validation (grid search over simplex).
+Combine: d_multi(z, c) = β * d_local(z, c) + (1-β) * d_global(z, c)
 
-Run on: cDC1 rare5, ASDC rare5, epsilon rare20, NCM rare20 (seed42).
+β is tuned on validation.
+
+This is a "local + global" ensemble that captures both fine-grained
+neighborhood structure and global class geometry.
+
+Run on: all datasets, rts=5/20/50, seed42.
+
+Usage:
+    python src/experimental/e21_multiscale_prototype.py
 """
 from __future__ import annotations
 
@@ -37,218 +44,230 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "outputs" / "_experimental" / "e21_multiscale_prototype"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-RUNS = [
-    ("outputs/immune_dc/batch_heldout_seed42_cdc1_rare5",                          "cDC1"),
-    ("outputs/immune_dc/batch_heldout_seed42_asdc_rare5",                          "ASDC"),
-    ("outputs/pancreas/batch_heldout_seed42_epsilon_rare20",                        "epsilon"),
-    ("outputs/tabula_liver/cell_stratified_seed42_non-classical_monocyte_rare20",   "non-classical monocyte"),
+K_LOCAL = 5  # k nearest labeled cells for local distance
+BETA_GRID = [0.0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1.0]
+
+DATASET_CONFIGS = [
+    ("outputs/immune_dc",       "cDC1",                    "batch_heldout",   "cdc1"),
+    ("outputs/immune_dc",       "ASDC",                    "batch_heldout",   "asdc"),
+    ("outputs/pancreas",        "epsilon",                 "batch_heldout",   "epsilon"),
+    ("outputs/pancreas",        "gamma",                   "batch_heldout",   "gamma"),
+    ("outputs/tabula_liver",    "non-classical monocyte",  "cell_stratified", "non-classical_monocyte"),
+    ("outputs/tabula_kidney",   "endothelial cell",        "cell_stratified", "endothelial_cell"),
+    ("outputs/tabula_spleen",   "innate lymphoid cell",    "batch_heldout",   "innate_lymphoid_cell"),
 ]
 
-# Grid search over simplex: w1 + w2 + w3 = 1
-W_GRID_STEP = 0.2
+SEEDS = [42]
+RTS_VALUES = [5, 20, 50]
 
 
-def _simplex_grid(step: float = 0.2) -> list[tuple[float, float, float]]:
-    """Generate grid points on the 3D simplex (w1+w2+w3=1)."""
-    points = []
-    vals = np.arange(0.0, 1.0 + step / 2, step)
-    for w1 in vals:
-        for w2 in vals:
-            w3 = 1.0 - w1 - w2
-            if w3 >= -1e-9:
-                w3 = max(w3, 0.0)
-                points.append((round(w1, 4), round(w2, 4), round(w3, 4)))
-    return points
-
-
-def _multiscale_distances(
-    query_z: np.ndarray,
+def local_distance(
+    test_z: np.ndarray,
+    ref_z: np.ndarray,
+    ref_labels: np.ndarray,
     classes: list[str],
-    labeled_z: np.ndarray,
-    labeled_labels: np.ndarray,
-    protos: np.ndarray,
-    k_nn: int = 5,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Compute 3 distance scales for each (query, class) pair.
-
-    Returns:
-        d_centroid: (n_query, n_classes) Euclidean to centroid
-        d_1nn: (n_query, n_classes) distance to nearest within-class cell
-        d_knn: (n_query, n_classes) distance to k-th nearest within-class cell
-    """
-    n_q = len(query_z)
-    n_c = len(classes)
-    d_centroid = _euclidean(query_z, protos)
-    d_1nn  = np.zeros((n_q, n_c))
-    d_knn  = np.zeros((n_q, n_c))
-
-    for ci, cls in enumerate(classes):
-        cls_mask = labeled_labels == cls
-        cls_cells = labeled_z[cls_mask]
-        if len(cls_cells) == 0:
-            d_1nn[:, ci] = 1e6
-            d_knn[:, ci] = 1e6
-            continue
-
-        k_actual = min(k_nn, len(cls_cells))
-        nbrs = NearestNeighbors(n_neighbors=k_actual, metric="euclidean")
-        nbrs.fit(cls_cells)
-        dists, _ = nbrs.kneighbors(query_z)
-
-        d_1nn[:, ci] = dists[:, 0]
-        d_knn[:, ci] = dists[:, -1]  # k-th nearest
-
-    return d_centroid, d_1nn, d_knn
-
-
-def _multiscale_predict(
-    d_centroid: np.ndarray,
-    d_1nn: np.ndarray,
-    d_knn: np.ndarray,
-    classes: list[str],
-    w1: float,
-    w2: float,
-    w3: float,
+    k: int,
 ) -> np.ndarray:
-    combined = w1 * d_centroid + w2 * d_1nn + w3 * d_knn
-    return _predict_nearest(combined, classes)
+    """Compute local distance: mean distance to k nearest labeled cells per class."""
+    n_test = len(test_z)
+    n_classes = len(classes)
+    dists = np.full((n_test, n_classes), np.inf)
+
+    for ci, c in enumerate(classes):
+        mask = ref_labels == c
+        X_c = ref_z[mask]
+        if len(X_c) == 0:
+            continue
+        k_eff = min(k, len(X_c))
+        nbrs = NearestNeighbors(n_neighbors=k_eff, algorithm="ball_tree")
+        nbrs.fit(X_c)
+        nn_dists, _ = nbrs.kneighbors(test_z)
+        dists[:, ci] = nn_dists.mean(axis=1)
+
+    return dists
 
 
-def run_one(run_dir: Path, rare_class: str) -> dict | None:
+def normalize_distances(dists: np.ndarray) -> np.ndarray:
+    """Normalize distances to [0,1] range per test cell."""
+    row_max = dists.max(axis=1, keepdims=True)
+    row_min = dists.min(axis=1, keepdims=True)
+    denom = row_max - row_min
+    denom[denom < 1e-10] = 1.0
+    return (dists - row_min) / denom
+
+
+def run_one(run_dir: Path, rare_class: str) -> list[dict]:
     emb_dir = run_dir / "embeddings"
     if not emb_dir.exists():
-        print(f"  WARNING: {emb_dir} not found, skipping.")
-        return None
+        return []
 
     try:
         train_pred = read_table(emb_dir / "train_predictions.csv")
         train_lat  = read_table(emb_dir / "train_latent.csv")
         test_pred  = read_table(emb_dir / "test_predictions.csv")
         test_lat   = read_table(emb_dir / "test_latent.csv")
-    except FileNotFoundError as e:
-        print(f"  WARNING: missing file {e}, skipping {run_dir}")
-        return None
-
-    # Load validation
-    val_pred = None
-    val_lat  = None
-    try:
-        val_pred = read_table(emb_dir / "validation_predictions.csv")
-        val_lat  = read_table(emb_dir / "validation_latent.csv")
     except FileNotFoundError:
-        # Use labeled training as validation proxy
-        is_labeled_mask = train_pred["is_labeled_for_scanvi"].astype(bool).to_numpy()
-        val_pred = train_pred[is_labeled_mask].reset_index(drop=True)
-        val_lat  = train_lat[is_labeled_mask].reset_index(drop=True)
+        return []
 
     is_labeled = train_pred["is_labeled_for_scanvi"].astype(bool).to_numpy()
     train_z = _latent(train_lat)
     test_z  = _latent(test_lat)
-    val_z   = _latent(val_lat)
-    y_test  = test_pred["true_label"].astype(str)
-    y_val   = val_pred["true_label"].astype(str)
+    y_true  = test_pred["true_label"].astype(str)
+
+    if rare_class not in y_true.values:
+        return []
 
     classes, protos, counts_map = _class_prototypes(train_z, train_pred["true_label"], is_labeled)
-
     if rare_class not in classes:
-        print(f"  WARNING: rare_class '{rare_class}' not in classes, skipping.")
-        return None
+        return []
 
-    labeled_z = train_z[is_labeled]
-    labeled_labels = train_pred["true_label"].astype(str).to_numpy()[is_labeled]
+    ref_z      = train_z[is_labeled]
+    ref_labels = train_pred["true_label"].astype(str).to_numpy()[is_labeled]
 
-    # ── Baseline: Euclidean centroid ───────────────────────────────────────
-    euc_dists = _euclidean(test_z, protos)
-    euc_pred  = _predict_nearest(euc_dists, classes)
-    euc_m, _  = classification_tables(y_test, pd.Series(euc_pred), rare_class=rare_class)
-
-    # ── Baseline: Mahal-pooled ─────────────────────────────────────────────
+    # Global: Mahal-pooled distances
     pooled = _pooled_covariance_shrunk(train_z, train_pred["true_label"], is_labeled, classes)
     pooled_covs = [pooled] * len(classes)
-    mahal_dists = _mahalanobis(test_z, protos, pooled_covs)
-    mahal_pred  = _predict_nearest(mahal_dists, classes)
-    mahal_m, _  = classification_tables(y_test, pd.Series(mahal_pred), rare_class=rare_class)
+    mah_dists = _mahalanobis(test_z, protos, pooled_covs)
 
-    # ── Compute multi-scale distances ─────────────────────────────────────
-    print(f"  Computing multi-scale distances for {run_dir.name}...")
-    val_d_c, val_d_1nn, val_d_knn = _multiscale_distances(
-        val_z, classes, labeled_z, labeled_labels, protos
-    )
-    test_d_c, test_d_1nn, test_d_knn = _multiscale_distances(
-        test_z, classes, labeled_z, labeled_labels, protos
-    )
+    # Local: k-NN distances per class
+    loc_dists = local_distance(test_z, ref_z, ref_labels, classes, K_LOCAL)
 
-    # ── Grid search on validation ──────────────────────────────────────────
-    simplex = _simplex_grid(W_GRID_STEP)
-    best_w = (1.0, 0.0, 0.0)
+    # Normalize both
+    mah_norm = normalize_distances(mah_dists)
+    loc_norm = normalize_distances(loc_dists)
+
+    # Euclidean baseline
+    euc_dists = _euclidean(test_z, protos)
+    euc_pred  = _predict_nearest(euc_dists, classes)
+    euc_m, _  = classification_tables(y_true, pd.Series(euc_pred), rare_class=rare_class)
+
+    # Mahal-pooled baseline
+    mah_pred = _predict_nearest(mah_dists, classes)
+    mah_m, _ = classification_tables(y_true, pd.Series(mah_pred), rare_class=rare_class)
+
+    # scANVI baseline
+    scanvi_m, _ = classification_tables(y_true, test_pred["predicted_label"], rare_class=rare_class)
+
+    name = run_dir.name
+    seed = None
+    rts  = None
+    for part in name.split("_"):
+        if part.startswith("seed"):
+            try:
+                seed = int(part[4:])
+            except ValueError:
+                pass
+        if part.startswith("rare") and part != "rareall":
+            try:
+                rts = int(part[4:])
+            except ValueError:
+                pass
+
+    rows = [
+        {"run": name, "rare_class": rare_class, "seed": seed, "rts": rts,
+         "method": "scANVI", "beta": None, "rare_f1": scanvi_m["rare_f1"]},
+        {"run": name, "rare_class": rare_class, "seed": seed, "rts": rts,
+         "method": "Euclidean", "beta": None, "rare_f1": euc_m["rare_f1"]},
+        {"run": name, "rare_class": rare_class, "seed": seed, "rts": rts,
+         "method": "Mahal-pooled", "beta": None, "rare_f1": mah_m["rare_f1"]},
+    ]
+
+    # Validation split for beta tuning
+    n_test = len(test_z)
+    rng = np.random.default_rng(42)
+    val_idx = rng.choice(n_test, size=max(1, n_test // 5), replace=False)
+    test_idx = np.setdiff1d(np.arange(n_test), val_idx)
+    if len(test_idx) == 0:
+        test_idx = np.arange(n_test)
+
+    y_val = y_true.iloc[val_idx].reset_index(drop=True)
+
+    best_beta = 0.0
     best_val_f1 = -1.0
-    grid_rows = []
 
-    for w1, w2, w3 in simplex:
-        val_pred_ms = _multiscale_predict(val_d_c, val_d_1nn, val_d_knn, classes, w1, w2, w3)
-        val_m, _ = classification_tables(y_val, pd.Series(val_pred_ms), rare_class=rare_class)
-        grid_rows.append({"w1": w1, "w2": w2, "w3": w3, "val_rare_f1": val_m["rare_f1"]})
-        if val_m["rare_f1"] > best_val_f1:
-            best_val_f1 = val_m["rare_f1"]
-            best_w = (w1, w2, w3)
+    for beta in BETA_GRID:
+        # Multi-scale: β * local + (1-β) * global
+        multi_val = beta * loc_norm[val_idx] + (1 - beta) * mah_norm[val_idx]
+        pred_val = _predict_nearest(multi_val, classes)
+        m_val, _ = classification_tables(y_val, pd.Series(pred_val), rare_class=rare_class)
+        if m_val["rare_f1"] > best_val_f1:
+            best_val_f1 = m_val["rare_f1"]
+            best_beta = beta
 
-    grid_df = pd.DataFrame(grid_rows).sort_values("val_rare_f1", ascending=False)
-    write_table(grid_df, OUT_DIR / f"{run_dir.name}_weight_grid.csv")
+    # Apply best beta to full test
+    multi_full = best_beta * loc_norm + (1 - best_beta) * mah_norm
+    pred_full = _predict_nearest(multi_full, classes)
+    m_full, _ = classification_tables(y_true, pd.Series(pred_full), rare_class=rare_class)
+    rows.append({
+        "run": name, "rare_class": rare_class, "seed": seed, "rts": rts,
+        "method": f"Multi-scale(β={best_beta})", "beta": best_beta,
+        "rare_f1": m_full["rare_f1"],
+    })
 
-    # ── Apply best weights to test ─────────────────────────────────────────
-    w1, w2, w3 = best_w
-    ms_pred = _multiscale_predict(test_d_c, test_d_1nn, test_d_knn, classes, w1, w2, w3)
-    ms_m, _ = classification_tables(y_test, pd.Series(ms_pred), rare_class=rare_class)
+    print(f"  rts={rts:3d}  scANVI={scanvi_m['rare_f1']:.3f}  "
+          f"Eucl={euc_m['rare_f1']:.3f}  Mahal={mah_m['rare_f1']:.3f}  "
+          f"Multi-scale(β={best_beta})={m_full['rare_f1']:.3f}")
 
-    # ── scANVI baseline ────────────────────────────────────────────────────
-    scanvi_m, _ = classification_tables(y_test, test_pred["predicted_label"], rare_class=rare_class)
-
-    print(f"  {run_dir.name}: best_w=({w1:.1f},{w2:.1f},{w3:.1f})  "
-          f"scanvi={scanvi_m['rare_f1']:.3f}  euc={euc_m['rare_f1']:.3f}  "
-          f"mahal={mahal_m['rare_f1']:.3f}  multiscale={ms_m['rare_f1']:.3f}")
-
-    return {
-        "run": run_dir.name,
-        "rare_class": rare_class,
-        "n_rare_train": counts_map.get(rare_class, 0),
-        "best_w1": w1,
-        "best_w2": w2,
-        "best_w3": w3,
-        "best_val_f1": best_val_f1,
-        "scanvi_rare_f1": scanvi_m["rare_f1"],
-        "euclidean_rare_f1": euc_m["rare_f1"],
-        "mahal_pooled_rare_f1": mahal_m["rare_f1"],
-        "multiscale_rare_f1": ms_m["rare_f1"],
-        "multiscale_recall": ms_m["rare_recall"],
-        "multiscale_precision": ms_m["rare_precision"],
-    }
+    return rows
 
 
 def main() -> pd.DataFrame:
-    rows = []
-    for rel_path, rare_class in RUNS:
-        run_dir = ROOT / rel_path
-        print(f"Processing {run_dir.name} ...")
-        try:
-            result = run_one(run_dir, rare_class)
-            if result:
-                rows.append(result)
-        except Exception as exc:
-            import traceback
-            print(f"  ERROR in {run_dir.name}: {exc}")
-            traceback.print_exc()
+    all_rows = []
 
-    df = pd.DataFrame(rows)
+    for dataset_dir, rare_class, split_prefix, rare_slug in DATASET_CONFIGS:
+        dataset_path = ROOT / dataset_dir
+        if not dataset_path.exists():
+            continue
+
+        dataset_name = dataset_path.name
+        print(f"\n{'='*60}")
+        print(f"Dataset: {dataset_name}  rare_class: {rare_class}")
+        print(f"{'='*60}")
+
+        for seed in SEEDS:
+            for rts in RTS_VALUES:
+                run_name = f"{split_prefix}_seed{seed}_{rare_slug}_rare{rts}"
+                run_dir  = dataset_path / run_name
+                if not run_dir.exists():
+                    continue
+
+                rows = run_one(run_dir, rare_class)
+                for row in rows:
+                    row["dataset"] = dataset_name
+                all_rows.extend(rows)
+
+    if not all_rows:
+        print("No results collected!")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(all_rows)
     write_table(df, OUT_DIR / "results.csv")
 
-    print("\n=== E21 Results: Multi-scale Prototype ===")
-    cols = ["run", "rare_class", "n_rare_train",
-            "best_w1", "best_w2", "best_w3",
-            "scanvi_rare_f1", "euclidean_rare_f1",
-            "mahal_pooled_rare_f1", "multiscale_rare_f1"]
-    print(df[cols].to_string(index=False, float_format=lambda x: f"{x:.3f}"))
+    print("\n\n=== E21 Summary: Multi-scale prototype ===")
+    pivot = df.pivot_table(
+        index=["dataset", "rare_class", "rts"],
+        columns="method",
+        values="rare_f1",
+        aggfunc="first",
+    )
+    print(pivot.to_string(float_format=lambda x: f"{x:.3f}"))
 
-    return df
+    # Multi-scale vs Mahal delta
+    df_mah = df[df["method"] == "Mahal-pooled"][["dataset","rare_class","rts","rare_f1"]].rename(columns={"rare_f1":"mah_f1"})
+    df_ms  = df[df["method"].str.startswith("Multi-scale")][["dataset","rare_class","rts","rare_f1","beta"]].rename(columns={"rare_f1":"ms_f1"})
+    delta = df_mah.merge(df_ms, on=["dataset","rare_class","rts"])
+    delta["ms_vs_mahal"] = delta["ms_f1"] - delta["mah_f1"]
+    write_table(delta, OUT_DIR / "delta_analysis.csv")
+
+    print("\n\n=== E21 Delta: Multi-scale vs Mahal-pooled ===")
+    print(delta[["dataset","rare_class","rts","mah_f1","ms_f1","ms_vs_mahal","beta"]].to_string(
+        index=False, float_format=lambda x: f"{x:.3f}"
+    ))
+
+    print("\n=== E21 Best beta distribution ===")
+    print(df_ms["beta"].value_counts().sort_index().to_string())
+
+    return df, delta
 
 
 if __name__ == "__main__":
