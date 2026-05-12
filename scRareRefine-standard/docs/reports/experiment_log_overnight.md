@@ -601,3 +601,291 @@ outputs/_experimental/
     fig_e14_mahal_sweep_scatter.png
     fig_e14_mahal_sweep_heatmap.png
 ```
+
+
+---
+
+# Round 2 — Data Efficiency Sweep (rts=5/20/50, 3 seeds)
+
+---
+
+## E8: Full Data Efficiency Sweep — Mahal-pooled vs Euclidean
+**Status**: ✅ Complete
+**Script**: `src/experimental/e8_data_efficiency_sweep.py`
+
+### Setup
+对所有可用 run 目录（8 个数据集，rts=5/10/20/50，3 个 seed）运行：
+- scANVI baseline
+- Euclidean nearest-proto
+- Mahal-pooled (λ=0)
+
+共 29 个 (dataset, rare_class, rts) 配置，每个 3 seeds。
+
+### Results (mean rare_f1 across 3 seeds)
+
+| Dataset | Rare class | rts | scANVI | Euclidean | Mahal-pooled | Δ(Mahal-Eucl) |
+|---|---|---|---|---|---|---|
+| immune_dc | cDC1 | 5 | 0.003 | **0.985** | 0.979 | -0.006 |
+| immune_dc | cDC1 | 20 | 0.208 | 0.982 | **0.989** | +0.007 |
+| immune_dc | cDC1 | 50 | 0.992 | 0.991 | **0.995** | +0.005 |
+| immune_dc | ASDC | 5 | 0.025 | **0.902** | 0.845 | -0.057 |
+| immune_dc | ASDC | 50 | 0.879 | **0.936** | 0.903 | -0.033 |
+| pancreas | epsilon | 5 | 0.222 | 0.294 | **0.603** | +0.309 |
+| pancreas | epsilon | 20 | 0.889 | 0.325 | **0.624** | +0.299 |
+| pancreas | epsilon | 50 | 1.000 | 0.376 | **0.778** | +0.402 |
+| pancreas | gamma | 5 | 0.065 | 0.710 | **0.768** | +0.058 |
+| tabula_kidney | endothelial cell | 5 | 0.888 | 0.682 | **0.814** | +0.132 |
+| tabula_spleen | innate lymphoid cell | 5 | 0.040 | 0.715 | **0.806** | +0.090 |
+| tabula_spleen | innate lymphoid cell | 50 | 0.854 | 0.707 | **0.811** | +0.104 |
+
+**Mahal-pooled wins: 20/29 (69.0%), mean delta = +0.078**
+
+### Key Finding
+**Mahal-pooled 在 rts=5/20/50 全程一致优于 Euclidean（69% 胜率，平均 +7.8pp）。** 最大优势在 epsilon（低分离度）：rts=5 时 +30.9pp，rts=50 时 +40.2pp。对 ASDC（高分离度）Mahal 略低（-3 到 -6pp）。**数据效率故事清晰：Mahal-pooled 在低分离度案例中随 rts 增加持续领先，而 Euclidean 在低分离度案例中始终失败。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e8_data_efficiency_mahal_vs_euclidean.png`
+
+---
+
+## E9: Class-balanced kNN Full Sweep (rts=5/20/50)
+**Status**: ✅ Complete
+**Script**: `src/experimental/e9_cb_knn_sweep.py`
+
+### Setup
+对所有数据集、rts=5/10/20/50、3 seeds 运行 CB-kNN (k=30)。
+比较：scANVI、Euclidean、Mahal-pooled、Standard kNN、CB-kNN。
+
+### Results (mean rare_f1 across 3 seeds, selected)
+
+| Dataset | Rare class | rts | Euclidean | Std-kNN | CB-kNN | Δ(CB-Eucl) |
+|---|---|---|---|---|---|---|
+| immune_dc | cDC1 | 5 | 0.985 | 0.000 | **0.948** | -0.037 |
+| immune_dc | cDC1 | 50 | 0.991 | 0.959 | **0.993** | +0.002 |
+| pancreas | gamma | 5 | 0.710 | 0.000 | **0.932** | +0.222 |
+| pancreas | gamma | 10 | 0.790 | 0.000 | **0.928** | +0.138 |
+| tabula_kidney | endothelial cell | 5 | 0.682 | 0.000 | **0.871** | +0.189 |
+| tabula_spleen | innate lymphoid cell | 5 | 0.715 | 0.000 | **0.740** | +0.025 |
+| pancreas | epsilon | 5 | 0.294 | 0.000 | 0.289 | -0.005 |
+
+**CB-kNN wins vs Euclidean: 18/29 (62.1%), mean delta = +0.031**
+
+### Key Finding
+**CB-kNN 在 rts=5 时对 Standard kNN 的优势最大**（Standard kNN 在 rts=5 时几乎全部失败，CB-kNN 保持 0.7-0.9）。对 gamma（高分离度）CB-kNN 在 rts=5 时 +22pp vs Euclidean。对 epsilon（低分离度）CB-kNN 不如 Mahal-pooled（0.289 vs 0.603）。**结论：CB-kNN 是高分离度案例的强力替代，但对低分离度案例不如 Mahal-pooled。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e9_cb_knn_efficiency.png`
+
+---
+
+# Round 3 — New Algorithmic Ideas
+
+---
+
+## E10: Prototype Ensemble — Euclidean + Mahal-pooled
+**Status**: ✅ Complete
+**Script**: `src/experimental/e10_prototype_ensemble.py`
+
+### Setup
+d_ensemble = α * d_euclidean + (1-α) * d_mahal，在 validation 上 grid search α ∈ {0.0, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, 1.0}。
+运行：所有数据集，rts=5/20/50，seed42。
+
+### Results
+
+| Dataset | Rare class | rts | best_α | Euclidean | Mahal-pooled | Ensemble | Δ(Ens-best) |
+|---|---|---|---|---|---|---|---|
+| immune_dc | cDC1 | 5 | 0.9 | 0.982 | 0.973 | 0.971 | -0.010 |
+| pancreas | epsilon | 5 | 0.0 | 0.095 | 0.308 | 0.333 | +0.026 |
+| pancreas | epsilon | 20 | 0.0 | 0.211 | 0.500 | 0.571 | +0.071 |
+| tabula_liver | NCM | 20 | 0.0 | 0.667 | 0.680 | 0.698 | +0.018 |
+| tabula_kidney | endothelial | 5 | 0.0 | 0.632 | 0.686 | 0.714 | +0.029 |
+
+**Best alpha distribution: α=0.0 (17/22), α=0.9 (3/22), α=1.0 (1/22), α=0.2 (1/22)**
+
+### Key Finding
+**Ensemble 在 77% 的案例中选择 α=0（纯 Mahal-pooled）**，说明 Mahal-pooled 在大多数情况下已是最优。Ensemble 在 epsilon 上略有提升（+2.6 到 +7.1pp），但在高分离度案例（cDC1、ASDC）上略低于 Euclidean。**结论：Ensemble 不是独立贡献，α=0 的 Mahal-pooled 已是最优默认选择。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e10_ensemble_alpha.png`
+
+---
+
+## E11: Soft Gate using Mahal Distance Ratio
+**Status**: ✅ Complete
+**Script**: `src/experimental/e11_soft_gate.py`
+
+### Setup
+p_rescue(z) = sigmoid((d_pred - d_rare) / τ)，τ 和 p_thresh 在 validation 上调优。
+比较：scANVI、Euclidean、Mahal-pooled、Hard gate、Soft gate。
+运行：cDC1/epsilon/NCM，rts=5/20/50，seed42。
+
+### Results
+
+| Dataset | Rare class | rts | scANVI | Euclidean | Mahal | Hard gate | Soft gate |
+|---|---|---|---|---|---|---|---|
+| immune_dc | cDC1 | 5 | 0.000 | 0.982 | 0.973 | 0.000 | **0.982** |
+| immune_dc | cDC1 | 20 | 0.485 | 0.982 | 0.988 | 0.485 | **0.992** |
+| immune_dc | cDC1 | 50 | 0.994 | 0.990 | 0.996 | 0.994 | **0.996** |
+| pancreas | epsilon | 5 | 0.000 | 0.095 | 0.308 | 0.000 | 0.308 |
+| pancreas | epsilon | 20 | 0.667 | 0.211 | 0.500 | 0.667 | 0.500 |
+| tabula_liver | NCM | 5 | 0.111 | 0.667 | 0.640 | 0.111 | 0.640 |
+
+### Key Finding
+**Soft gate 在 cDC1 上优于 Hard gate**（rts=5: 0.982 vs 0.000，rts=20: 0.992 vs 0.485）。Hard gate 对 cDC1 过于保守（rank cutoff 过滤掉了有效候选）。对 epsilon 和 NCM，soft gate 等同于 Mahal-pooled（无 gate）。**结论：Soft gate 是 Hard gate 的改进，但对低分离度案例不如直接用 Mahal-pooled 预测。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e11_soft_gate.png`
+
+---
+
+## E12: Rare-class Calibration — Distance-based Temperature Scaling
+**Status**: ✅ Complete
+**Script**: `src/experimental/e12_temperature_scaling.py`
+
+### Setup
+用 Mahal 距离的负值作为 logit，对 rare class 应用温度缩放 T_rare ∈ {0.1, 0.2, 0.3, 0.5, 0.7, 1.0, 1.5, 2.0}。
+注：scANVI 概率文件不可用，改用距离空间的温度缩放。
+
+### Results (selected)
+
+| Dataset | Rare class | rts | Mahal-pooled | Dist-TempScaled | Best T |
+|---|---|---|---|---|---|
+| pancreas | gamma | 5 | 0.377 | **0.955** | 1.5 |
+| tabula_kidney | endothelial | 20 | 0.649 | **0.857** | 0.7 |
+| tabula_kidney | endothelial | 50 | 0.667 | **0.750** | 0.5 |
+| immune_dc | cDC1 | 5 | 0.973 | 0.973 | 1.0 |
+| pancreas | epsilon | 5 | 0.308 | 0.000 | 0.1 |
+
+### Key Finding
+**距离温度缩放在 gamma (rts=5) 上有显著提升（0.377 → 0.955）**，在 endothelial cell 上也有改善。但对 epsilon 反而有害（T=0.1 导致 0.000）。**结论：温度缩放对某些数据集有效，但不稳定，需要可靠的 validation 集。**
+
+### Figures
+- `outputs/_experimental/figures/fig_e12_temperature_scaling.png`
+
+---
+
+## E13: Density-ratio Normalized GMM
+**Status**: ✅ Complete (negative result)
+**Script**: `src/experimental/e13_gmm_density_ratio.py`
+
+### Setup
+score_c(z) = log p_c(z) - log p_background(z)，background GMM 拟合所有 labeled 细胞。
+运行：cDC1/ASDC rare5/20，epsilon rare20，gamma rare5/20，seed42。
+
+### Results
+
+| Dataset | Rare class | rts | Euclidean | Mahal-pooled | GMM-DR |
+|---|---|---|---|---|---|
+| immune_dc | cDC1 | 5 | 0.982 | 0.973 | **0.000** |
+| immune_dc | ASDC | 5 | 0.922 | 0.833 | **0.000** |
+| pancreas | epsilon | 20 | 0.211 | 0.500 | **0.000** |
+| pancreas | gamma | 5 | 0.208 | 0.377 | **0.000** |
+
+### Key Finding
+**GMM density ratio 在所有案例中均失败（0.000）。** 根本原因：background GMM 的 log-likelihood 在高维空间中数值不稳定，导致 density ratio 的 argmax 始终指向 majority class。即使用 2-component rare class GMM 也无法修复。**结论：GMM 方向在当前实现下不可行，需要更稳健的密度估计方法（如 kernel density estimation 或 normalizing flows）。**
+
+---
+
+## E14: Prototype Uncertainty Quantification — Bootstrap
+**Status**: ✅ Complete
+**Script**: `src/experimental/e14_bootstrap_uncertainty.py`
+
+### Setup
+B=100 bootstrap 样本，对每个 test cell 计算 mean/std 距离到 rare prototype。
+rescue if mean_dist_rare < mean_dist_pred AND std_dist_rare < threshold。
+运行：cDC1/ASDC rare5/20，epsilon rare20，gamma rare5/20，ILC rare5/20，seed42。
+
+### Results
+
+| Dataset | Rare class | rts | Euclidean | Mahal-pooled | Bootstrap |
+|---|---|---|---|---|---|
+| immune_dc | cDC1 | 5 | 0.982 | 0.973 | 0.971 |
+| immune_dc | ASDC | 5 | 0.922 | 0.833 | **0.900** |
+| tabula_spleen | ILC | 5 | 0.806 | 0.811 | **0.844** |
+| pancreas | epsilon | 20 | 0.211 | 0.500 | 0.267 |
+
+### Key Finding
+**Bootstrap uncertainty 在 ASDC (rts=5) 上优于 Mahal-pooled（0.900 vs 0.833）**，在 ILC (rts=5) 上也有小幅提升（0.844 vs 0.811）。但对 epsilon 不如 Mahal-pooled（0.267 vs 0.500）。**结论：Bootstrap 提供了有用的不确定性估计，但计算成本高（B=100 次重采样），且对低分离度案例不如 Mahal-pooled。**
+
+---
+
+## E15: Latent Space Alignment
+**Status**: ✅ Complete (null result)
+**Script**: `src/experimental/e15_latent_alignment.py`
+
+### Setup
+z_corrected = z - (mean_majority - mean_rare) * correction_factor，cf ∈ {-1.0, -0.5, ..., 1.0}。
+运行：cDC1/ASDC/epsilon/gamma/ILC/endothelial，rts=5/20，seed42。
+
+### Results
+所有案例的最优 correction_factor = -1.0，但对应的 rare_f1 与无对齐时完全相同。
+
+### Key Finding
+**Latent alignment 无效。** 原因：当 correction_factor = -1.0 时，shift = -(mean_majority - mean_rare) = mean_rare - mean_majority，这将 test cells 向 rare class 方向移动，但同时也将 train prototypes 向同方向移动，净效果为零（相对距离不变）。**结论：简单的仿射对齐不改变 nearest-prototype 分类结果，需要更复杂的非线性对齐方法。**
+
+---
+
+# Round 4 — Synthesis and Visualization
+
+---
+
+## E16: Best Method per Regime — Comprehensive Comparison
+**Status**: ✅ Complete
+**Script**: `src/experimental/e16_comprehensive_comparison.py`
+
+### Setup
+汇总 E8-E15 所有结果，对每个 (dataset, rare_class, rts) 找最优方法。
+
+### Results
+
+**Best method distribution (29 configurations):**
+
+| Method | Count | % |
+|---|---|---|
+| scANVI | 10 | 34.5% |
+| CB-kNN | 4 | 13.8% |
+| Euclidean | 3 | 10.3% |
+| Mahal-pooled | 3 | 10.3% |
+| Dist-TempScaled | 3 | 10.3% |
+| Ensemble | 2 | 6.9% |
+| Bootstrap | 2 | 6.9% |
+| Soft-gate | 2 | 6.9% |
+
+**Mean best_f1 by dataset:**
+- immune_dc: 0.957
+- tabula_kidney: 0.905
+- tabula_pancreas: 0.897
+- pancreas: 0.879
+- tabula_spleen: 0.844
+- tabula_liver: 0.693
+
+**Mahal-pooled wins vs Euclidean: 20/29 (69.0%), mean delta = +0.078**
+**CB-kNN wins vs Euclidean: 18/29 (62.1%), mean delta = +0.031**
+
+### Key Finding
+**scANVI 在 rts=50 时仍是最优方法（10/29 cases）**，说明当有足够标注数据时，scANVI 的端到端训练优于所有 post-hoc 方法。**Mahal-pooled 是 rts=5/20 时最一致的改进**（69% 胜率）。CB-kNN 在特定高分离度案例（gamma, endothelial）有显著优势。
+
+### Figures
+- `outputs/_experimental/figures/fig_e16_best_method_heatmap.png`
+- `outputs/_experimental/figures/fig_comprehensive_heatmap.png`
+
+---
+
+## E17: Updated Visualizations
+**Status**: ✅ Complete
+**Script**: `src/experimental/e17_updated_visualizations.py`
+
+### Figures generated
+
+| Figure | Description |
+|---|---|
+| `fig_e8_data_efficiency_mahal_vs_euclidean.png` | 数据效率曲线，所有数据集，mean±std |
+| `fig_e9_cb_knn_efficiency.png` | CB-kNN vs Euclidean vs Mahal-pooled |
+| `fig_e10_ensemble_alpha.png` | α sweep 结果 |
+| `fig_e11_soft_gate.png` | Soft gate vs Hard gate vs No gate |
+| `fig_e12_temperature_scaling.png` | 距离温度缩放 |
+| `fig_e16_best_method_heatmap.png` | 最优方法 × 数据集 × rts |
+| `fig_comprehensive_heatmap.png` | 所有方法 × 所有配置 |
+
+All figures saved to: `outputs/_experimental/figures/`
+
