@@ -1676,3 +1676,102 @@ outputs/_experimental/
     fig_e30_paradigm_bars.png
     fig_e30_paradigm_heatmap.png
 ```
+
+---
+
+# Round 5 — Synthesis and Integration (E31–E34)
+
+---
+
+## E31: Three-layer Framework (Logit Adj + Mahal + Conformal)
+**Status**: ❌ Failed (Conformal Layer 3 over-rescues)
+
+### Key Finding
+三层框架失败：Layer 3（Conformal，α=0.05）把几乎所有 test cells 都 rescue 成 rare class（L3 数量高达 5000+），导致 precision 崩溃。根本原因：conformal 的 rescue 逻辑需要更严格的控制（只在 prediction set 大小 ≤ 2 时才 rescue）。**三层框架的概念是对的，但 conformal 的 rescue 规则需要重新设计。**
+
+---
+
+## E32: Logit Adjustment Full Sweep (all datasets × rts × 3 seeds)
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e32_logit_adj_full_sweep.py`
+
+### Results (mean across 3 seeds, 21 configurations)
+
+| Regime | scANVI | Euclidean | Mahal-pooled | Logit Adj |
+|---|---|---|---|---|
+| High-sep (12 configs) | 0.539 | 0.876 | **0.897** | 0.757 |
+| Low-sep (9 configs) | 0.657 | 0.564 | **0.705** | 0.696 |
+
+**Logit Adj wins vs scANVI: 14/21 (66.7%), mean Δ = +0.142**  
+**Logit Adj wins vs Mahal-pooled: 10/21 (47.6%), mean Δ = -0.084**
+
+### Key Finding
+Logit Adjustment 在 high-sep 案例上不如 Mahal-pooled（0.757 vs 0.897），但在 low-sep 案例上接近 Mahal-pooled（0.696 vs 0.705）。**Logit Adj 的优势在于特定数据集（endothelial cell：0.928 → 0.952，ILC rts=20：0.764 → 0.841），而不是全面优势。**
+
+---
+
+## E33: Logit Adj + Mahal Combined (confidence-based ensemble)
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e33_logit_adj_plus_mahal.py`
+
+### Algorithm
+当 Logit Adj 和 Mahal-pooled 预测一致时，直接采用；不一致时，选置信度更高的方法。
+S-Adaptive：S≥1.2 用 Logit Adj，S<1.2 用 Mahal-pooled。
+
+### Results (mean across 3 seeds, 21 configurations)
+
+| Regime | scANVI | Euclidean | Mahal-pooled | Logit Adj | Combined | S-Adaptive |
+|---|---|---|---|---|---|---|
+| High-sep (12) | 0.539 | 0.876 | **0.897** | 0.757 | 0.834 | 0.882 |
+| Low-sep (9) | 0.657 | 0.564 | **0.705** | 0.696 | 0.717 | 0.692 |
+
+**Best method distribution (21 configs):**
+- Euclidean: 5 (23.8%)
+- scANVI: 5 (23.8%)
+- Combined: 5 (23.8%)
+- Mahal-pooled: 4 (19.0%)
+- Logit Adj: 2 (9.5%)
+
+### Key Finding
+**Combined（置信度 ensemble）在 gamma rts=5 上有显著提升（0.768 → 0.899，+13pp）**，在 endothelial rts=5 上也有小幅提升（0.814 → 0.930）。但整体上 Combined 不如 Mahal-pooled（mean Δ = -0.031）。**S-Adaptive 在 high-sep 上接近 Mahal-pooled（0.882 vs 0.897），在 low-sep 上略低（0.692 vs 0.705）。**
+
+---
+
+## E34: Final Visualizations
+**Status**: ✅ Complete  
+**Script**: `src/experimental/e34_final_visualizations.py`
+
+### Figures
+- `fig_e33_regime_bars.png` — high-sep vs low-sep regime comparison
+- `fig_e32_logit_adj_vs_mahal_scatter.png` — scatter: LA vs Mahal per run
+- `fig_final_summary_all_methods.png` — final summary bar chart
+
+---
+
+## Round 5 Summary
+
+### Final Method Ranking (E33, 21 configs, 3 seeds)
+
+| Method | Paradigm | High-sep | Low-sep | Overall | Notes |
+|---|---|---|---|---|---|
+| **Mahal-pooled** | Geometric | **0.897** | **0.705** | **0.813** | Best single method |
+| S-Adaptive | Adaptive | 0.882 | 0.692 | 0.800 | Close to Mahal |
+| Combined | Ensemble | 0.834 | 0.717 | 0.782 | Wins on gamma rts=5 |
+| Euclidean | Geometric | 0.876 | 0.564 | 0.740 | Fails on low-sep |
+| Logit Adj | Probabilistic | 0.757 | 0.696 | 0.731 | Best for endothelial/ILC |
+| scANVI | baseline | 0.539 | 0.657 | 0.590 | — |
+
+### 最终结论（所有轮次综合）
+
+**算法层面的真正贡献（按重要性排序）：**
+
+1. **Mahal-pooled (λ=0)** — 最一致的改进，68% 胜率，low-sep +14pp
+2. **Logit Adjustment (ICLR 2021)** — 纯概率方法，无需几何，66% 胜率 vs scANVI
+3. **Conformal Prediction** — 唯一有理论保证的方法，gamma rts=5 +86pp
+4. **MC Dropout** — 最强 Bayesian 方法，cDC1 rts=5 +97pp
+5. **Class-balanced kNN** — 独立贡献，high-sep rts=5 时 standard kNN 完全失败时的替代
+
+**论文建议：**
+- 主方法：Mahal-pooled + Logit Adjustment（两个互补的范式）
+- 理论贡献：Conformal Prediction 提供 false rescue rate 的理论保证
+- 消融：Euclidean vs Mahal vs LA vs Combined
