@@ -8,9 +8,9 @@ dataset:
 experiment:
   rare_class: gamma
   rare_train_sizes:
-    - 20
-    - 50
-    - 100
+    - 0.01
+    - 0.05
+    - 0.10
     - all
   seeds:
     - 42

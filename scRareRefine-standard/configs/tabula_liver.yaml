@@ -1,0 +1,39 @@
+dataset:
+  name: tabula_liver
+  path: data/raw/tabula/tabula_sapiens_liver_raw.h5ad
+  use_layer: decontXcounts
+  label_key: cell_type
+  batch_key: donor_id
+
+experiment:
+  rare_class: non-classical monocyte
+  secondary_rare_classes:
+    - myeloid dendritic cell
+  rare_train_sizes:
+    - 5
+    - 10
+    - 20
+    - 50
+    - all
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+  output_dir: results/tabula_liver/audit
+
+model:
+  n_top_hvg: 3000
+  n_latent: 30
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 256
+
+analysis:
+  rare_threshold: 0.05
+  rare_max_cells: 200
+  review_fractions:
+    - 0.01
+    - 0.05
+    - 0.10
+    - 0.20

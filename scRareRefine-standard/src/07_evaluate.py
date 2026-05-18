@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from utils import classification_tables, load_config, make_run_dir, parse_rare_train_size, read_table, write_table
+from utils import _rts_label, classification_tables, load_config, make_run_dir, parse_rare_train_size, read_table, write_table
 
 
 # ── Method display config ─────────────────────────────────────────────────────
@@ -286,7 +286,7 @@ def main() -> None:
     parser.add_argument("--config", required=True)
     parser.add_argument("--rare_class", default=None)
     parser.add_argument("--rare_train_size", required=True)
-    parser.add_argument("--split_mode", default="batch_heldout", choices=["batch_heldout", "cell_stratified"])
+    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified | lobo_<batch>")
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44])
     args = parser.parse_args()
 
@@ -305,18 +305,27 @@ def main() -> None:
         print("No results found. Run prerequisite stages first.")
         return
 
-    # Save aggregated table
-    out_dir = Path("outputs") / dataset_name / f"evaluate_{args.split_mode}_{rare_class}_rare{rare_train_size}"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    csv_path = write_table(df, out_dir / "all_seeds_metrics.csv")
-    print(f"  Saved: {csv_path}")
-
     _print_summary(df, rare_class=rare_class)
 
     rts_str = str(rare_train_size)
-    plot_bar(df, out_dir / "comparison_bar.png", rare_class=rare_class, rts=rts_str)
-    plot_box(df, out_dir / "comparison_box.png", rare_class=rare_class, rts=rts_str)
-    print(f"\nDone. Results in {out_dir}")
+
+    # All outputs → each seed's run_dir
+    for seed in args.seeds:
+        seed_df = df[df["seed"] == seed]
+        if seed_df.empty:
+            continue
+        run_dir = make_run_dir(config, args.split_mode, seed, rare_class, rare_train_size)
+        run_dir.mkdir(parents=True, exist_ok=True)
+        # Aggregate metrics table (all seeds) copied to each run folder
+        csv_path = write_table(df, run_dir / "all_seeds_metrics.csv")
+        print(f"  Saved: {csv_path}")
+        # Per-seed charts
+        fig_dir = run_dir / "figure"
+        fig_dir.mkdir(parents=True, exist_ok=True)
+        plot_bar(seed_df, fig_dir / "comparison_bar.png", rare_class=rare_class, rts=rts_str)
+        plot_box(seed_df, fig_dir / "comparison_box.png", rare_class=rare_class, rts=rts_str)
+
+    print(f"\nDone.")
 
 
 if __name__ == "__main__":
