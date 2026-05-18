@@ -1,0 +1,26 @@
+dataset:
+  name: pbmc_pdc
+  path: data/raw/pbmc/pbmc_pdc_50k.h5ad
+  label_key: label
+  batch_key: donor_id
+
+experiment:
+  rare_class: pDC
+  rare_train_sizes:
+    - 5
+    - 10
+    - 20
+    - 50
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+  output_dir: results/pbmc_pdc/audit
+
+model:
+  n_top_hvg: 3000
+  n_latent: 30
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 256

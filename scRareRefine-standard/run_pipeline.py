@@ -55,12 +55,11 @@ def main() -> None:
     parser.add_argument("--rare_train_size", required=True,
                         help="Rare class 训练预算，必须显式指定（config 中 rare_train_sizes 为列表，无唯一默认值）")
     parser.add_argument("--split_mode", default="batch_heldout",
-                        choices=["batch_heldout", "cell_stratified"],
-                        help="Split mode（默认 batch_heldout）")
+                        help="batch_heldout | cell_stratified | lobo（需配合 --test_batch）")
+    parser.add_argument("--test_batch", default=None,
+                        help="LOBO 模式下留出的 test batch 名称（--split_mode lobo 时必填）")
     parser.add_argument("--force", action="store_true",
                         help="强制重新训练 Stage 2，忽略已有 embedding")
-    parser.add_argument("--skip_visualize", action="store_true",
-                        help="跳过 Stage 8 可视化")
     args = parser.parse_args()
 
     # ── 读 config，仅用它填充有单值默认的参数（rare_class）────────────────────
@@ -72,9 +71,15 @@ def main() -> None:
     if rare_class is None:
         parser.error("--rare_class not provided and experiment.rare_class not found in config.")
 
+    if args.split_mode == "lobo":
+        if not args.test_batch:
+            parser.error("--test_batch is required when --split_mode lobo")
+        split_mode = f"lobo_{args.test_batch}"
+    else:
+        split_mode = args.split_mode
+
     seed            = args.seed
     rare_train_size = args.rare_train_size
-    split_mode      = args.split_mode
 
     print(f"\nPipeline parameters:")
     print(f"  config         = {args.config}")
@@ -107,13 +112,8 @@ def main() -> None:
         ("Stage 3: prototype scores",    [py, "src/03_prototype.py",       *common]),
         ("Stage 4: prototype gate",      [py, "src/04_prototype_gate.py",  *common]),
         ("Stage 5: gate + marker",       [py, "src/05_prototype_gate_marker.py", *common]),
-        ("Stage 6: fusion",              [py, "src/06_fusion.py",          *common]),
-        ("Stage 7: evaluate",            [py, "src/07_evaluate.py",        *common]),
+        ("Stage 6: evaluate",            [py, "src/07_evaluate.py",        *common]),
     ]
-    if not args.skip_visualize:
-        stages.append(
-            ("Stage 8: visualize",       [py, "src/08_visualize.py",       *common])
-        )
 
     for label, cmd in stages:
         print(f"\n>>> {label}")

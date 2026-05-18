@@ -63,19 +63,40 @@ def safe_class_name(name: str) -> str:
     return name.replace("+", "pos").replace(" ", "_").replace("/", "_").lower()
 
 
-def parse_rare_train_size(value: str | int) -> int | str:
+def parse_rare_train_size(value: str | int | float) -> int | float | str:
+    """Parse rare_train_size: int → absolute count, float in (0,1] → proportion, "all" → "all".
+
+    Accepts: int, float, "all", "5pct", "0.05", "20".
+    """
+    if isinstance(value, float):
+        return value
     if isinstance(value, int):
         return value
-    if str(value).lower() == "all":
+    s = str(value).strip().lower()
+    if s == "all":
         return "all"
-    return int(value)
+    if s.endswith("pct"):
+        return int(s[:-3]) / 100.0
+    try:
+        f = float(s)
+        if 0 < f <= 1 and "." in s:
+            return f
+        return int(float(s))
+    except ValueError:
+        raise ValueError(f"Cannot parse rare_train_size: {value!r}")
 
 
-def make_run_id(split_mode: str, seed: int, rare_class: str, rare_train_size: str | int) -> str:
-    return f"{split_mode}_seed{seed}_{safe_class_name(rare_class)}_rare{rare_train_size}"
+def _rts_label(rare_train_size: float | int | str) -> str:
+    if isinstance(rare_train_size, float):
+        return f"{round(rare_train_size * 100)}pct"
+    return str(rare_train_size)
 
 
-def make_run_dir(config: dict[str, Any], split_mode: str, seed: int, rare_class: str, rare_train_size: str | int) -> Path:
+def make_run_id(split_mode: str, seed: int, rare_class: str, rare_train_size: float | int | str) -> str:
+    return f"{split_mode}_seed{seed}_{safe_class_name(rare_class)}_rare{_rts_label(rare_train_size)}"
+
+
+def make_run_dir(config: dict[str, Any], split_mode: str, seed: int, rare_class: str, rare_train_size: float | int | str) -> Path:
     dataset_name = config["dataset"]["name"]
     run_id = make_run_id(split_mode, seed, rare_class, rare_train_size)
     return Path("outputs") / dataset_name / run_id

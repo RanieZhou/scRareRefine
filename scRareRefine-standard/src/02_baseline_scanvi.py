@@ -87,10 +87,52 @@ def make_scanvi_labels(
         selected = rare_indices
     else:
         rng = np.random.default_rng(seed)
-        selected = rng.choice(rare_indices, size=min(int(rare_train_size), len(rare_indices)), replace=False)
+        if isinstance(rare_train_size, float):
+            size = max(5, int(rare_train_size * len(rare_indices)))
+        else:
+            size = int(rare_train_size)
+        selected = rng.choice(rare_indices, size=min(size, len(rare_indices)), replace=False)
     labels.iloc[selected] = rare_class
     is_labeled[selected] = True
     return labels.astype(str), is_labeled
+
+
+def make_split_summary(
+    obs: pd.DataFrame,
+    split: pd.Series,
+    *,
+    label_key: str,
+    batch_key: str,
+    rare_class: str,
+) -> pd.DataFrame:
+    rows = []
+    for s in ["train", "validation", "test"]:
+        mask = split.eq(s)
+        sub = obs[mask]
+        true_labels = sub[label_key].astype(str)
+        n_cells = len(sub)
+        n_rare = (true_labels == rare_class).sum()
+        batches = sub[batch_key].astype(str)
+        n_batches = batches.nunique()
+        rare_batches = batches[true_labels == rare_class].nunique()
+        row = {
+            "split": s,
+            "n_cells": n_cells,
+            "n_rare": int(n_rare),
+            "rare_ratio": round(n_rare / n_cells, 4) if n_cells > 0 else 0.0,
+            "n_batches": n_batches,
+            "rare_batches": int(rare_batches),
+        }
+        if s == "train" and "is_labeled_for_scanvi" in obs.columns:
+            labeled_mask = mask & obs["is_labeled_for_scanvi"].astype(bool)
+            labeled_rare = (obs.loc[labeled_mask, label_key].astype(str) == rare_class).sum()
+            row["train_labeled_rare"] = int(labeled_rare)
+            row["train_unlabeled_rare"] = int(n_rare - labeled_rare)
+        else:
+            row["train_labeled_rare"] = ""
+            row["train_unlabeled_rare"] = ""
+        rows.append(row)
+    return pd.DataFrame(rows)
 
 
 def _train_device_kwargs() -> dict[str, int | str]:
@@ -178,7 +220,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Stage 2: train scANVI baseline")
     parser.add_argument("--config", required=True)
     parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--split_mode", default="batch_heldout", choices=["batch_heldout", "cell_stratified"])
+    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified | lobo_<batch>")
     parser.add_argument("--rare_class", default=None)
     parser.add_argument("--rare_train_size", required=True)
     parser.add_argument("--scvi_epochs", type=int, default=None)
@@ -268,6 +310,17 @@ def main() -> None:
     assignments.insert(0, "cell_id", adata.obs_names.astype(str))
     assignments["split"] = split.to_numpy()
     write_table(assignments, run_dir / "split_assignments.csv")
+
+    split_summary = make_split_summary(
+        adata.obs,
+        split,
+        label_key=label_key,
+        batch_key=batch_key,
+        rare_class=rare_class,
+    )
+    write_table(split_summary, run_dir / "split_summary.csv")
+    print(f"\n  Split summary ({rare_class}):")
+    print(split_summary.to_string(index=False))
     write_table(pd.DataFrame({"gene": genes}), run_dir / "selected_hvg_genes.csv")
     write_table(
         pd.DataFrame([{**monitor.summary(), "seed": args.seed, "rare_class": rare_class,

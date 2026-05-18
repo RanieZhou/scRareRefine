@@ -1,0 +1,97 @@
+dataset,rare_class,method,rare_train_size,rts_num,mean,std,count
+immune_dc,ASDC,baseline,5,5.0,0.024989556036610797,0.031015489101610783,3
+immune_dc,ASDC,baseline,10,10.0,0.16161616161616157,0.2274410151353071,3
+immune_dc,ASDC,baseline,20,20.0,0.6564962258627054,0.14715625979753563,3
+immune_dc,ASDC,baseline,50,50.0,0.8785160352344294,0.04303229878210102,3
+immune_dc,ASDC,baseline,all,9999.0,0.9466542432420856,0.002689750322339558,3
+immune_dc,ASDC,fusion_gated,5,5.0,0.8989173947495703,0.016561108786446805,3
+immune_dc,ASDC,fusion_gated,10,10.0,0.9127914951989026,0.01550883982580653,3
+immune_dc,ASDC,fusion_gated,20,20.0,0.9308495594959295,0.02314696196458677,3
+immune_dc,ASDC,fusion_gated,50,50.0,0.9303009137774002,0.0007765911395418606,3
+immune_dc,ASDC,fusion_gated,all,9999.0,0.9508510231401798,0.0026499151770035096,3
+immune_dc,ASDC,prototype_gate_marker,5,5.0,0.9042599327367918,0.011356469165088272,3
+immune_dc,ASDC,prototype_gate_marker,10,10.0,0.8698826077045817,0.09064043569752757,3
+immune_dc,ASDC,prototype_gate_marker,20,20.0,0.9333354921405923,0.01923308705874285,3
+immune_dc,ASDC,prototype_gate_marker,50,50.0,0.9242739357823214,0.0018107020797837798,3
+immune_dc,ASDC,prototype_gate_marker,all,9999.0,0.9511931319869064,0.006678915795131288,3
+immune_dc,cDC1,baseline,5,5.0,0.0026881720430107334,0.00465605055798082,3
+immune_dc,cDC1,baseline,10,10.0,0.03418298009191533,0.02985181175705813,3
+immune_dc,cDC1,baseline,20,20.0,0.20840956213316128,0.23936085066398247,3
+immune_dc,cDC1,baseline,50,50.0,0.9918365819005389,0.003578147332784241,3
+immune_dc,cDC1,baseline,all,9999.0,0.991869918699187,0.0,3
+immune_dc,cDC1,fusion_gated,5,5.0,0.9850501984931661,0.003132085017185294,3
+immune_dc,cDC1,fusion_gated,10,10.0,0.9774798838102233,0.011443091655947042,3
+immune_dc,cDC1,fusion_gated,20,20.0,0.9823844646944409,0.0030984213516950113,3
+immune_dc,cDC1,fusion_gated,50,50.0,0.9918475704634925,0.00411529896406188,3
+immune_dc,cDC1,fusion_gated,all,9999.0,0.9892466124661246,0.004543699679476061,3
+immune_dc,cDC1,prototype_gate_marker,5,5.0,0.985718118879246,0.004094747978141667,3
+immune_dc,cDC1,prototype_gate_marker,10,10.0,0.9788263111365082,0.011715154292050164,3
+immune_dc,cDC1,prototype_gate_marker,20,20.0,0.9849946166937888,0.0023493348896797494,3
+immune_dc,cDC1,prototype_gate_marker,50,50.0,0.9966248121473914,0.0011663546018400946,3
+immune_dc,cDC1,prototype_gate_marker,all,9999.0,0.9912593405551152,0.002321083296749584,3
+pancreas,epsilon,baseline,5,5.0,0.2222222222222222,0.3849001794597505,3
+pancreas,epsilon,baseline,10,10.0,0.6666666666666666,0.0,3
+pancreas,epsilon,baseline,20,20.0,0.8888888888888888,0.19245008972987532,3
+pancreas,epsilon,baseline,50,50.0,1.0,0.0,3
+pancreas,epsilon,fusion_gated,5,5.0,0.2960927960927961,0.19892111062159024,3
+pancreas,epsilon,fusion_gated,10,10.0,0.48095238095238096,0.3289852466555405,3
+pancreas,epsilon,fusion_gated,20,20.0,0.7222222222222222,0.2545875386086578,3
+pancreas,epsilon,fusion_gated,50,50.0,0.5481481481481482,0.21923923832516656,3
+pancreas,epsilon,prototype_gate_marker,5,5.0,0.36936936936936937,0.2810175488375175,3
+pancreas,epsilon,prototype_gate_marker,10,10.0,0.45555555555555555,0.2364866294865862,3
+pancreas,epsilon,prototype_gate_marker,20,20.0,0.8888888888888888,0.19245008972987532,3
+pancreas,epsilon,prototype_gate_marker,50,50.0,1.0,0.0,3
+pancreas,gamma,baseline,5,5.0,0.06533072662104916,0.07721199244066458,3
+pancreas,gamma,baseline,10,10.0,0.535552986512524,0.4972643294426077,3
+pancreas,gamma,baseline,20,20.0,0.9961464354527939,0.0033372847930036235,3
+pancreas,gamma,baseline,50,50.0,0.9863773112936484,0.006791667298042434,3
+pancreas,gamma,fusion_gated,5,5.0,0.7162002980126111,0.4241357021639114,3
+pancreas,gamma,fusion_gated,10,10.0,0.7646170578831648,0.20872265934908882,3
+pancreas,gamma,fusion_gated,20,20.0,0.9942418001018759,0.005747158440916065,3
+pancreas,gamma,fusion_gated,50,50.0,0.9884166443909828,7.716523244986575e-05,3
+pancreas,gamma,prototype_gate_marker,5,5.0,0.7222315765033889,0.41369695303709647,3
+pancreas,gamma,prototype_gate_marker,10,10.0,0.8808949283436746,0.11096304519082341,3
+pancreas,gamma,prototype_gate_marker,20,20.0,0.9923589320121112,0.008721588169669395,3
+pancreas,gamma,prototype_gate_marker,50,50.0,0.9845617920770918,0.0033059031636998217,3
+pbmc_pdc,pDC,baseline,20,20.0,0.9986859395532196,,1
+pbmc_pdc,pDC,fusion_gated,20,20.0,0.9986859395532196,,1
+pbmc_pdc,pDC,prototype_gate_marker,20,20.0,0.9986859395532196,,1
+tabula_kidney,endothelial cell,baseline,5,5.0,0.8878713878713879,0.04121821143778814,3
+tabula_kidney,endothelial cell,baseline,10,10.0,0.8771981530602221,0.027156794812466925,3
+tabula_kidney,endothelial cell,baseline,20,20.0,0.9276591862798759,0.03832232040010031,3
+tabula_kidney,endothelial cell,baseline,50,50.0,0.9276591862798759,0.03832232040010031,3
+tabula_kidney,endothelial cell,fusion_gated,5,5.0,0.9010989010989011,0.04758381339474943,3
+tabula_kidney,endothelial cell,fusion_gated,10,10.0,0.8771981530602221,0.027156794812466925,3
+tabula_kidney,endothelial cell,fusion_gated,20,20.0,0.9276591862798759,0.03832232040010031,3
+tabula_kidney,endothelial cell,fusion_gated,50,50.0,0.9276591862798759,0.03832232040010031,3
+tabula_kidney,endothelial cell,prototype_gate_marker,5,5.0,0.9063492063492063,0.1096617488851802,3
+tabula_kidney,endothelial cell,prototype_gate_marker,10,10.0,0.8848290598290598,0.0444131012096883,3
+tabula_kidney,endothelial cell,prototype_gate_marker,20,20.0,0.9194060419866871,0.056599612327834906,3
+tabula_kidney,endothelial cell,prototype_gate_marker,50,50.0,0.9194060419866871,0.056599612327834906,3
+tabula_liver,non-classical monocyte,baseline,5,5.0,0.037037037037037035,0.06415002990995841,3
+tabula_liver,non-classical monocyte,baseline,10,10.0,0.13684210526315788,0.11862555441668045,3
+tabula_liver,non-classical monocyte,baseline,20,20.0,0.37351778656126483,0.11579408755170159,3
+tabula_liver,non-classical monocyte,baseline,50,50.0,0.6450897358338374,0.058422833073613255,3
+tabula_liver,non-classical monocyte,fusion_gated,5,5.0,0.5994327660994329,0.010163159433111826,3
+tabula_liver,non-classical monocyte,fusion_gated,10,10.0,0.7276718553314298,0.0547551368170065,3
+tabula_liver,non-classical monocyte,fusion_gated,20,20.0,0.7038659893753151,0.11908604044706367,3
+tabula_liver,non-classical monocyte,fusion_gated,50,50.0,0.681730716367035,0.01552258069721691,3
+tabula_liver,non-classical monocyte,prototype_gate_marker,5,5.0,0.42622655122655123,0.1804475864774928,3
+tabula_liver,non-classical monocyte,prototype_gate_marker,10,10.0,0.40615384615384614,0.18091156425955807,3
+tabula_liver,non-classical monocyte,prototype_gate_marker,20,20.0,0.6247771836007131,0.11526307626004963,3
+tabula_liver,non-classical monocyte,prototype_gate_marker,50,50.0,0.6843803056027165,0.09855581584884586,3
+tabula_pancreas,type B pancreatic cell,baseline,20,20.0,0.8972932888394513,0.07008080694894632,3
+tabula_pancreas,type B pancreatic cell,fusion_gated,20,20.0,0.8972932888394513,0.07008080694894632,3
+tabula_pancreas,type B pancreatic cell,prototype_gate_marker,20,20.0,0.8972932888394513,0.07008080694894632,3
+tabula_spleen,innate lymphoid cell,baseline,5,5.0,0.1212121212121212,,1
+tabula_spleen,innate lymphoid cell,baseline,10,10.0,0.064516129032258,,1
+tabula_spleen,innate lymphoid cell,baseline,20,20.0,0.625,,1
+tabula_spleen,innate lymphoid cell,baseline,50,50.0,0.8387096774193549,,1
+tabula_spleen,innate lymphoid cell,fusion_gated,5,5.0,0.8571428571428571,,1
+tabula_spleen,innate lymphoid cell,fusion_gated,10,10.0,0.8571428571428571,,1
+tabula_spleen,innate lymphoid cell,fusion_gated,20,20.0,0.7636363636363637,,1
+tabula_spleen,innate lymphoid cell,fusion_gated,50,50.0,0.8387096774193549,,1
+tabula_spleen,innate lymphoid cell,prototype_gate_marker,5,5.0,0.8307692307692308,,1
+tabula_spleen,innate lymphoid cell,prototype_gate_marker,10,10.0,0.8307692307692308,,1
+tabula_spleen,innate lymphoid cell,prototype_gate_marker,20,20.0,0.8571428571428571,,1
+tabula_spleen,innate lymphoid cell,prototype_gate_marker,50,50.0,0.8387096774193549,,1
