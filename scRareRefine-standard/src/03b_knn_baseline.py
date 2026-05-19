@@ -91,7 +91,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Stage 3b: kNN baseline on latent embedding")
     parser.add_argument("--config", required=True)
     parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified | lobo_<batch>")
+    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified")
     parser.add_argument("--rare_class", default=None)
     parser.add_argument("--rare_train_size", required=True)
     parser.add_argument("--k", type=int, default=15, help="Number of nearest neighbors (default: 15)")

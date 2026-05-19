@@ -167,7 +167,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Stage 5: prototype gate + marker verification")
     parser.add_argument("--config", required=True)
     parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified | lobo_<batch>")
+    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified")
     parser.add_argument("--rare_class", default=None)
     parser.add_argument("--rare_train_size", required=True)
     parser.add_argument("--max_false_rescue_rate", type=float, default=0.001)
@@ -184,6 +184,10 @@ def main() -> None:
     genes = read_table(run_dir / "selected_hvg_genes.csv")["gene"].astype(str).tolist()
     train_pred = read_table(emb_dir / "train_predictions.csv")
 
+    sep_df = read_table(proto_dir / "separability.csv")
+    sep_ratio = float(sep_df["separability_ratio"].iloc[0])
+    print(f"  S_ratio={sep_ratio:.3f} ({sep_df['rescue_confidence'].iloc[0]})")
+
     print("Loading expression data for marker signatures ...")
     adata = load_adata(config)
     adata.obs_names_make_unique()
@@ -198,28 +202,25 @@ def main() -> None:
         is_labeled=train_pred["is_labeled_for_scanvi"].astype(bool).to_numpy(),
     )
     print(f"  Marker signatures computed for {len(signatures)} cell types")
-    # Save marker signatures for downstream analysis/visualization
     sig_rows = [{"cell_type": ct, "gene": g, "rank": i + 1}
                 for ct, genes_list in signatures.items() for i, g in enumerate(genes_list)]
     if sig_rows:
         write_table(pd.DataFrame(sig_rows), out_dir / "marker_signatures.csv")
 
-    # ── Validation: score candidates, build threshold curve, select threshold ──
-    val_pred = read_table(emb_dir / "validation_predictions.csv")
+    # ── Validation: score rank=1 candidates, select marker threshold ─────────
+    val_pred  = read_table(emb_dir / "validation_predictions.csv")
     val_proto = read_table(proto_dir / "validation_scores.csv")
-    val_mask = _rank1_candidate_ids(val_pred, val_proto, rare_class=rare_class)
+    val_mask  = _rank1_candidate_ids(val_pred, val_proto, rare_class=rare_class)
     val_candidates = val_pred.loc[val_mask].copy().reset_index(drop=True)
 
     if not val_candidates.empty:
-        val_cell_ids = val_candidates["cell_id"].astype(str).tolist()
-        val_expr = _load_expression_for_cells(adata, val_cell_ids, genes)
-        val_marker_scores = score_candidates(val_expr, val_candidates, signatures=signatures, rare_class=rare_class, gene_names=genes)
-        val_scored = pd.concat([val_candidates, val_marker_scores], axis=1)
+        val_expr = _load_expression_for_cells(adata, val_candidates["cell_id"].astype(str).tolist(), genes)
+        val_marker = score_candidates(val_expr, val_candidates, signatures=signatures, rare_class=rare_class, gene_names=genes)
+        val_scored = pd.concat([val_candidates, val_marker], axis=1)
         curve = marker_threshold_curve(val_pred, val_scored, rare_class=rare_class, thresholds=default_thresholds(val_scored))
         selected_threshold = choose_threshold(curve, max_false_rescue_rate=args.max_false_rescue_rate)
     else:
-        val_scored = val_candidates.copy()
-        curve = pd.DataFrame()
+        val_scored, curve = val_candidates.copy(), pd.DataFrame()
         selected_threshold = float("inf")
 
     write_table(val_scored, out_dir / "validation_scored.csv")
@@ -230,17 +231,16 @@ def main() -> None:
     )
     print(f"  Val candidates: {len(val_candidates)}, selected threshold: {selected_threshold:.4f}")
 
-    # ── Test: score candidates using the threshold selected on val ─────────────
-    test_pred = read_table(emb_dir / "test_predictions.csv")
+    # ── Test: apply marker threshold selected on val ──────────────────────────
+    test_pred  = read_table(emb_dir / "test_predictions.csv")
     test_proto = read_table(proto_dir / "test_scores.csv")
-    test_mask = _rank1_candidate_ids(test_pred, test_proto, rare_class=rare_class)
+    test_mask  = _rank1_candidate_ids(test_pred, test_proto, rare_class=rare_class)
     test_candidates = test_pred.loc[test_mask].copy().reset_index(drop=True)
 
     if not test_candidates.empty:
-        test_cell_ids = test_candidates["cell_id"].astype(str).tolist()
-        test_expr = _load_expression_for_cells(adata, test_cell_ids, genes)
-        test_marker_scores = score_candidates(test_expr, test_candidates, signatures=signatures, rare_class=rare_class, gene_names=genes)
-        test_scored = pd.concat([test_candidates, test_marker_scores], axis=1)
+        test_expr = _load_expression_for_cells(adata, test_candidates["cell_id"].astype(str).tolist(), genes)
+        test_marker = score_candidates(test_expr, test_candidates, signatures=signatures, rare_class=rare_class, gene_names=genes)
+        test_scored = pd.concat([test_candidates, test_marker], axis=1)
     else:
         test_scored = test_candidates.copy()
 

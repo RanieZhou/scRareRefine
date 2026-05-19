@@ -164,7 +164,6 @@ def latex_main_table(df: pd.DataFrame, out_path: Path) -> None:
         "tabula_pancreas": "Tabula Pancreas",
         "tabula_spleen": "Tabula Spleen",
         "tabula_kidney": "Tabula Kidney",
-        "pbmc_pdc": "PBMC",
     }
 
     rare_class_labels_latex = {
@@ -188,7 +187,7 @@ def latex_main_table(df: pd.DataFrame, out_path: Path) -> None:
     lines.append(r"\hline")
 
     for ds in ["immune_dc", "pancreas", "tabula_liver", "tabula_pancreas",
-                "tabula_spleen", "tabula_kidney", "pbmc_pdc"]:
+                "tabula_spleen", "tabula_kidney"]:
         ds_sub = sub[sub["dataset"] == ds]
         rare_classes = sorted(ds_sub["rare_class"].unique())
         for i, rc in enumerate(rare_classes):
@@ -217,8 +216,7 @@ def latex_main_table(df: pd.DataFrame, out_path: Path) -> None:
                 else:
                     row_parts.append("--")
             lines.append(" & ".join(row_parts) + r" \\")
-        if ds != "pbmc_pdc":
-            lines.append(r"\hline")
+        lines.append(r"\hline")
 
     lines.append(r"\hline")
     lines.append(r"\end{tabular}")

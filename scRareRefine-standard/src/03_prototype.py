@@ -68,6 +68,11 @@ def prototype_scores(
     ])
     rare_dist = distances[:, rare_idx]
     ranks = np.argsort(np.argsort(distances, axis=1), axis=1)[:, rare_idx] + 1
+
+    non_rare_idx = [i for i, cls in enumerate(classes) if cls != rare_class]
+    d_nearest_majority = distances[:, non_rare_idx].min(axis=1) if non_rare_idx else np.full(len(query_latent), np.nan)
+    dist_ratio = np.where(d_nearest_majority > 1e-10, rare_dist / d_nearest_majority, np.nan)
+
     threshold = float(np.quantile(margin, margin_quantile))
     candidates = (predicted_labels.to_numpy() != rare_class) & (ranks <= 2) & (margin <= threshold)
 
@@ -76,6 +81,8 @@ def prototype_scores(
         "distance_to_pred": pred_dist,
         f"prototype_rank_{rare_class}": ranks,
         f"d_pred_minus_d_{rare_class}": pred_dist - rare_dist,
+        "d_nearest_majority": d_nearest_majority,
+        f"dist_ratio_{rare_class}": dist_ratio,
         "prototype_rescue_candidate": candidates,
     })
 
@@ -98,7 +105,8 @@ def separability_metrics(
     }
     rare_proto = prototypes[rare_class]
     rare_cells = ref[labeled_mask & labels.eq(rare_class).to_numpy()]
-    intra_radius = float(np.sqrt(((rare_cells - rare_proto) ** 2).sum(axis=1)).mean())
+    dists_to_proto = np.sqrt(((rare_cells - rare_proto) ** 2).sum(axis=1))
+    intra_radius = float(np.percentile(dists_to_proto, 95))
 
     inter_dists = {
         cls: float(np.sqrt(((rare_proto - p) ** 2).sum()))
@@ -133,7 +141,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Stage 3: compute prototype scores")
     parser.add_argument("--config", required=True)
     parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified | lobo_<batch>")
+    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified")
     parser.add_argument("--rare_class", default=None)
     parser.add_argument("--rare_train_size", required=True)
     args = parser.parse_args()

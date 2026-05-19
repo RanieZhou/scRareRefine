@@ -145,54 +145,13 @@ def batch_heldout_split(
     return batches.map(batch_to_split).astype(str)
 
 
-def lobo_split(
-    obs: pd.DataFrame,
-    *,
-    batch_key: str,
-    label_key: str,
-    test_batch: str,
-    seed: int,
-    val_fraction: float = 0.15,
-) -> pd.Series:
-    """Leave-One-Batch-Out split: test_batch → test, remaining → train/val.
-
-    Val batches are selected greedily (shuffled order) until they cover
-    val_fraction of the remaining cells, with a minimum of 1 batch.
-    """
-    batches = obs[batch_key].astype(str)
-    if test_batch not in batches.values:
-        raise ValueError(f"test_batch '{test_batch}' not found in column '{batch_key}'")
-
-    remaining = [b for b in batches.unique() if b != test_batch]
-    if len(remaining) < 2:
-        raise ValueError("LOBO requires at least 3 batches total")
-
-    remaining_sizes = {b: int((batches == b).sum()) for b in remaining}
-    total_remaining = sum(remaining_sizes.values())
-    val_target = total_remaining * val_fraction
-
-    rng = np.random.default_rng(seed)
-    order = rng.permutation(remaining)
-
-    val_set, val_count = set(), 0
-    for b in order:
-        val_set.add(b)
-        val_count += remaining_sizes[b]
-        if val_count >= val_target:
-            break
-
-    split = pd.Series("train", index=obs.index, dtype=object)
-    split[batches == test_batch] = "test"
-    split[batches.isin(val_set)] = "validation"
-    return split.astype(str)
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Stage 1: generate train/val/test split")
     parser.add_argument("--config", required=True, help="Path to YAML config")
     parser.add_argument("--seed", type=int, required=True, help="Random seed")
     parser.add_argument("--split_mode", default="batch_heldout",
-                        help="batch_heldout | cell_stratified | lobo_<batch_name>")
+                        help="batch_heldout | cell_stratified")
     parser.add_argument("--train_fraction", type=float, default=0.70)
     parser.add_argument("--validation_fraction", type=float, default=0.15)
     parser.add_argument("--test_fraction", type=float, default=0.15)
@@ -213,14 +172,7 @@ def main() -> None:
         test_fraction=args.test_fraction,
     )
     print(f"Running {args.split_mode} split with seed={args.seed} ...")
-    if args.split_mode.startswith("lobo_"):
-        test_batch = args.split_mode[len("lobo_"):]
-        split = lobo_split(
-            adata.obs, batch_key=batch_key, label_key=label_key,
-            test_batch=test_batch, seed=args.seed,
-            val_fraction=args.validation_fraction,
-        )
-    elif args.split_mode == "cell_stratified":
+    if args.split_mode == "cell_stratified":
         split = cell_stratified_split(adata.obs, label_key=label_key, seed=args.seed, **fractions)
     else:
         split = batch_heldout_split(adata.obs, label_key=label_key, batch_key=batch_key, seed=args.seed, **fractions)

@@ -55,9 +55,7 @@ def main() -> None:
     parser.add_argument("--rare_train_size", required=True,
                         help="Rare class 训练预算，必须显式指定（config 中 rare_train_sizes 为列表，无唯一默认值）")
     parser.add_argument("--split_mode", default="batch_heldout",
-                        help="batch_heldout | cell_stratified | lobo（需配合 --test_batch）")
-    parser.add_argument("--test_batch", default=None,
-                        help="LOBO 模式下留出的 test batch 名称（--split_mode lobo 时必填）")
+                        help="batch_heldout | cell_stratified")
     parser.add_argument("--force", action="store_true",
                         help="强制重新训练 Stage 2，忽略已有 embedding")
     args = parser.parse_args()
@@ -71,12 +69,7 @@ def main() -> None:
     if rare_class is None:
         parser.error("--rare_class not provided and experiment.rare_class not found in config.")
 
-    if args.split_mode == "lobo":
-        if not args.test_batch:
-            parser.error("--test_batch is required when --split_mode lobo")
-        split_mode = f"lobo_{args.test_batch}"
-    else:
-        split_mode = args.split_mode
+    split_mode = args.split_mode
 
     seed            = args.seed
     rare_train_size = args.rare_train_size
@@ -110,6 +103,9 @@ def main() -> None:
                                           "--split_mode", split_mode]),
         ("Stage 2: scANVI baseline",     [py, "src/02_baseline_scanvi.py", *common, *stage2_extra]),
         ("Stage 3: prototype scores",    [py, "src/03_prototype.py",       *common]),
+        ("Stage 3b: kNN baseline",       [py, "src/03b_knn_baseline.py",   *common]),
+        ("Stage 3c: CellTypist",         [py, "src/03c_celltypist_baseline.py", *common]),
+        ("Stage 3d: scBalance",          [py, "src/03d_scbalance_baseline.py",  *common]),
         ("Stage 4: prototype gate",      [py, "src/04_prototype_gate.py",  *common]),
         ("Stage 5: gate + marker",       [py, "src/05_prototype_gate_marker.py", *common]),
         ("Stage 6: evaluate",            [py, "src/07_evaluate.py",        *common]),
