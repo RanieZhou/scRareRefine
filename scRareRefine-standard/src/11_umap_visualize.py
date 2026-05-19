@@ -161,7 +161,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Stage 11: UMAP visualization")
     parser.add_argument("--config", required=True)
     parser.add_argument("--seed", type=int, required=True)
-    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified | lobo_<batch>")
+    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified")
     parser.add_argument("--rare_class", default=None)
     parser.add_argument("--rare_train_size", required=True)
     parser.add_argument("--split", default="test", choices=["test", "validation", "both"])

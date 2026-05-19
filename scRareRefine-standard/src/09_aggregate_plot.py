@@ -56,7 +56,6 @@ DATASET_LABELS = {
     "tabula_pancreas":  "Tabula Pancreas\n(β-cell)",
     "tabula_spleen":    "Tabula Spleen\n(ILC)",
     "tabula_kidney":    "Tabula Kidney\n(endothelial)",
-    "pbmc_pdc":         "PBMC\n(pDC)",
 }
 
 

@@ -1,33 +1,18 @@
-"""Stage 3c: CellTypist logistic regression baseline (best match).
+"""Stage 3d: scBalance baseline (weighted-sampling MLP).
 
-Uses the actual CellTypist library (train + annotate).
+Uses scBalance (Xu et al., 2023, Briefings in Bioinformatics) with its default
+weighted-sampling strategy to handle rare-cell class imbalance.  Input is the
+same log1p-normalized HVG expression used by CellTypist (Stage 3c) so that
+the two baselines are directly comparable.
 
-Input normalization:
-    CellTypist does NOT normalize raw counts internally — it only applies
-    StandardScaler after receiving log1p-normalized expression.  We pre-normalize
-    with scanpy (normalize_total to 10k + log1p) and pass check_expression=False
-    to skip CellTypist's format validation (which would re-warn on already-
-    normalized data).
-
-sklearn compatibility:
-    CellTypist 1.7.1 hardcodes multi_class='ovr' in LogisticRegression, which
-    was removed in sklearn >= 1.7.  Two effects:
-    (a) sklearn >= 1.7 raises TypeError → must patch celltypist/train.py to drop
-        multi_class='ovr' from the LogisticRegression call.
-    (b) The patch restores sklearn 1.8 default (multinomial/lbfgs for multi-class),
-        which is actually BETTER for rare cell detection than OvR: with only
-        O(5–20) rare training cells vs O(10k) non-rare cells, OvR binary
-        classifiers fail to converge (tested: F1 drops from 0.41 → 0.03).
-    Patch applied to: site-packages/celltypist/train.py, lines ~126 and ~146.
-
-majority_voting note (rejected):
-    CellTypist's majority_voting=True over-clusters test cells via leiden
-    (resolution=10) and assigns each cluster its plurality label.  For rare
-    cell types with O(10–100) test cells, those cells are always a minority
-    in every cluster → all rare predictions are overwritten → F1=0.00.
-    Majority voting is designed to smooth noisy common-cell predictions, not
-    to preserve rare-cell signals.  We use mode='best match' (highest softmax
-    probability) which gives CellTypist its best possible rare-class performance.
+scBalance API:
+    scBalance.scBalance(
+        test      = pd.DataFrame (cells × genes, float32),
+        reference = pd.DataFrame (cells × genes, float32),
+        label     = pd.DataFrame with column 'Label',
+        weighted_sampling = True,   # oversampling for rare classes
+    )
+    Returns: list[str] of predicted labels
 
 Reads:
     outputs/{dataset}/{run_id}/split_assignments.csv
@@ -36,15 +21,15 @@ Reads:
     AnnData at config.dataset.path (for raw expression)
 
 Writes:
-    outputs/{dataset}/{run_id}/celltypist/
+    outputs/{dataset}/{run_id}/scbalance/
         test_predictions.csv
         test_metrics.csv
         comparison.png
 
 Usage:
-    python src/03c_celltypist_baseline.py \\
+    python src/03d_scbalance_baseline.py \\
         --config configs/immune_dc.yaml \\
-        --seed 42 --rare_class ASDC --rare_train_size 20
+        --seed 42 --rare_class ASDC --rare_train_size 0.05
 """
 from __future__ import annotations
 
@@ -77,12 +62,11 @@ from utils import (
 
 def _plot(metrics_df: pd.DataFrame, out_path: Path, *, rare_class: str) -> None:
     cols = ["rare_f1", "rare_recall", "rare_precision", "overall_accuracy"]
-    labels = {"baseline": "Baseline\n(scANVI)", "lr": "CellTypist\n(MV)"}
-    colors = {"baseline": "#8da0cb", "lr": "#fc8d62"}
+    labels = {"baseline": "Baseline\n(scANVI)", "scbalance": "scBalance"}
+    colors = {"baseline": "#8da0cb", "scbalance": "#a6d854"}
     methods = metrics_df["method"].tolist()
     fig, axes = plt.subplots(1, 4, figsize=(12, 4))
-    fig.suptitle(f"CellTypist (majority voting) vs Baseline  |  {rare_class}",
-                 fontsize=10, fontweight="bold")
+    fig.suptitle(f"scBalance vs Baseline  |  {rare_class}", fontsize=10, fontweight="bold")
     for ax, col in zip(axes, cols):
         vals = [float(metrics_df.loc[metrics_df["method"] == m, col].iloc[0])
                 if col in metrics_df.columns else 0.0 for m in methods]
@@ -106,7 +90,7 @@ def _plot(metrics_df: pd.DataFrame, out_path: Path, *, rare_class: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Stage 3c: CellTypist baseline")
+    parser = argparse.ArgumentParser(description="Stage 3d: scBalance baseline")
     parser.add_argument("--config", required=True)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--split_mode", default="batch_heldout",
@@ -116,32 +100,16 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        import celltypist
+        import scBalance
     except ImportError:
-        raise ImportError("celltypist is not installed. Run: pip install celltypist")
-
-    import sklearn
-    from packaging.version import Version
-    if Version(sklearn.__version__) >= Version("1.7"):
-        # Verify the required patch has been applied to celltypist/train.py.
-        # Without the patch, celltypist passes multi_class='ovr' to LogisticRegression,
-        # which was removed in sklearn 1.7 → TypeError at training time.
-        import sys, importlib
-        _ct_mod = importlib.import_module("celltypist.train")
-        _train_file = Path(_ct_mod.__file__).read_text()
-        if "multi_class" in _train_file:
-            raise RuntimeError(
-                f"celltypist 1.7.1 is incompatible with scikit-learn {sklearn.__version__}. "
-                "Apply patch: remove multi_class='ovr' from LogisticRegression calls "
-                "in site-packages/celltypist/train.py (~lines 126 and 146)."
-            )
+        raise ImportError("scBalance is not installed. Run: pip install scBalance")
 
     cfg = load_config(args.config)
     rare_class = args.rare_class or cfg["experiment"]["rare_class"]
     rare_train_size = parse_rare_train_size(args.rare_train_size)
 
     run_dir = make_run_dir(cfg, args.split_mode, args.seed, rare_class, rare_train_size)
-    out_dir = run_dir / "celltypist"
+    out_dir = run_dir / "scbalance"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Labeled training cells ─────────────────────────────────────────────────
@@ -172,9 +140,7 @@ def main() -> None:
     ]
     labeled_ids = set(pd.concat([labeled_major["cell_id"], labeled_rare["cell_id"]]).astype(str))
 
-    # ── Load expression and normalize ─────────────────────────────────────────
-    # CellTypist expects log1p-normalized expression (normalize_total to 10k + log1p).
-    # It does NOT normalize internally; it only applies StandardScaler after this step.
+    # ── Load and normalize expression ──────────────────────────────────────────
     print("Loading AnnData...")
     adata_full = load_adata(cfg)
     adata_full.obs_names = adata_full.obs_names.astype(str)
@@ -206,11 +172,15 @@ def main() -> None:
     adata_train = adata_full[train_ids_list].copy()
     adata_test  = adata_full[test_ids_filtered].copy()
 
-    # CellTypist requires dense matrix for training
-    if sp.issparse(adata_train.X):
-        adata_train.X = np.asarray(adata_train.X.todense())
-    if sp.issparse(adata_test.X):
-        adata_test.X = np.asarray(adata_test.X.todense())
+    # scBalance requires dense float32 DataFrames
+    def to_df(adata: sc.AnnData) -> pd.DataFrame:
+        X = adata.X
+        if sp.issparse(X):
+            X = np.asarray(X.todense())
+        return pd.DataFrame(X.astype(np.float32), index=adata.obs_names, columns=adata.var_names)
+
+    X_train_df = to_df(adata_train)
+    X_test_df  = to_df(adata_test)
 
     train_labels = (
         assignments.set_index("cell_id")["scanvi_label"]
@@ -218,47 +188,25 @@ def main() -> None:
         .fillna("Unknown")
         .astype(str)
     )
-    adata_train.obs["celltypist_label"] = train_labels.values
+    # scBalance expects a DataFrame with column 'Label'
+    label_df = pd.DataFrame({"Label": train_labels.values})
 
-    print(f"  Train cells: {len(adata_train)} (rare: {(train_labels == rare_class).sum()})")
-    print(f"  Test cells:  {len(adata_test)}")
+    print(f"  Train cells: {len(X_train_df)} (rare: {(train_labels == rare_class).sum()})")
+    print(f"  Test cells:  {len(X_test_df)}")
 
-    # ── CellTypist train ───────────────────────────────────────────────────────
-    # check_expression=False: we have already done log1p normalization above;
-    # CellTypist's check would reject re-normalized data whose max > 20.
-    print("Training CellTypist model (OvR logistic regression, C=1.0, max_iter=200)...")
-    new_model = celltypist.train(
-        adata_train,
-        labels="celltypist_label",
-        check_expression=False,
-        C=1.0,
-        max_iter=200,
-        n_jobs=4,
+    # ── scBalance train + predict ──────────────────────────────────────────────
+    # weighted_sampling=True (default): internally upsamples rare class to balance
+    # training batches — the core contribution of scBalance for rare-cell tasks.
+    print("Running scBalance (weighted-sampling MLP, 20 epochs)...")
+    pred_list = scBalance.scBalance(
+        test=X_test_df,
+        reference=X_train_df,
+        label=label_df,
+        weighted_sampling=True,
+        processing_unit="cpu",
     )
-    print("  Training done.")
-
-    # ── CellTypist annotate (best match) ──────────────────────────────────────
-    # mode='best match': assigns each cell the class with the highest softmax
-    # probability — functionally identical to the sklearn OvR reimplementation.
-    #
-    # NOTE on majority_voting=True (tested, rejected for rare-cell use):
-    #   CellTypist's majority voting over-clusters the test set via leiden
-    #   (resolution=10 by default), then assigns each cluster its plurality label.
-    #   For rare cell types (e.g. ASDC with ~10–20 test cells), those cells are
-    #   a small minority in every cluster they land in, so majority voting
-    #   systematically overwrites their predictions with the dominant non-rare
-    #   label.  In testing this dropped rare-class F1 from 0.41 → 0.00.
-    #   Majority voting is designed to smooth noisy predictions across common
-    #   cell types, not to preserve rare-cell signals — using it here would
-    #   artificially weaken the CellTypist baseline and reduce comparison
-    #   credibility.
-    print("Annotating (best match)...")
-    result = celltypist.annotate(
-        adata_test,
-        model=new_model,
-        mode="best match",
-    )
-    pred_labels = result.predicted_labels["predicted_labels"].astype(str).values
+    pred_labels = np.array(pred_list, dtype=str)
+    print("  Done.")
 
     true_labels = (
         test_meta.set_index("cell_id")["true_label"]
@@ -276,7 +224,7 @@ def main() -> None:
     write_table(pred_df, out_dir / "test_predictions.csv")
 
     # ── Metrics ───────────────────────────────────────────────────────────────
-    lr_metrics, _ = classification_tables(true_labels, pred_labels, rare_class=rare_class)
+    sb_metrics, _ = classification_tables(true_labels, pred_labels, rare_class=rare_class)
 
     baseline_true = (test_meta.set_index("cell_id")["true_label"]
                      .reindex(test_ids_filtered).astype(str).values)
@@ -286,13 +234,13 @@ def main() -> None:
 
     metrics_df = pd.DataFrame([
         {"method": "baseline", **baseline_metrics},
-        {"method": "lr", **lr_metrics},
+        {"method": "scbalance", **sb_metrics},
     ])
     write_table(metrics_df, out_dir / "test_metrics.csv")
     _plot(metrics_df, out_dir / "comparison.png", rare_class=rare_class)
 
-    print(f"\n  baseline: F1={baseline_metrics['rare_f1']:.4f}")
-    print(f"  lr:       F1={lr_metrics['rare_f1']:.4f}")
+    print(f"\n  baseline:  F1={baseline_metrics['rare_f1']:.4f}")
+    print(f"  scbalance: F1={sb_metrics['rare_f1']:.4f}")
     print(f"  Saved → {out_dir}")
 
 

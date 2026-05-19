@@ -38,17 +38,19 @@ from utils import _rts_label, classification_tables, load_config, make_run_dir, 
 
 # ── Method display config ─────────────────────────────────────────────────────
 
-METHOD_ORDER = ["baseline", "knn_k15", "lr", "scRareRefine"]
+METHOD_ORDER = ["baseline", "knn_k15", "lr", "scbalance", "scRareRefine"]
 METHOD_LABELS = {
     "baseline":     "Baseline\n(scANVI)",
     "knn_k15":      "kNN\n(k=15)",
-    "lr":           "LR\n(CellTypist)",
+    "lr":           "CellTypist",
+    "scbalance":    "scBalance",
     "scRareRefine": "scRareRefine",
 }
 METHOD_COLORS = {
     "baseline":     "#8da0cb",
     "knn_k15":      "#66c2a5",
     "lr":           "#fc8d62",
+    "scbalance":    "#a6d854",
     "scRareRefine": "#e78ac3",
 }
 
@@ -64,7 +66,7 @@ METRICS = [
 def _safe_read(path: Path) -> pd.DataFrame:
     try:
         return read_table(path)
-    except FileNotFoundError:
+    except (FileNotFoundError, pd.errors.EmptyDataError):
         return pd.DataFrame()
 
 
@@ -95,6 +97,19 @@ def _lr_metrics(run_dir: Path) -> dict | None:
     if df.empty:
         return None
     row = df[df["method"] == "lr"]
+    if row.empty:
+        row = df[df["method"] != "baseline"]
+    if row.empty:
+        return None
+    r = row.iloc[0]
+    return {c: float(r[c]) for c in ["overall_accuracy", "macro_f1", "rare_precision", "rare_recall", "rare_f1"] if c in r.index}
+
+
+def _scbalance_metrics(run_dir: Path) -> dict | None:
+    df = _safe_read(run_dir / "scbalance" / "test_metrics.csv")
+    if df.empty:
+        return None
+    row = df[df["method"] == "scbalance"]
     if row.empty:
         row = df[df["method"] != "baseline"]
     if row.empty:
@@ -150,6 +165,10 @@ def collect_all_seeds(
         lr = _lr_metrics(run_dir)
         if lr:
             rows.append({"method": "lr", **common, **lr})
+
+        sb = _scbalance_metrics(run_dir)
+        if sb:
+            rows.append({"method": "scbalance", **common, **sb})
 
         rows.append({"method": "scRareRefine", **common,
                      **_scrarerefine_metrics(test_pred, run_dir, rare_class=rare_class)})
@@ -286,7 +305,7 @@ def main() -> None:
     parser.add_argument("--config", required=True)
     parser.add_argument("--rare_class", default=None)
     parser.add_argument("--rare_train_size", required=True)
-    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified | lobo_<batch>")
+    parser.add_argument("--split_mode", default="batch_heldout", help="batch_heldout | cell_stratified")
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44])
     args = parser.parse_args()
 
