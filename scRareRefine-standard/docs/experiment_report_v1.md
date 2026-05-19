@@ -10,12 +10,12 @@
 
 ### 1.1 数据集
 
-| 数据集 | 稀有类 | 总细胞数（约） | 稀有类占比（约） |
-|--------|--------|--------------|----------------|
-| DC-ASDC (`immune_dc`) | ASDC | 10k | ~1% |
-| DC-cDC1 (`immune_dc_cdc1`) | cDC1 | 10k | ~2% |
-| Pancreas-γ (`pancreas_gamma`) | gamma cell | 15k | ~1% |
-| Spleen-ILC (`tabula_spleen`) | innate lymphoid cell | 70k | <1% |
+| 数据集 | 稀有类 | 总细胞数 | 稀有类数量 | 稀有类占比 |
+|--------|--------|---------|-----------|-----------|
+| DC-ASDC (`immune_dc`) | ASDC | 23,287 | 522 | 2.24% |
+| DC-cDC1 (`immune_dc_cdc1`) | cDC1 | 23,287 | 943 | 4.05% |
+| Pancreas-γ (`pancreas_gamma`) | gamma cell | 16,382 | 699 | 4.27% |
+| Spleen-ILC (`tabula_spleen`) | innate lymphoid cell | 70,448 | 170 | 0.24% |
 
 所有数据集均采用 **batch_heldout split**（以 batch/donor 为单位整体划分，比例 70% / 15% / 15%），保证 train/val/test 无 batch 交叉，eval 完全 inductive。
 
