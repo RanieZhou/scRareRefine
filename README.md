@@ -1,255 +1,199 @@
 # scRareRefine
 
-scRareRefine 是一个面向单细胞注释场景的稀有细胞修正项目，核心思路是：
+基于 scANVI latent embedding 的稀有细胞识别 post-hoc rescue 框架。
 
-1. 先用 scANVI 做基础细胞类型预测；
-2. 再基于训练集参考细胞的 latent prototype 进行后处理融合；
-3. 对候选稀有细胞再结合 marker 规则做进一步验证。
+在已有 scANVI 输出的基础上，通过 prototype 距离 → gate → marker 验证三阶段 pipeline，修正 scANVI 在极小训练样本和 batch-heldout 场景下对稀有细胞类型的漏检问题。
 
-当前仓库保留的是代码、配置和测试；数据目录与实验输出目录没有上传到 GitHub。
+**不替代** scANVI/CellTypist/Seurat label transfer，而是在其之后作为 refinement layer 使用。
 
-## 为什么本地 clone 后没有 outputs 目录？
+---
 
-这是当前项目的预期行为，不是仓库损坏。
+## 核心结果
 
-- `data/` 和 `outputs/` 已在 `.gitignore` 中忽略；
-- 原因是相关数据文件和实验结果体积较大，没有随 GitHub 仓库一起上传；
-- 因此新 clone 的仓库默认只有代码和配置，不会自带运行结果。
+immune_dc cDC1，`rare_train_size=5`，3 seeds，batch-heldout split：
 
-如果你要复现实验，需要自行准备配置文件中引用的 `.h5ad` 数据文件；运行工作流后，`outputs/` 会在本地自动生成。
+| 方法                            | rare-class F1            |
+| ------------------------------- | ------------------------ |
+| scANVI baseline                 | 0.003 ± 0.005           |
+| kNN k=15                        | 0.000 ± 0.000           |
+| **Gate+Marker（本方法）** | **0.986 ± 0.004** |
 
-## 环境要求
+rescue 是否有效由 **separability ratio** 预测（训练集推断前可算）：
 
-- Python >= 3.10
-- 主要依赖见 `pyproject.toml`，包括：`anndata`、`scanpy`、`scvi-tools`、`torch`、`pandas`、`numpy`、`scikit-learn` 等
+- `sep ≥ 1.3`：rescue 显著有效
+- `sep < 1.1`：方法自动 abstain，不改变 baseline 输出
 
-推荐安装方式：
+---
 
-```bash
-python -m pip install -e .[dev]
-```
+## 快速开始
 
-## 项目结构
-
-- `src/scrare/`：主 Python 包
-- `src/scrare/cli/`：当前命令行入口模块
-- `src/scrare/workflows/`：inductive 主流程与 posthoc 评估编排
-- `src/scrare/data/`：数据加载、预处理、split 构造
-- `src/scrare/models/`：scANVI、prototype、fusion、marker 等建模逻辑
-- `src/scrare/evaluation/`：指标、审计与后处理评估
-- `src/scrare/infra/`：配置、I/O、路径、资源监控等基础设施
-- `configs/`：数据集与实验参数配置
-- `tests/`：按模块划分的测试
-
-## 核心流程
-
-项目当前使用的是 **inductive workflow**，核心约束是：
-
-- 训练、验证、测试集严格分开；
-- 稀有类标注预算只暴露给训练集；
-- prototype、marker signature、参数选择都应基于训练集或验证集，而不是测试集。
-
-主流程如下：
-
-1. 从配置文件读取数据集路径、标签列、batch 列和实验参数；
-2. 构造 train / validation / test split；
-3. 在训练集中为 rare class 保留有限数量的标注样本；
-4. 训练 SCVI，再转换为 SCANVI；
-5. 对验证集和测试集做推断；
-6. 基于训练集 reference latent 构造 prototype 概率；
-7. 在验证集上选择 fusion 参数；
-8. 在测试集上报告 fusion 效果；
-9. 对保存下来的 run 结果进一步做 prototype gate 和 marker verification 分析。
-
-## 配置文件
-
-当前仓库包含三个示例配置：
-
-- `configs/immune_dc.yaml`
-- `configs/pancreas_epsilon.yaml`
-- `configs/pancreas_gamma.yaml`
-
-配置里最重要的字段包括：
-
-- `dataset.path`：输入 `.h5ad` 文件路径
-- `dataset.label_key`：真实标签列
-- `dataset.batch_key`：批次列
-- `dataset.use_raw` 或 `dataset.use_layer`：使用哪一层表达矩阵
-- `experiment.rare_class`：主稀有类
-- `experiment.rare_train_sizes`：训练集中稀有类标注预算
-- `experiment.seeds`：随机种子列表
-- `model.n_top_hvg`、`model.n_latent`、`model.scvi_max_epochs`、`model.scanvi_max_epochs`
-
-## 如何运行
-
-### 1. 数据审计
-
-根据配置读取数据，并输出数据集摘要、类别分布和 batch 分布：
+### 前提
 
 ```bash
-python -m scrare.cli.audit --config configs/immune_dc.yaml
+pip install scvi-tools anndata pandas numpy scipy scikit-learn matplotlib pyyaml psutil
 ```
 
-### 2. 运行主实验：`run_inductive`
+### 主入口
 
-默认命令会在单个入口下完成 baseline 训练，并产出 5 组方法结果：
-
-- `baseline`
-- `baseline_plus_prototype`
-- `baseline_plus_prototype_gate`
-- `baseline_plus_prototype_gate_plus_marker`
-- `baseline_plus_fusion`
-
-最常见的运行方式：
+已有 scANVI embeddings，直接跑主方法：
 
 ```bash
-python -m scrare.cli.run_inductive --config configs/immune_dc.yaml
+python src/main.py \
+    --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
+
+# --force 强制重算 prototype scores 和 marker threshold
 ```
 
-常用变体：
+输出（仅 baseline vs scRareRefine）：
+
+- `metrics/scRareRefine_metrics.csv`
+- `metrics/scRareRefine_comparison.png`
+
+控制台摘要：
+
+```
+method        rare_f1  rare_recall  rare_precision  overall_accuracy
+baseline        0.003        0.002           0.500             0.985
+scRareRefine    0.986        0.987           0.986             0.999
+
+sep_ratio=1.408 [HIGH]  n_rescued=142  false_rescues=1
+```
+
+### 对比 baselines（可选，独立运行）
 
 ```bash
-# 只跑单个 slice
-python -m scrare.cli.run_inductive \
-  --config configs/immune_dc.yaml \
-  --rare-class ASDC \
-  --split-mode batch_heldout \
-  --seed 42 \
-  --rare-train-size 20
+python src/03b_knn_baseline.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+# 输出：knn/test_metrics.csv（含 baseline 行 + knn 行）
 
-# 只重算某个方法，复用已有 baseline artifacts，不重新训练 baseline
-python -m scrare.cli.run_inductive \
-  --config configs/immune_dc.yaml \
-  --methods baseline_plus_fusion \
-  --reuse-baseline-only
-
-# 只保留 baseline 方法的汇总结果；baseline artifacts、资源表和默认图表仍会生成
-python -m scrare.cli.run_inductive \
-  --config configs/immune_dc.yaml \
-  --methods baseline
+python src/03c_celltypist_baseline.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+# 输出：celltypist/test_metrics.csv（含 baseline 行 + lr 行）
 ```
 
-当前 `run_inductive` 支持的主要参数包括：
+### 三个 seed 汇总 + 对比图
 
-- `--rare-class`
-- `--split-mode`
-- `--seed`
-- `--rare-train-size`
-- `--methods`
-- `--reuse-baseline-only`
-- `--output-dir`
-- `--max-cells`
-- `--scvi-epochs`
-- `--scanvi-epochs`
-- `--train-fraction`
-- `--validation-fraction`
-- `--test-fraction`
-- `--max-false-rescue-rate`
-
-### 3. 运行下游 posthoc 补算
-
-该命令不会重新训练模型，而是复用 `run_inductive` 已经写出的 baseline artifacts：
+三个 seed 的 main / kNN / LR 都跑完后：
 
 ```bash
-python -m scrare.cli.evaluate_posthoc --config configs/immune_dc.yaml
+python src/07_evaluate.py \
+    --config configs/immune_dc.yaml \
+    --rare_class ASDC --rare_train_size 20 \
+    --seeds 42 43 44
 ```
 
-也可以通过安装后的 console scripts 调用：
+默认 `--seeds 42 43 44`，所以也可简写：
 
 ```bash
-scrare-audit --config configs/immune_dc.yaml
-scrare-run-inductive --config configs/immune_dc.yaml
-scrare-evaluate-posthoc --config configs/immune_dc.yaml
+python src/07_evaluate.py \
+    --config configs/immune_dc.yaml \
+    --rare_class ASDC --rare_train_size 20
 ```
 
-## 输出目录说明
+输出目录：`outputs/{dataset}/evaluate_{split_mode}_{rare_class}_rare{rare_train_size}/`
 
-### 数据审计输出
+输出文件：
 
-审计命令会把结果直接写到配置中的 `experiment.output_dir` 下，不再额外复制一份到其他目录。
+- `all_seeds_metrics.csv`：每行一个 `(method, seed)`
+- `comparison_bar.png`：三个 seed 均值柱状图，误差线为 ±std
+- `comparison_box.png`：三个 seed 箱线图 + 单个 seed 散点
 
-例如 `configs/immune_dc.yaml` 当前配置的是：
+对比方法固定为：`baseline`、`knn_k15`、`lr`、`scRareRefine`。
 
-```yaml
-experiment:
-  output_dir: outputs/immune_dc/audit
+---
+
+## 目录结构
+
+```
+src/
+├── main.py                       # scRareRefine 主入口（baseline vs scRareRefine）
+├── utils.py                      # 共享工具：IO、metrics、路径
+├── 01_split.py                   # 生成 train/val/test split
+├── 02_baseline_scanvi.py         # 训练 scANVI，输出 embeddings
+├── 03_prototype.py               # prototype 距离得分 + separability ratio（被 main.py 调用）
+├── 03b_knn_baseline.py           # kNN baseline（输出 baseline + knn）
+├── 03c_celltypist_baseline.py    # LR baseline（输出 baseline + lr）
+├── 05_prototype_gate_marker.py   # scRareRefine 核心逻辑（被 main.py 调用）
+├── 06_fusion.py                  # fusion 扩展（可选，独立运行）
+├── 07_evaluate.py                # 全方法汇总 + 可视化
+├── 09_aggregate_plot.py          # 多数据集聚合图表
+└── 10_paper_table.py             # 论文 LaTeX 表格生成
+outputs/
+└── {dataset}/{run_id}/
+    ├── embeddings/               # 02 输出
+    ├── prototype/                # 03 输出（separability.csv）
+    ├── knn/                      # 03b 输出
+    ├── celltypist/               # 03c 输出（LR）
+    ├── gate_marker/              # 05 输出（main.py 写入）
+    ├── fusion/                   # 06 输出（可选）
+    └── metrics/                  # final_metrics.csv、图表
 ```
 
-### 主实验输出
+`run_id` 格式：`{split_mode}_seed{seed}_{rare_class}_rare{rare_train_size}`
 
-inductive workflow 默认会按如下结构自动组织输出：
+---
 
-```text
-outputs/<dataset>/<inductive_cell|inductive_batch>/<rare_class>/
-```
-
-其中主要包含：
-
-- `runs/<run>/artifacts/`：单次运行的 baseline 原子产物
-  - `train_predictions.csv`
-  - `validation_predictions.csv`
-  - `test_predictions.csv`
-  - `train_latent.csv`
-  - `validation_latent.csv`
-  - `test_latent.csv`
-- `runs/<run>/selected_hvg_genes.csv`：该 run 基于训练集选择的 HVGs
-- `runs/<run>/split_assignments.csv`：该 run 的 train / validation / test 划分与 scanvi 标注情况
-- `runs/<run>/resource_summary.csv`：单个 slice 的总运行时间与峰值内存摘要
-- `runs/<run>/stages/inductive_methods/`：该 run 自己的方法结果缓存
-- `stages/inductive_methods/`：跨全部 runs 聚合后的 stage 结果
-- `stages/inductive_plots/`：跨全部 runs 聚合后的 root 级静态图
-
-当前主流程会在 `stages/inductive_methods/` 下写出：
-
-- `five_method_effect_runs.csv`
-- `five_method_effect_summary.csv`
-- `validation_marker_threshold_curve.csv`
-- `selected_marker_thresholds.csv`
-- `prototype_test_candidates.csv`
-- `marker_verified_test_candidates.csv`
-- `fusion_validation_grid.csv`
-- `resource_summary.csv`：跨 runs 聚合的资源表
-
-当前主流程会在 `stages/inductive_plots/` 下默认生成 5 张 PNG：
-
-- `five_method_metric_summary.png`
-- `marker_threshold_curve.png`
-- `fusion_validation_heatmap.png`
-- `runtime_summary.png`
-- `memory_summary.png`
-
-### 下游分析输出
-
-`evaluate_posthoc` 会复用已有 run artifacts，并在根目录下继续写入 `stages/posthoc/`。
-
-## 测试
-
-运行全部测试：
+## 完整流程
 
 ```bash
-pytest -v
+# 1. 生成 split（每个 seed 一次）
+python src/01_split.py --config configs/immune_dc.yaml --seed 42
+
+# 2. 训练 scANVI（已有 embedding 自动跳过；--force 强制重训）
+python src/02_baseline_scanvi.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+
+# 3. 主方法
+python src/main.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+
+# 4. （可选）对比 baselines
+python src/03b_knn_baseline.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+python src/03c_celltypist_baseline.py \
+    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+
+# 5. 三个 seed 汇总 + 出图
+python src/07_evaluate.py \
+    --config configs/immune_dc.yaml --rare_class ASDC --rare_train_size 20 \
+    --seeds 42 43 44
 ```
 
-运行单个测试文件：
+---
 
-```bash
-pytest tests/test_inductive.py
-```
+## 方法说明
 
-按关键字筛选测试：
+| 方法名                 | 脚本                | 说明                                               |
+| ---------------------- | ------------------- | -------------------------------------------------- |
+| baseline               | 02                  | scANVI softmax 原始输出                            |
+| knn_k15                | 03b                 | scANVI latent 上 kNN（k=15）                       |
+| lr                     | 03c                 | HVG expression 上 logistic regression              |
+| **scRareRefine** | **main / 05** | **prototype rank-1 + marker 验证（主方法）** |
+| fusion_gated           | 06                  | 概率融合扩展（可选）                               |
 
-```bash
-pytest tests/test_inductive.py -k rare_train_size
-```
+**sep_ratio**：诊断指标，反映稀有细胞在 latent space 中的可分性。`sep ≥ 1.3` 时 rescue 效果显著；`sep < 1.1` 时方法自动 abstain，不修改 baseline 输出。
 
-`tests/test_project_state.py` 会显式检查当前仓库没有重新引入旧的脚本入口和旧包实现。
+---
 
-## 使用前的最小检查清单
+## 核心 inductive 约束
 
-在正式运行前，建议先确认：
+所有 reference、threshold、signature 均来自 train/validation，不使用 test 标签：
 
-1. 配置文件中的 `dataset.path` 在你本地真实存在；
-2. `.h5ad` 中包含配置指定的 `label_key` 和 `batch_key`；
-3. 如果配置使用 `use_raw: true`，对应数据对象里确实存在 `adata.raw`；
-4. 如果配置使用 `use_layer`，对应 layer 名称存在；
-5. 已正确安装 `scvi-tools` 与 `torch` 相关依赖。
+1. val/test cell 不进入训练 reference
+2. HVG 仅基于训练集选择
+3. prototype reference 仅来自训练集标注 cell
+4. marker signature 仅由训练集有标注 cell 计算
+5. 所有调参（marker threshold、fusion 参数）仅基于 validation
+6. test 标签不用于任何调参或阈值选择
+
+---
+
+## 数据规则
+
+- `data/raw/` 只读，禁止修改
+- 实验输出写入 `outputs/`
+- 旧版代码备份在 `_legacy/`（不再使用）
+
+
+![1778494407424](image/README/1778494407424.png)

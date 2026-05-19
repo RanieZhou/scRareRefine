@@ -1,8 +1,30 @@
-/data/
-scRareRefine-standard/data/raw/
-scRareRefine.rar
+# 原始数据（只读，不入库）
+data/raw/
+
+# 实验输出（体积大，可重新生成）
 outputs/
-.worktrees/
+
+# Split 结果（可重新生成）
+data/splits/
+
+# 旧版备份（不入库）
+_legacy/
+
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# 系统
+.DS_Store
+.aris/
+
+# 临时
+tmp/
+logs/
+checkpoints/
+*.log

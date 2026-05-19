@@ -1,98 +1,155 @@
 # CLAUDE.md
 
-本文件为 Claude Code 在本仓库中工作时提供约束与导航。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 always reply in Chinese
 
-## Development commands
+## 项目目标
 
-- Install package + test dependencies: `python -m pip install -e .[dev]`
-- Run the full test suite: `pytest -v`
-- Run a single test file: `pytest tests/test_inductive.py`
-- Run a single test case: `pytest tests/test_inductive.py -k rare_train_size`
-- Audit a dataset from config: `python -m scrare.cli.audit --config configs/immune_dc.yaml`
-- Run the main inductive pipeline: `python -m scrare.cli.run_inductive --config configs/immune_dc.yaml`
-- Run the downstream posthoc evaluation over saved runs: `python -m scrare.cli.evaluate_posthoc --config configs/immune_dc.yaml`
+scRareRefine 基于 scANVI 的预测概率和 latent embedding，设计稀有细胞识别 refinement 模块，提高 rare cell type 的识别效果。核心方法是 prototype 距离评分 + marker gene 验证的两阶段 rescue 流程。
 
-## Repository shape
+## 常用命令
 
-本仓库采用 `src/` 布局，主 Python 包位于 `src/scrare/`。
+```bash
+# 安装依赖
+pip install -e .[dev]
 
-- `src/scrare/cli/`: CLI 入口模块
-- `src/scrare/workflows/`: 工作流编排，包括 inductive 主流程与 posthoc 工作流
-- `src/scrare/data/`: 数据读取、预处理、split 逻辑
-- `src/scrare/models/`: scANVI、prototype、fusion、marker 等模型与后处理逻辑
-- `src/scrare/evaluation/`: 指标、数据审计与后处理评估，其中包含 `src/scrare/evaluation/posthoc.py`
-- `src/scrare/infra/`: 配置、I/O、路径、资源监控等基础设施
-- `configs/`: YAML 配置
-- `tests/`: 按子系统组织的测试
+# 运行完整管道（必须显式指定 seed 和 rare_train_size）
+python run_pipeline.py --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
 
-## High-level architecture
+# 强制重新训练（忽略缓存）
+python run_pipeline.py --config configs/immune_dc.yaml --seed 42 --rare_train_size 20 --force
 
-### 1. Config-driven data loading
+# 单独运行某一 Stage（如调试 Stage 5）
+python src/05_prototype_gate_marker.py --config configs/immune_dc.yaml \
+    --seed 42 --rare_class ASDC --rare_train_size 20
 
-- 配置文件位于 `configs/`。
-- `scrare.infra.config` 负责加载 YAML 并提供输出目录辅助函数。
-- `scrare.data.loading` 与 `scrare.data.preprocess` 负责把配置转成 `AnnData` 并选择合适的表达矩阵。
+# 简化版管道（仅 baseline vs scRareRefine 对比）
+python src/main.py --config configs/immune_dc.yaml --seed 42 --rare_class ASDC --rare_train_size 20
 
-重要配置键包括：
+# 运行测试
+pytest -v
+pytest tests/test_prototype.py
+pytest tests/test_prototype.py -k "test_separability"
+```
 
-- `dataset.path`, `dataset.label_key`, `dataset.batch_key`
-- `dataset.use_raw` 或 `dataset.use_layer`
-- `experiment.rare_class`, `experiment.secondary_rare_classes`, `experiment.rare_train_sizes`, `experiment.seeds`, `experiment.unlabeled_category`
-- `model.n_top_hvg`, `model.n_latent`, `model.scvi_max_epochs`, `model.scanvi_max_epochs`, `model.batch_size`
+## 目录结构
 
-### 2. Inductive split and partial-label construction
+```
+src/
+├── main.py                       # 简化版管道入口（baseline vs scRareRefine）
+├── utils.py                      # 共享工具：I/O、路径、指标、资源监控
+├── 01_split.py                   # 生成 train/val/test split
+├── 02_baseline_scanvi.py         # 训练 scANVI，输出 embeddings
+├── 03_prototype.py               # 原型距离评分 + 可分性指标
+├── 03b_knn_baseline.py           # kNN baseline（k=15）
+├── 03c_celltypist_baseline.py    # Logistic regression baseline
+├── 04_prototype_gate.py          # Prototype ranking 候选筛选
+├── 05_prototype_gate_marker.py   # Marker gene 验证 + validation 阈值选择
+├── 06_fusion.py                  # 概率融合（可选扩展）
+├── 07_evaluate.py                # 多 seed 汇总与对比
+└── 08_visualize.py               # UMAP 可视化
+configs/                          # YAML 配置（immune_dc、pancreas_epsilon、pancreas_gamma 等）
+data/raw/                         # 只读原始数据（.h5ad）
+data/splits/                      # 生成的 split 索引
+outputs/                          # 实验输出（按数据集 + run_id 组织）
+```
 
-核心设计约束是 inductive evaluation，不能把 held-out cells 泄漏到训练参考中。
+## 架构要点
 
-- `scrare.data.splits` 实现 train/validation/test split 与部分标注构造。
-- 训练集中的 major classes 保持标注。
-- rare class 通过 `rare_train_size` 控制标注预算。
-- validation/test cells 保持未标注。
-- HVG 选择必须仅基于训练集。
+### Stage 管道与文件依赖
 
-如果修改评估逻辑，必须保持 train-only reference 假设：prototype、marker signature 与调参只能基于训练集或验证集，不能依赖测试标签。
+```
+run_pipeline.py
+├── Stage 1 (01_split.py) → data/splits/{dataset}/{split_mode}_seed{seed}/split.csv
+├── Stage 2 (02_baseline_scanvi.py) → outputs/.../embeddings/{train|val|test}_{predictions,latent}.csv
+├── Stage 3 (03_prototype.py) → outputs/.../prototype/{separability,val|test_scores}.csv
+├── Stage 5 (05_prototype_gate_marker.py) → outputs/.../gate_marker/{*_scored,selected_thresholds}.csv
+└── Stage 7 (07_evaluate.py) → outputs/.../all_seeds_metrics.csv
+```
 
-### 3. Main experiment pipeline
+参数优先级：CLI 参数 > 配置文件（通过 `utils.resolve_param()` 实现）。
 
-`python -m scrare.cli.run_inductive --config ...` 会进入 `src/scrare/cli/run_inductive.py`，再调用 `src/scrare/workflows/inductive.py`。
+### 关键算法
 
-主流程按 `(rare_class, split_mode, seed, rare_train_size)` 组合执行，通常包括：
+**原型评分**（`03_prototype.py`）：基于标注训练集计算各类均值原型，对 query cells 计算欧氏距离。`prototype_rescue_candidate = rank≤2 & margin低分位`。`separability_ratio = dist_to_nearest_majority / intra_rare_radius`：≥1.3 时 rescue 有效，<1.1 时自动 abstain。
 
-1. 读取并可选下采样数据集。
-2. 构建 train/validation/test split。
-3. 创建 `scanvi_label` 与 `is_labeled_for_scanvi` 等监督字段。
-4. 仅基于训练集选择 HVGs。
-5. 训练 `SCVI`，再转换为 `SCANVI`。
-6. 对 validation/test 做 query inference。
-7. 输出预测、latent、split、HVG、metrics、confusion tables 与资源使用摘要。
-8. 基于训练集 reference latent 计算 prototype 概率并进行 validation-driven fusion 搜索。
-9. 用验证集选出融合参数，再在测试集上做最终评估。
+**Marker 验证**（`05_prototype_gate_marker.py`）：从训练集有标签样本计算 top-25 marker genes（按 in_class_mean - out_class_mean 排序），在 validation 集上用 `max_false_rescue_rate ≤ 0.001` 约束选择 marker_margin 阈值，再应用于 test。
 
-### 4. Posthoc evaluation
+### 输出目录结构
 
-`python -m scrare.cli.evaluate_posthoc --config ...` 会进入 `src/scrare/cli/evaluate_posthoc.py`，再调用 `src/scrare/workflows/posthoc.py`。
+Run ID 格式：`{split_mode}_seed{seed}_{safe_rare_class}_rare{rare_train_size}`（例：`batch_heldout_seed42_asdc_rare20`）
 
-- 该流程不会重新训练模型。
-- 它会复用已有 run artifacts，重新读取 train/validation/test 预测与 latent。
-- `src/scrare/evaluation/posthoc.py` 提供与 posthoc 评估相关的逻辑。
-- prototype gate 与 marker verification 的阈值选择应基于 validation，再应用到 test。
+```
+outputs/{dataset}/{run_id}/
+├── embeddings/    # predictions + latent（train/val/test）
+├── prototype/     # separability.csv + val|test_scores.csv
+├── gate_marker/   # marker_signatures.csv + scored + selected_thresholds.csv
+├── knn/           # (Stage 3b)
+├── celltypist/    # (Stage 3c)
+└── metrics/       # scRareRefine_metrics.csv + 对比图
+```
 
-### 5. Metrics and outputs
+## 优先级与约束
 
-- `scrare.evaluation.metrics` 提供共享分类与不确定性指标。
-- `scrare.infra.paths`、`scrare.infra.io` 定义输出布局与表格读写。
-- `scrare.infra.resources` 提供运行资源监控实现。
+当指令冲突时：
 
-## Tests
+1. 不修改原始数据（`data/raw/`、原始 `.h5ad` 文件）
+2. 不伪造结果
+3. 不破坏标准项目结构
+4. 不无记录地改变实验设置
+5. 不写未经验证的科研结论
 
-测试按子系统组织。常用锚点：
+### Inductive 约束（修改评估逻辑时必须遵守）
 
-- `tests/test_inductive.py`: split 正确性、标签隐藏、train-only HVG 行为
-- `tests/test_fusion.py`: prototype 概率与 fusion 权重
-- `tests/test_prototype.py` 和 `tests/test_prototype_gate.py`: rescue scoring 与 gate 规则
-- `tests/test_marker_verifier.py`: marker signature、阈值选择、rescue 评估
-- `tests/test_project_state.py`: 防止重新引入旧脚本入口、旧包实现或历史输出根目录
+- Prototype reference、HVG 选择、marker signature 均只能来自训练集
+- Fusion 参数只能从 validation 选择
+- Test 标签仅用于最终评估，不用于调参或阈值选择
+- validation/test cells 不能泄漏到训练 reference
 
-修改核心工作流后，优先运行对应子系统测试，再运行 `pytest -v` 全量验证。
+### 配置约束
+
+不要无记录地改变：随机种子、split、rare cell 定义、label/batch 列、预处理流程、baseline 设置、指标定义、scANVI 训练参数。
+
+当前可运行配置：`configs/immune_dc.yaml`、`configs/pancreas_epsilon.yaml`、`configs/pancreas_gamma.yaml`
+
+重要配置键：`dataset.{path,label_key,batch_key,use_raw,use_layer}`、`experiment.{rare_class,secondary_rare_classes,rare_train_sizes,seeds,unlabeled_category}`、`model.{n_top_hvg,n_latent,scvi_max_epochs,scanvi_max_epochs,batch_size}`
+
+## 修改前计划模板
+
+修改代码、配置、实验脚本或文档前，先输出：
+
+```text
+本次任务目标：
+
+计划修改文件：
+1.
+2.
+
+不会修改的内容：
+- data/raw/
+- 原始 .h5ad 文件
+- 已有正式结果（除非用户明确要求）
+
+预期输出：
+
+风险：
+
+验证方式：
+```
+
+用户确认后再修改，除非用户明确要求直接执行。
+
+## 结果与文档规则
+
+实验输出 → `results/`；日志 → `logs/`；模型权重 → `checkpoints/`；临时文件 → `tmp/`。不要在根目录随意新建目录。
+
+## 论文主张限制
+
+不可写：解决了稀有细胞识别问题、全面优于所有方法、state-of-the-art、临床可用、适用于所有单细胞数据。
+
+可写（需结果支持）：在评估的数据集上，scRareRefine 相比原始 scANVI 提升了稀有细胞相关指标。
+
+## Git 规则
+
+不要创建 git commit、git push、force push、reset、删除分支或清理大目录，除非用户明确要求。
