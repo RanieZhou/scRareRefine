@@ -1,199 +1,125 @@
 # scRareRefine
 
-基于 scANVI latent embedding 的稀有细胞识别 post-hoc rescue 框架。
+基于 scANVI 潜在表示空间的单细胞稀有细胞识别与 Post-hoc 拯救校正框架。
 
-在已有 scANVI 输出的基础上，通过 prototype 距离 → gate → marker 验证三阶段 pipeline，修正 scANVI 在极小训练样本和 batch-heldout 场景下对稀有细胞类型的漏检问题。
+在已有半监督模型输出的基础上，通过 **Prototype 距离门控 → Marker 基因验证 → 自适应概率融合** 的后处理拯救机制，解决模型在极小训练样本及跨批次供体泛化（`batch-heldout`）场景下对稀有细胞类型漏检、误检的问题。
 
-**不替代** scANVI/CellTypist/Seurat label transfer，而是在其之后作为 refinement layer 使用。
-
----
-
-## 核心结果
-
-immune_dc cDC1，`rare_train_size=5`，3 seeds，batch-heldout split：
-
-| 方法                            | rare-class F1            |
-| ------------------------------- | ------------------------ |
-| scANVI baseline                 | 0.003 ± 0.005           |
-| kNN k=15                        | 0.000 ± 0.000           |
-| **Gate+Marker（本方法）** | **0.986 ± 0.004** |
-
-rescue 是否有效由 **separability ratio** 预测（训练集推断前可算）：
-
-- `sep ≥ 1.3`：rescue 显著有效
-- `sep < 1.1`：方法自动 abstain，不改变 baseline 输出
+> [!NOTE]
+> **本框架不替代** scANVI/CellTypist/scBalance 等细胞标注与迁移学习方法，而是在其之上作为后处理优化层（Refinement Layer）使用。
 
 ---
 
-## 快速开始
+## 🚀 核心架构与重构设计
 
-### 前提
+本项目采用高内聚、低耦合的模块化设计，学术核心组件与对比实验基线已完全隔离：
+
+```
+scRareRefine/
+├── run_pipeline.py          # 单次端到端一键流水线入口（数据预处理 -> 模型训练 -> 拯救后处理 -> 绘图）
+├── run_all_experiments.py   # 批量参数矩阵对比实验总控脚本（多数据集、多 seed、多标注规模，自动生成汇总大表）
+├── configs/                 # 结构化科学配置文件目录（包含 8 个数据集的 YAML 配置文件）
+│   └── *.yaml
+├── src/                     # 核心学术包目录
+│   ├── __init__.py
+│   ├── preprocess.py        # 生信级数据体检与严格三路切分机制（支持 batch_heldout 与 cell_stratified）
+│   ├── model.py             # HVG 筛选、双阶段 scVI/scANVI 表示微调与测试集推理
+│   ├── rescue.py            # 三种拯救器组件（Prototype Gating、Marker Verification、Adaptive Fusion）
+│   └── utils.py             # 科学评估指标、Seaborn/Matplotlib Fallback 绘图、GBK 兼容打印与系统监控
+└── baseline/                # 独立且解耦的对比基线模型目录
+    ├── scanvi/
+    │   └── scanvi_baseline.py # scANVI 基线模型训练，输出对比所需的低维潜在表示
+    ├── knn/
+    │   └── knn_baseline.py    # 基于低维表示的最近邻多数投票基线
+    ├── celltypist/
+    │   └── celltypist_baseline.py # CellTypist (Logistic Regression, OvR) 线性分类基线
+    └── scbalance/
+        └── scbalance_baseline.py # scBalance (自适应 MLP 过采样) 深度非平衡分类基线
+```
+
+---
+
+## 📦 环境要求与快速开始
+
+### 依赖安装
 
 ```bash
-pip install scvi-tools anndata pandas numpy scipy scikit-learn matplotlib pyyaml psutil
+pip install scvi-tools anndata pandas numpy scipy scikit-learn matplotlib seaborn pyyaml psutil
 ```
 
-### 主入口
+### 1. 运行单次端到端管线
 
-已有 scANVI embeddings，直接跑主方法：
+通过 `run_pipeline.py`，可以直接对单个数据集的某种配置运行完整的预处理、表示学习和三种后处理拯救策略（`gate_only`, `gate_marker`, `fusion`）的评估对比：
 
 ```bash
-python src/main.py \
-    --config configs/immune_dc.yaml \
-    --seed 42 --rare_class ASDC --rare_train_size 20
-
-# --force 强制重算 prototype scores 和 marker threshold
+python run_pipeline.py --config configs/immune_dc.yaml --seed 42 --rare_train_size 0.05 --split_mode batch_heldout
 ```
 
-输出（仅 baseline vs scRareRefine）：
+**命令行常用参数说明：**
+- `--config`: YAML 配置文件路径（例如 `configs/immune_dc.yaml`）。
+- `--seed`: 实验随机数种子（用于控制数据切分与模型初始化随机性）。
+- `--rare_class`: 目标稀有类名称（若不传，则默认读取 YAML 配置中的 `experiment.rare_class`）。
+- `--rare_train_size`: 稀有类训练标注样本的规模（支持浮点数如 `0.05` 代表 5%、绝对整数如 `10`、或者 `'all'` 代表全部。若不传，则优先读取 YAML 的 `experiment.rare_train_sizes` 首元素）。
+- `--split_mode`: 样本三路切分模式。可选 `batch_heldout`（默认，批次/供体外泛化划分）或 `cell_stratified`（随机分层划分）。
+- `--max_false_rescue_rate`: 后处理所允许的最大误判率阈值（默认 0.001）。
 
-- `metrics/scRareRefine_metrics.csv`
-- `metrics/scRareRefine_comparison.png`
-
-控制台摘要：
-
-```
-method        rare_f1  rare_recall  rare_precision  overall_accuracy
-baseline        0.003        0.002           0.500             0.985
-scRareRefine    0.986        0.987           0.986             0.999
-
-sep_ratio=1.408 [HIGH]  n_rescued=142  false_rescues=1
-```
-
-### 对比 baselines（可选，独立运行）
-
-```bash
-python src/03b_knn_baseline.py \
-    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-# 输出：knn/test_metrics.csv（含 baseline 行 + knn 行）
-
-python src/03c_celltypist_baseline.py \
-    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-# 输出：celltypist/test_metrics.csv（含 baseline 行 + lr 行）
-```
-
-### 三个 seed 汇总 + 对比图
-
-三个 seed 的 main / kNN / LR 都跑完后：
-
-```bash
-python src/07_evaluate.py \
-    --config configs/immune_dc.yaml \
-    --rare_class ASDC --rare_train_size 20 \
-    --seeds 42 43 44
-```
-
-默认 `--seeds 42 43 44`，所以也可简写：
-
-```bash
-python src/07_evaluate.py \
-    --config configs/immune_dc.yaml \
-    --rare_class ASDC --rare_train_size 20
-```
-
-输出目录：`outputs/{dataset}/evaluate_{split_mode}_{rare_class}_rare{rare_train_size}/`
-
-输出文件：
-
-- `all_seeds_metrics.csv`：每行一个 `(method, seed)`
-- `comparison_bar.png`：三个 seed 均值柱状图，误差线为 ±std
-- `comparison_box.png`：三个 seed 箱线图 + 单个 seed 散点
-
-对比方法固定为：`baseline`、`knn_k15`、`lr`、`scRareRefine`。
+**单次运行产物：**
+结果将保存在 `outputs/{dataset_name}/{run_id}/metrics/` 下：
+- `final_metrics.csv`: 各拯救策略的性能指标大表（包括 Precision, Recall, F1-Score, 拯救细胞数等）。
+- `method_comparison.png`: 多策略性能柱状对比图。
+- `rescue_effect.png`: 实际拯救细胞数与误拯救数对比图。
+- `marker_violin.png`: 稀有类型特异 Marker 基因表达量小提琴图。
 
 ---
 
-## 目录结构
+### 2. 运行批量对比实验（推荐）
 
-```
-src/
-├── main.py                       # scRareRefine 主入口（baseline vs scRareRefine）
-├── utils.py                      # 共享工具：IO、metrics、路径
-├── 01_split.py                   # 生成 train/val/test split
-├── 02_baseline_scanvi.py         # 训练 scANVI，输出 embeddings
-├── 03_prototype.py               # prototype 距离得分 + separability ratio（被 main.py 调用）
-├── 03b_knn_baseline.py           # kNN baseline（输出 baseline + knn）
-├── 03c_celltypist_baseline.py    # LR baseline（输出 baseline + lr）
-├── 05_prototype_gate_marker.py   # scRareRefine 核心逻辑（被 main.py 调用）
-├── 06_fusion.py                  # fusion 扩展（可选，独立运行）
-├── 07_evaluate.py                # 全方法汇总 + 可视化
-├── 09_aggregate_plot.py          # 多数据集聚合图表
-└── 10_paper_table.py             # 论文 LaTeX 表格生成
-outputs/
-└── {dataset}/{run_id}/
-    ├── embeddings/               # 02 输出
-    ├── prototype/                # 03 输出（separability.csv）
-    ├── knn/                      # 03b 输出
-    ├── celltypist/               # 03c 输出（LR）
-    ├── gate_marker/              # 05 输出（main.py 写入）
-    ├── fusion/                   # 06 输出（可选）
-    └── metrics/                  # final_metrics.csv、图表
-```
-
-`run_id` 格式：`{split_mode}_seed{seed}_{rare_class}_rare{rare_train_size}`
-
----
-
-## 完整流程
+通过 `run_all_experiments.py` 启动批量评测矩阵。该总控脚本会自动遍历全部数据集、种子和已标注样本规模，顺序拉起所有对比基线与 scRareRefine 流水线。并在运行结束后自动搜集所有的 `.csv` 指标文件，聚合成大表，并在控制台打印 Markdown 格式的学术评估报表：
 
 ```bash
-# 1. 生成 split（每个 seed 一次）
-python src/01_split.py --config configs/immune_dc.yaml --seed 42
+# 执行完整评测矩阵（总共 48 组超参任务，包含所有 baseline）
+python run_all_experiments.py
 
-# 2. 训练 scANVI（已有 embedding 自动跳过；--force 强制重训）
-python src/02_baseline_scanvi.py \
-    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
+# 使用 dry-run 模式预览全部生成的执行命令组而并不实际运行
+python run_all_experiments.py --dry_run
 
-# 3. 主方法
-python src/main.py \
-    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-
-# 4. （可选）对比 baselines
-python src/03b_knn_baseline.py \
-    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-python src/03c_celltypist_baseline.py \
-    --config configs/immune_dc.yaml --seed 42 --rare_train_size 20
-
-# 5. 三个 seed 汇总 + 出图
-python src/07_evaluate.py \
-    --config configs/immune_dc.yaml --rare_class ASDC --rare_train_size 20 \
-    --seeds 42 43 44
+# 截取评测任务区间进行测试（例如只跑前 3 组任务组合）
+python run_all_experiments.py --start_at 1 --end_at 3
 ```
 
----
-
-## 方法说明
-
-| 方法名                 | 脚本                | 说明                                               |
-| ---------------------- | ------------------- | -------------------------------------------------- |
-| baseline               | 02                  | scANVI softmax 原始输出                            |
-| knn_k15                | 03b                 | scANVI latent 上 kNN（k=15）                       |
-| lr                     | 03c                 | HVG expression 上 logistic regression              |
-| **scRareRefine** | **main / 05** | **prototype rank-1 + marker 验证（主方法）** |
-| fusion_gated           | 06                  | 概率融合扩展（可选）                               |
-
-**sep_ratio**：诊断指标，反映稀有细胞在 latent space 中的可分性。`sep ≥ 1.3` 时 rescue 效果显著；`sep < 1.1` 时方法自动 abstain，不修改 baseline 输出。
+**批量运行产表与产物：**
+- 合并指标表保存至：`results/all_experiments_summary.csv`。
+- 控制台打印类似于下表的平均 F1-Score 表现大表：
+  
+| 数据集 | 稀有类 | 标注规模 | scANVI Baseline | k-NN | CellTypist | scBalance | Proto Gating | Gate + Marker | Adaptive Fusion (Ours) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| immune_dc | ASDC | 0.01 | 0.0034 | 0.0000 | 0.4567 | 0.3211 | 0.8122 | 0.9254 | **0.9856** |
 
 ---
 
-## 核心 inductive 约束
+## 🔬 学术评测设计与切分机制
 
-所有 reference、threshold、signature 均来自 train/validation，不使用 test 标签：
+本项目严格定义了两种三路（Train / Validation / Test）数据切分机制，以校验模型在不同临床实验设计下的表现：
 
-1. val/test cell 不进入训练 reference
-2. HVG 仅基于训练集选择
-3. prototype reference 仅来自训练集标注 cell
-4. marker signature 仅由训练集有标注 cell 计算
-5. 所有调参（marker threshold、fusion 参数）仅基于 validation
-6. test 标签不用于任何调参或阈值选择
+### 1. Batch Heldout (默认模式)
+- **学术语义**：跨供体 / 跨批次泛化评测。该模式会根据配置的 `batch_key` 对不同的批次/样本来源（Batch/Donor）进行聚类划分。将某些批次的细胞整批次地归入 Validation 或 Test，从而完全隔离训练集与测试集的批次分布。
+- **配置方法**：在 YAML 配置文件中设置 `experiment.split_mode: batch_heldout`，并确保 `dataset.batch_key` 配置正确。
+
+### 2. Cell Stratified
+- **学术语义**：单细胞随机分层三路划分。忽略批次源，在整体细胞标签上按照 70% / 15% / 15% 进行分层随机抽样，保证每个切分区间里的各细胞类型占比一致。
+- **配置方法**：在 YAML 配置文件中设置 `experiment.split_mode: cell_stratified`。
 
 ---
 
-## 数据规则
+## 🛠 核心 Inductive 约束
 
-- `data/raw/` 只读，禁止修改
-- 实验输出写入 `outputs/`
-- 旧版代码备份在 `_legacy/`（不再使用）
+为确保学术评测的绝对严谨与无数据泄漏，项目在代码层面实现了以下严格的 Inductive 约束：
+1. **零测试集泄漏**：所有的参考原型（Prototypes）、分类阈值（Thresholds）、特异特征（Signatures）计算均仅源于 Train / Validation 集，Test 集细胞仅用于最终推理评估。
+2. **特征独立选择**：高变基因（HVG）的计算与筛选过程仅基于训练集。
+3. **主动调参约束**：后处理拯救的概率决策（如 Fusion 最佳权重等）仅通过 Validation 集的不确定性指标进行选择，避免过拟合于测试集。
 
+---
 
-![1778494407424](image/README/1778494407424.png)
+## 📊 数据与输出管理
+- **原始数据** 存放在 `data/raw/` 目录下（保持只读）。
+- **运行中间产物及模型表示**（包括潜在低维 latent 嵌入、预测概率等）自动写入 `outputs/` 目录。
+- **合并指标大表** 自动汇总于 `results/` 目录。

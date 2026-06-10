@@ -1,38 +1,46 @@
-dataset:
-  name: tabula_pancreas
-  path: data/raw/tabula/tabula_sapiens_pancreas_4be7951a.h5ad
-  use_layer: decontXcounts
-  label_key: cell_type
-  batch_key: donor_id
+# ==============================================================================
+# scRareRefine 实验配置文件: tabula_pancreas (Tabula 胰腺数据集，胰腺 B 细胞为稀有)
+# ==============================================================================
 
+# 数据集加载配置
+dataset:
+  name: tabula_pancreas                 # 数据集唯一标识符，用于确定保存输出的文件夹名
+  path: data/raw/tabula/tabula_sapiens_pancreas_4be7951a.h5ad # 原始 h5ad 数据存储路径
+  use_layer: decontXcounts              # 读取 AnnData.layers["decontXcounts"]（去污染计数层）作为模型输入
+  label_key: cell_type                  # 细胞类型真实标签在 obs 中的列名
+  batch_key: donor_id                   # 样本批次标识（这里是捐献者 donor_id）在 obs 中的列名，用于去批次
+
+# 实验及标注参数配置
 experiment:
-  rare_class: type B pancreatic cell
-  secondary_rare_classes:
-    - pancreatic A cell
-  rare_train_sizes:
+  rare_class: type B pancreatic cell    # 目标稀有细胞类型的名称（此处为 type B pancreatic cell 胰腺 B 细胞/胰岛素分泌细胞）
+  secondary_rare_classes:               # 次要的稀有细胞类型列表（实验分析中需要关注的其他稀有群）
+    - pancreatic A cell                 # 胰腺 A 细胞
+  rare_train_sizes:                     # 批量对比实验中稀有细胞已标注样本绝对个数列表
     - 5
     - 10
     - 20
     - 50
     - all
-  seeds:
+  seeds:                                # 批量实验所遍历的随机数种子列表
     - 42
     - 43
     - 44
-  unlabeled_category: Unknown
-  output_dir: results/tabula_pancreas/audit
+  unlabeled_category: Unknown           # 未标注细胞及半监督学习时在模型中使用的占位标签名称
+  output_dir: results/tabula_pancreas/audit # 结果审计输出目录
 
+# scVI / scANVI 神经网络模型超参数
 model:
-  n_top_hvg: 3000
-  n_latent: 30
-  scvi_max_epochs: 200
-  scanvi_max_epochs: 100
-  batch_size: 256
+  n_top_hvg: 3000                       # 高变基因选择数量（特征筛选，默认取前 3000 个方差最高的基因）
+  n_latent: 30                          # 潜在空间表示维度（低维隐空间 Bottleneck 瓶颈层大小，默认 30 维）
+  scvi_max_epochs: 200                  # 第一阶段：无监督 VAE 预训练的最大 Epoch 轮数
+  scanvi_max_epochs: 100                 # 第二阶段：半监督 scANVI 表示微调的最大 Epoch 轮数
+  batch_size: 256                       # 神经网络训练的批大小（Batch Size）
 
+# 下游评估分析参数
 analysis:
-  rare_threshold: 0.05
-  rare_max_cells: 200
-  review_fractions:
+  rare_threshold: 0.05                  # 判定稀有类别的丰度阈值（占比低于 5% 判定为稀有）
+  rare_max_cells: 200                   # 判定稀有细胞的最大上限细胞数
+  review_fractions:                     # 用于主动学习审核的细胞筛选比例列表
     - 0.01
     - 0.05
     - 0.10

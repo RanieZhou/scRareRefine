@@ -1,0 +1,100 @@
+\subsection{Implementation Details}
+\label{sec:impl}
+
+\paragraph{scANVI training.}
+scANVI models were trained using scvi-tools v1.x \citep{gayoso2022python} with the following fixed hyperparameters: $n\_\text{latent} = 30$, $n\_\text{top\_hvg} = 4000$ (highly variable genes selected on training data only), $\text{scVI max epochs} = 400$, $\text{scANVI max epochs} = 20$, $\text{batch size} = 512$. Unlabeled cells in the training set (non-rare cells whose labels are withheld to simulate the semi-supervised setting) are assigned the category \texttt{Unknown} as the scANVI unlabeled category. All preprocessing (library-size normalization to $10^4$ counts, $\log(1+x)$ transformation, HVG selection) is applied using only training-set statistics.
+
+\paragraph{Prototype computation.}
+Prototypes are computed from the scANVI latent embeddings of labeled training-set cells after full model training, using \cref{eq:prototype}. The intra-class radius and nearest-majority distance are computed analogously. No further transformation is applied to the latent space.
+
+\paragraph{Candidate selection.}
+The margin percentile threshold of $q_{25}$ was chosen to balance recall and precision in a preliminary analysis on the Immune DC dataset (seed 42). We verified that results are robust to the choice of $q_{25}$ vs. $q_{10}$ or $q_{50}$; the main text results use $q_{25}$ throughout.
+
+\paragraph{Marker signature.}
+The top-$k = 25$ discriminative genes are selected by mean fold-change between the rare class and all other labeled training cells (\cref{eq:markers}), retaining only genes with positive fold-change. A minimum of 5 labeled training cells is required to compute a signature; if fewer cells are available, marker verification is skipped and the prototype gate alone determines rescue decisions.
+
+\paragraph{Validation-set threshold.}
+The marker-margin threshold $\tau$ (\cref{eq:threshold}) is optimized on the validation set using a fine-grained grid search over 200 threshold values between the 1st and 99th percentile of the observed marker-margin distribution. The false-rescue rate tolerance of 0.001 was chosen conservatively to prevent false-positive rescues.
+
+\paragraph{Gated fusion.}
+Fusion parameters $(\alpha, T, \theta)$ are searched over 18 combinations as described in \cref{sec:fusion}. The validation-set optimization criterion is: maximize rare-class F1 subject to overall accuracy $\geq$ (scANVI accuracy $- 0.005$) and FRR $\leq 0.005$.
+
+\subsection{Hyperparameter Sensitivity}
+\label{sec:sensitivity}
+
+\cref{tab:sensitivity} reports Gate+Marker rare-class F1 for ASDC (seed 42, $n_\text{rare} = 20$) under variations of the three most sensitive hyperparameters: margin threshold percentile, marker gene count $k$, and FRR tolerance.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Sensitivity of Gate+Marker F1 to hyperparameter variations (ASDC, seed 42, $n_\text{rare} = 20$). Default settings are highlighted in \textbf{bold}.}
+\label{tab:sensitivity}
+\begin{tabular}{lcc}
+\toprule
+Hyperparameter & Value & F1 \\
+\midrule
+\multirow{3}{*}{Margin threshold} & $q_{10}$ & 0.925 \\
+ & \textbf{$q_{25}$} & \textbf{0.934} \\
+ & $q_{50}$ & 0.901 \\
+\midrule
+\multirow{3}{*}{Marker gene count $k$} & 10 & 0.921 \\
+ & \textbf{25} & \textbf{0.934} \\
+ & 50 & 0.930 \\
+\midrule
+\multirow{3}{*}{FRR tolerance} & 0.0001 & 0.912 \\
+ & \textbf{0.001} & \textbf{0.934} \\
+ & 0.01 & 0.934 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Results are stable across moderate parameter variations. The tightest FRR tolerance ($10^{-4}$) reduces F1 by $\sim$2 pp due to conservative thresholding; all other settings produce F1 within 3 pp of the default.
+
+\subsection{Separability Ratio by Seed and Training Size}
+\label{sec:sepratio_detail}
+
+The separability ratio $\sepratio$ varies slightly with training size (as the rare-class prototype stabilizes with more examples) and with random seed (as different seeds partition donors differently). \cref{tab:sep_detail} summarizes seed-averaged values for all evaluated cell types.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Separability ratio (mean $\pm$ SD over seeds) at $n_\text{rare} = 20$ for all evaluated rare cell types.}
+\label{tab:sep_detail}
+\begin{tabular}{llcc}
+\toprule
+Dataset & Rare class & Sep ratio & Nearest majority class \\
+\midrule
+Immune DC & ASDC & $1.50 \pm 0.19$ & pDC / cDC2 \\
+ & cDC1 & $1.46 \pm 0.24$ & HLA-DR$^\text{hi}$ cDC2 \\
+Human pancreas & $\varepsilon$-cell & $1.07 \pm 0.03$ & $\gamma$-cell \\
+ & $\gamma$-cell & $0.89 \pm 0.05$ & $\varepsilon$-cell \\
+Tabula Liver & NCM & $1.98 \pm 0.07$ & intermediate monocyte \\
+Tabula Pancreas & $\beta$-cell & $0.81 \pm 0.05$ & pancreatic D cell \\
+Tabula Spleen & ILC & $1.58 \pm 0.15$ & NK T cell \\
+Tabula Kidney & Endothelial & $1.69 \pm 0.10$ & macrophage \\
+PBMC & pDC & $2.03$ & iNKT cell \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Full Data-Efficiency Tables}
+\label{sec:fullablation}
+
+The full data-efficiency ablations for ASDC and cDC1 are presented in \cref{tab:asdc_ablation,tab:cdc1_ablation} in \cref{sec:efficiency} of the main text. Gated fusion (Fusion-gated) results are included in those tables for reference.
+
+\subsection{Inductive Evaluation Protocol Details}
+\label{sec:inductive}
+
+To prevent any leakage of test-set information into the rescue procedure, we enforce the following constraints at all stages:
+\begin{enumerate}[leftmargin=*]
+    \item HVG selection uses only training-set expression statistics.
+    \item scANVI encoder and classifier parameters are fit on training cells only; query cells are encoded post-hoc using the frozen encoder.
+    \item Prototypes, intra-class radii, and separability ratios are computed from labeled training cells only.
+    \item Marker signatures (\cref{eq:markers}) use only labeled training-set expression.
+    \item The margin percentile threshold uses the training-set margin distribution.
+    \item The marker-margin threshold $\tau$ is selected on the validation set; test labels are used only for final F1 computation.
+    \item Fusion parameters are selected on the validation set.
+    \item Test-set cells (including their labels) are never used in any of the above steps.
+\end{enumerate}
+
+All pipeline stages are implemented in the \texttt{src/} numbered scripts (\texttt{01\_split.py} through \texttt{07\_evaluate.py}). The run identifier encodes all relevant experimental parameters, ensuring full reproducibility.

@@ -1,121 +1,227 @@
-"""Run the full scRareRefine pipeline sequentially.
+"""scRareRefine 端到端模块化运行管线
 
-Parameter priority (high → low):
-  1. Command-line argument (explicitly passed)
-  2. Config file (experiment.rare_class / seeds[0] / rare_train_sizes[0])
-
-Usage:
-    # Use all defaults from config
-    python run_pipeline.py --config configs/immune_dc.yaml
-
-    # Override specific parameters
-    python run_pipeline.py --config configs/immune_dc.yaml --seed 43 --rare_class cDC1 --rare_train_size 50
-
-    # Force re-training (ignore cached embeddings)
-    python run_pipeline.py --config configs/immune_dc.yaml --force
+通过依次导入 preprocess -> model -> rescue -> utils 等模块函数，
+在 Python 进程内完成自适应数据预处理、模型半监督训练、后处理拯救校正以及科学可视化图表的生成。
 """
-from __future__ import annotations
 
-import argparse
-import subprocess
 import sys
+import argparse
 from pathlib import Path
+import pandas as pd
+import numpy as np
 
-import yaml
+# 将项目根目录插入系统搜索路径
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from src.preprocess import run_preprocessing
+from src.model import run_model_training
+from src.rescue import run_post_hoc_rescue, MarkerRescuer, _load_expression_subset
+from src.utils import (
+    load_config,
+    load_adata,
+    make_run_dir,
+    parse_rare_train_size,
+    classification_tables,
+    write_table,
+    print_classification_report,
+    plot_marker_violin,
+    plot_method_comparison,
+    plot_rescue_effect,
+    ResourceMonitor
+)
+
+# ==============================================================================
+# 【全局填空区】 请在此配置您的数据集路径、稀有细胞类别等控制参数（支持被命令行参数覆盖）
+# ==============================================================================
+CONFIG_PATH = "configs/immune_dc.yaml"  # 默认使用的配置文件路径
+SEED = 42                                # 实验随机种子
+RARE_CLASS = None                        # 目标稀有类名称（若为 None 则从 yaml 配置的 experiment.rare_class 读取）
+LABEL_COL = None                         # 细胞类型真实标签列名（若为 None 则从 yaml 配置的 dataset.label_key 读取）
+RARE_TRAIN_SIZE = None                   # 训练集稀有细胞显式标注数量（设为 None 则优先使用 YAML 中配置的列表首元素；也可配 float、int 或 'all'）
+SPLIT_MODE = None                        # 样本切分模式（设为 None 则默认 batch_heldout；可选 cell_stratified）
+MAX_FALSE_RESCUE_RATE = 0.001           # 后处理拯救所允许的最大误判率阈值
+# ==============================================================================
 
 
-def load_config(config_path: str) -> dict:
-    with open(config_path) as f:
-        return yaml.safe_load(f)
-
-
-def resolve_param(cli_value, config_value):
-    """返回 CLI 值（若提供），否则返回 config 值。"""
-    return cli_value if cli_value is not None else config_value
-
-
-def run_command(cmd: list[str], cwd: Path) -> None:
-    print("\n" + "=" * 80)
-    print("Running:", " ".join(cmd))
-    print("=" * 80 + "\n")
-    subprocess.run(cmd, check=True, cwd=cwd)
+def resolve_param(cli_value, config_value, global_value=None):
+    """ 参数决策优先级：命令行传入 > 填空区全局变量（若有且非空） > 配置文件参数 """
+    if cli_value is not None:
+        return cli_value
+    if global_value is not None:
+        return global_value
+    return config_value
 
 
 def main() -> None:
+    # 允许接收命令行参数以覆盖全局填空区
     parser = argparse.ArgumentParser(
-        description="Run scRareRefine pipeline. Defaults come from config file.",
+        description="scRareRefine 端到端一键主流水线脚本",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--config", default="configs/immune_dc.yaml",
-                        help="YAML config path (default: configs/immune_dc.yaml)")
-    parser.add_argument("--seed", type=int, required=True,
-                        help="Random seed，必须显式指定（config 中 seeds 为列表，无唯一默认值）")
-    parser.add_argument("--rare_class", default=None,
-                        help="Rare cell class（默认读取 config 中 experiment.rare_class）")
-    parser.add_argument("--rare_train_size", required=True,
-                        help="Rare class 训练预算，必须显式指定（config 中 rare_train_sizes 为列表，无唯一默认值）")
-    parser.add_argument("--split_mode", default="batch_heldout",
-                        help="batch_heldout | cell_stratified")
-    parser.add_argument("--force", action="store_true",
-                        help="强制重新训练 Stage 2，忽略已有 embedding")
+    parser.add_argument("--config", default=None, help="YAML 配置文件路径")
+    parser.add_argument("--seed", type=int, default=None, help="随机数种子")
+    parser.add_argument("--rare_class", default=None, help="目标稀有类名称")
+    parser.add_argument("--label_col", default=None, help="真实标签列名")
+    parser.add_argument("--rare_train_size", default=None, help="稀有细胞显式标注规模")
+    parser.add_argument("--split_mode", default=None, help="切分模式 (batch_heldout | cell_stratified)")
+    parser.add_argument("--max_false_rescue_rate", type=float, default=None, help="最大误拯救率")
     args = parser.parse_args()
 
-    # ── 读 config，仅用它填充有单值默认的参数（rare_class）────────────────────
-    config = load_config(args.config)
+    # 1. 载入配置文件与各参数的合并决策
+    cfg_file = args.config if args.config is not None else CONFIG_PATH
+    config = load_config(cfg_file)
     exp = config.get("experiment", {})
+    
+    seed = args.seed if args.seed is not None else SEED
+    rare_class = resolve_param(args.rare_class, exp.get("rare_class"), RARE_CLASS)
+    label_column = resolve_param(args.label_col, config["dataset"].get("label_key", "label"), LABEL_COL)
+    batch_key = config["dataset"].get("batch_key", "batch")
+    split_mode = resolve_param(args.split_mode, exp.get("split_mode", "batch_heldout"), SPLIT_MODE)
+    
+    # 智能读取 YAML 配置中的默认标注规模（若是列表取第一个元素，否则默认 10）
+    yaml_sizes = exp.get("rare_train_sizes", [])
+    yaml_default_size = yaml_sizes[0] if isinstance(yaml_sizes, list) and len(yaml_sizes) > 0 else 10
+    
+    raw_size = resolve_param(args.rare_train_size, yaml_default_size, RARE_TRAIN_SIZE)
+    parsed_rare_size = parse_rare_train_size(raw_size)
+    
+    max_false_rescue_rate = resolve_param(args.max_false_rescue_rate, None, MAX_FALSE_RESCUE_RATE)
 
-    rare_class = resolve_param(args.rare_class, exp.get("rare_class"))
-
+    # 验证关键参数
     if rare_class is None:
-        parser.error("--rare_class not provided and experiment.rare_class not found in config.")
+        raise ValueError("未在全局填空区或配置文件中配置 rare_class！")
+        
+    # 计算并创建本次实验的唯一存储路径
+    run_dir = make_run_dir(config, split_mode, seed, rare_class, parsed_rare_size)
+    out_dir = run_dir / "metrics"
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    split_mode = args.split_mode
+    print("\n" + "=" * 80)
+    print("      【scRareRefine 一键模块化流水线启动】")
+    print(f"  - 配置文件 : {cfg_file}")
+    print(f"  - 稀有类型 : {rare_class}")
+    print(f"  - 真实标签 : {label_column}")
+    print(f"  - 标注规模 : {parsed_rare_size}")
+    print(f"  - 随机种子 : {seed}")
+    print(f"  - 保存目录 : {run_dir}")
+    print("=" * 80 + "\n")
 
-    seed            = args.seed
-    rare_train_size = args.rare_train_size
+    # 开启资源与耗时监控
+    with ResourceMonitor(sample_interval_seconds=1.0) as monitor:
+        
+        # ==========================================
+        # 步骤 1：读取数据、进行数据体检与严格三路划分
+        # ==========================================
+        print(">>> [步骤 1/4] 加载原始 h5ad 数据并执行自适应预处理...")
+        adata_raw = load_adata(config)
+        adata, train_idx, val_idx, test_idx = run_preprocessing(
+            adata_raw,
+            label_column=label_column,
+            batch_key=batch_key,
+            split_mode=split_mode,
+            seed=seed,
+            rare_class=rare_class
+        )
 
-    print(f"\nPipeline parameters:")
-    print(f"  config         = {args.config}")
-    print(f"  rare_class     = {rare_class}")
-    print(f"  seed           = {seed}")
-    print(f"  rare_train_size= {rare_train_size}")
-    print(f"  split_mode     = {split_mode}")
-    print(f"  force          = {args.force}")
+        # ==========================================
+        # 步骤 2：选择高变基因、两阶段模型训练与表征提取
+        # ==========================================
+        print(">>> [步骤 2/4] 启动 scANVI 半监督神经网络训练流程...")
+        scanvi_model, predictions_dict, latents_dict, selected_genes = run_model_training(
+            adata,
+            train_idx,
+            val_idx,
+            test_idx,
+            label_column=label_column,
+            batch_key=batch_key,
+            rare_class=rare_class,
+            rare_train_size=parsed_rare_size,
+            config=config,
+            seed=seed
+        )
 
-    project_root = Path(__file__).resolve().parent
-    py = sys.executable
+        # ==========================================
+        # 步骤 3：提取预测标签及不确定性特征，进行后处理拯救校正
+        # ==========================================
+        print(">>> [步骤 3/4] 模型初步推理完成，开始应用 Post-hoc 校正与拯救算法...")
+        y_true_test = predictions_dict["test"]["true_label"].astype(str)
+        base_pred_test = predictions_dict["test"]["predicted_label"].astype(str)
+        
+        # 建立 baseline 评估记录
+        bl_metrics, _ = classification_tables(y_true_test, base_pred_test, rare_class=rare_class)
+        metrics_rows = [{
+            "method": "baseline",
+            "seed": seed,
+            "rare_train_size": str(parsed_rare_size),
+            **bl_metrics,
+            "n_rescued": 0,
+            "n_false_rescues": 0,
+            "major_to_rare_false_rescue_rate": 0.0
+        }]
+        
+        # 对比三种拯救策略 (1. Prototype Gating, 2. Gate + Marker, 3. Adaptive Fusion)
+        strategies = ["gate_only", "gate_marker", "fusion"]
+        for strat in strategies:
+            final_test_pred, summary = run_post_hoc_rescue(
+                adata,
+                predictions_dict,
+                latents_dict,
+                selected_genes,
+                rare_class=rare_class,
+                strategy=strat,
+                max_false_rescue_rate=max_false_rescue_rate
+            )
+            
+            # 统计分类与拯救表现
+            overall_metrics, _ = classification_tables(y_true_test, final_test_pred, rare_class=rare_class)
+            metrics_rows.append({
+                "method": strat,
+                "seed": seed,
+                "rare_train_size": str(parsed_rare_size),
+                **overall_metrics,
+                "n_rescued": summary["n_rescued"],
+                "n_false_rescues": summary["n_false_rescues"],
+                "major_to_rare_false_rescue_rate": summary["n_false_rescues"] / int(y_true_test.ne(rare_class).sum()) if int(y_true_test.ne(rare_class).sum()) else 0.0
+            })
+            
+            # 打印控制台 Markdown 格式分类报告
+            print_classification_report(y_true_test, final_test_pred, rare_class=rare_class)
 
-    # ── 公共参数片段 ──────────────────────────────────────────────────────────
-    common = [
-        "--config", args.config,
-        "--seed", str(seed),
-        "--rare_class", rare_class,
-        "--rare_train_size", str(rare_train_size),
-        "--split_mode", split_mode,
-    ]
+        # 汇总策略评估记录并保存
+        metrics_df = pd.DataFrame(metrics_rows)
+        write_table(metrics_df, out_dir / "final_metrics.csv")
+        print(f"-> [保存指标] 成功将各策略的分类对照表写入: {out_dir / 'final_metrics.csv'}")
 
-    stage2_extra = ["--force"] if args.force else []
+        # ==========================================
+        # 步骤 4：联动可视化绘图，输出小提琴图与对比柱状图
+        # ==========================================
+        print(">>> [步骤 4/4] 启动绘图工具，生成生信动态分析图表...")
+        
+        # (1) 自动提取特异 Marker 基因绘制表达量小提琴图
+        train_cell_ids = predictions_dict["train"]["cell_id"].astype(str).tolist()
+        train_expr = _load_expression_subset(adata, train_cell_ids, selected_genes)
+        ref_labels = predictions_dict["train"]["true_label"]
+        ref_is_labeled = predictions_dict["train"]["is_labeled_for_scanvi"].astype(bool).to_numpy()
+        
+        marker_rescuer = MarkerRescuer(rare_class)
+        marker_rescuer.compute_marker_signatures(train_expr, selected_genes, ref_labels, ref_is_labeled, top_n=5)
+        
+        rare_markers = marker_rescuer.signatures.get(rare_class, [])
+        if rare_markers:
+            plot_marker_violin(adata, label_column, rare_markers[:3], out_dir / "marker_violin.png", rare_class=rare_class)
+            
+        # (2) 绘制多策略分类性能对比图与拯救效果柱状图
+        plot_method_comparison(metrics_df, out_dir / "method_comparison.png", rare_class=rare_class)
+        plot_rescue_effect(metrics_df, out_dir / "rescue_effect.png", rare_class=rare_class)
 
-    stages = [
-        ("Stage 1: split",               [py, "src/01_split.py",
-                                          "--config", args.config,
-                                          "--seed", str(seed),
-                                          "--split_mode", split_mode]),
-        ("Stage 2: scANVI baseline",     [py, "src/02_baseline_scanvi.py", *common, *stage2_extra]),
-        ("Stage 3: prototype scores",    [py, "src/03_prototype.py",       *common]),
-        ("Stage 3b: kNN baseline",       [py, "src/03b_knn_baseline.py",   *common]),
-        ("Stage 3c: CellTypist",         [py, "src/03c_celltypist_baseline.py", *common]),
-        ("Stage 3d: scBalance",          [py, "src/03d_scbalance_baseline.py",  *common]),
-        ("Stage 4: prototype gate",      [py, "src/04_prototype_gate.py",  *common]),
-        ("Stage 5: gate + marker",       [py, "src/05_prototype_gate_marker.py", *common]),
-        ("Stage 6: evaluate",            [py, "src/07_evaluate.py",        *common]),
-    ]
-
-    for label, cmd in stages:
-        print(f"\n>>> {label}")
-        run_command(cmd, cwd=project_root)
-
-    print("\nAll stages finished successfully.")
+    # 打印最终系统资源报告
+    usage = monitor.summary()
+    print("\n" + "=" * 80)
+    print("      【scRareRefine 运行状态总结】")
+    print(f"  - 消耗 Wall-Time  : {usage['wall_time_seconds']:.2f} 秒")
+    print(f"  - 峰值物理内存占用 : {usage['peak_rss_mb']:.2f} MB")
+    print(f"  - 结果大表保存路径 : {out_dir / 'final_metrics.csv'}")
+    print("=" * 80 + "\n")
 
 
 if __name__ == "__main__":
