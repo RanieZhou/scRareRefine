@@ -362,18 +362,14 @@ def plot_method_comparison(metrics_df: pd.DataFrame, out_path: str | Path, rare_
     out_path.parent.mkdir(parents=True, exist_ok=True)
     
     # 定义标准对比方法顺序、配色与标签
-    method_order = ["baseline", "gate_only", "gate_marker", "fusion"]
+    method_order = ["baseline", "scRareRefine"]
     method_labels = {
         "baseline": "scANVI Baseline",
-        "gate_only": "Proto Gating",
-        "gate_marker": "Gate + Marker",
-        "fusion": "Adaptive Fusion"
+        "scRareRefine": "scRareRefine (Ours)",
     }
     method_colors = {
         "baseline": "#8da0cb",
-        "gate_only": "#fc8d62",
-        "gate_marker": "#e78ac3",
-        "fusion": "#ffd92f"
+        "scRareRefine": "#ffd92f",
     }
     
     present_methods = [m for m in method_order if m in metrics_df["method"].values]
@@ -451,9 +447,7 @@ def plot_rescue_effect(metrics_df: pd.DataFrame, out_path: str | Path, rare_clas
     
     # 颜色卡
     method_colors = {
-        "gate_only": "#fc8d62",
-        "gate_marker": "#e78ac3",
-        "fusion": "#ffd92f"
+        "scRareRefine": "#ffd92f",
     }
     
     for ax, (col, title, ylabel) in zip(axes, metrics):

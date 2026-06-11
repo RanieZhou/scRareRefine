@@ -1,0 +1,43 @@
+# ==============================================================================
+# scRareRefine 实验配置文件: pancreas_baron (Baron et al. 2016 人类胰腺数据集)
+# 8569 细胞 × 20125 基因 | 4 个供体批次 (donor1-4)
+# 细胞类型分布: beta(29%) alpha(27%) ductal(13%) acinar(11%) ...
+# 稀有类: gamma(2.98%/255) > activated_stellate(3.3%) > macrophage(0.64%)
+#          > mast(0.29%) > epsilon(0.21%) > schwann(0.15%) > t_cell(0.08%)
+# ==============================================================================
+
+dataset:
+  name: pancreas_baron
+  path: data/raw/pancreas_baron/pancreas_baron.h5ad
+  label_key: cell_type
+  batch_key: batch                      # donor1 / donor2 / donor3 / donor4
+
+experiment:
+  rare_class: gamma                     # 255 个细胞 (2.98%)，批次泛化下训练集约 150 个，最小标注可用
+  split_mode: batch_heldout             # 4 个 donor 批次，按批次划分 train/val/test
+  rare_train_sizes:
+    - 0.05                              # ~7-9 个已标注稀有细胞
+    - 0.10                              # ~15-18 个
+    - 0.25                              # ~37-45 个
+    - all
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+
+model:
+  n_top_hvg: 2000                       # 8k 细胞规模，2000 HVG 足够
+  n_latent: 20                          # 适当缩小潜空间维度
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 128                       # 数据量较小，缩小 batch size
+
+analysis:
+  rare_threshold: 0.05
+  rare_max_cells: 200
+  review_fractions:
+    - 0.01
+    - 0.05
+    - 0.10
+    - 0.20

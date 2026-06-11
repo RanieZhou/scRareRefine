@@ -203,20 +203,18 @@ def collect_and_print_summary(jobs: list[Job], project_root: Path) -> None:
     # 格式化方法名称
     method_mapping = {
         "baseline": "scANVI Baseline",
-        "gate_only": "Proto Gating",
-        "gate_marker": "Gate + Marker",
-        "fusion": "Adaptive Fusion (Ours)",
+        "scRareRefine": "scRareRefine (Ours)",
         "celltypist": "CellTypist",
         "scbalance": "scBalance"
     }
     grouped["method"] = grouped["method"].map(lambda m: method_mapping.get(m, str(m).replace("knn_k15", "k-NN")))
-    
+
     # 转换为宽表，展示不同方法在 F1-Score 上的表现对比
     pivot_df = grouped.pivot(index=["dataset", "rare_class", "rare_train_size"], columns="method", values="rare_f1")
-    
-    # 重新排序列，确保 baseline 第一，我们提出的融合最后，其他居中
+
+    # 重新排序列，确保 baseline 第一，scRareRefine 最后，其他居中
     all_cols = pivot_df.columns.tolist()
-    pref_order = ["scANVI Baseline", "k-NN", "CellTypist", "scBalance", "Proto Gating", "Gate + Marker", "Adaptive Fusion (Ours)"]
+    pref_order = ["scANVI Baseline", "k-NN", "CellTypist", "scBalance", "scRareRefine (Ours)"]
     final_cols = [c for c in pref_order if c in all_cols] + [c for c in all_cols if c not in pref_order]
     pivot_df = pivot_df[final_cols]
     

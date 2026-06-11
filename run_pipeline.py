@@ -30,6 +30,23 @@ from src.utils import (
     ResourceMonitor
 )
 
+
+def _try_load_cached_embeddings(run_dir: Path) -> tuple | None:
+    """若 scANVI baseline 已保存嵌入文件，则直接加载并返回 (predictions_dict, latents_dict, selected_genes)。"""
+    splits = ["train", "validation", "test"]
+    emb_dir = run_dir / "embeddings"
+    hvg_file = run_dir / "selected_hvg_genes.csv"
+
+    required = [emb_dir / f"{s}_{t}.csv" for s in splits for t in ("predictions", "latent")]
+    required.append(hvg_file)
+    if not all(p.exists() for p in required):
+        return None
+
+    predictions_dict = {s: pd.read_csv(emb_dir / f"{s}_predictions.csv") for s in splits}
+    latents_dict = {s: pd.read_csv(emb_dir / f"{s}_latent.csv") for s in splits}
+    selected_genes = pd.read_csv(hvg_file)["gene"].tolist()
+    return predictions_dict, latents_dict, selected_genes
+
 # ==============================================================================
 # 【全局填空区】 请在此配置您的数据集路径、稀有细胞类别等控制参数（支持被命令行参数覆盖）
 # ==============================================================================
@@ -126,19 +143,24 @@ def main() -> None:
         # ==========================================
         # 步骤 2：选择高变基因、两阶段模型训练与表征提取
         # ==========================================
-        print(">>> [步骤 2/4] 启动 scANVI 半监督神经网络训练流程...")
-        scanvi_model, predictions_dict, latents_dict, selected_genes = run_model_training(
-            adata,
-            train_idx,
-            val_idx,
-            test_idx,
-            label_column=label_column,
-            batch_key=batch_key,
-            rare_class=rare_class,
-            rare_train_size=parsed_rare_size,
-            config=config,
-            seed=seed
-        )
+        cached = _try_load_cached_embeddings(run_dir)
+        if cached is not None:
+            print(">>> [步骤 2/4] 检测到已有 scANVI 嵌入缓存，跳过重新训练，直接加载...")
+            predictions_dict, latents_dict, selected_genes = cached
+        else:
+            print(">>> [步骤 2/4] 启动 scANVI 半监督神经网络训练流程...")
+            _, predictions_dict, latents_dict, selected_genes = run_model_training(
+                adata,
+                train_idx,
+                val_idx,
+                test_idx,
+                label_column=label_column,
+                batch_key=batch_key,
+                rare_class=rare_class,
+                rare_train_size=parsed_rare_size,
+                config=config,
+                seed=seed
+            )
 
         # ==========================================
         # 步骤 3：提取预测标签及不确定性特征，进行后处理拯救校正
@@ -159,33 +181,28 @@ def main() -> None:
             "major_to_rare_false_rescue_rate": 0.0
         }]
         
-        # 对比三种拯救策略 (1. Prototype Gating, 2. Gate + Marker, 3. Adaptive Fusion)
-        strategies = ["gate_only", "gate_marker", "fusion"]
-        for strat in strategies:
-            final_test_pred, summary = run_post_hoc_rescue(
-                adata,
-                predictions_dict,
-                latents_dict,
-                selected_genes,
-                rare_class=rare_class,
-                strategy=strat,
-                max_false_rescue_rate=max_false_rescue_rate
-            )
-            
-            # 统计分类与拯救表现
-            overall_metrics, _ = classification_tables(y_true_test, final_test_pred, rare_class=rare_class)
-            metrics_rows.append({
-                "method": strat,
-                "seed": seed,
-                "rare_train_size": str(parsed_rare_size),
-                **overall_metrics,
-                "n_rescued": summary["n_rescued"],
-                "n_false_rescues": summary["n_false_rescues"],
-                "major_to_rare_false_rescue_rate": summary["n_false_rescues"] / int(y_true_test.ne(rare_class).sum()) if int(y_true_test.ne(rare_class).sum()) else 0.0
-            })
-            
-            # 打印控制台 Markdown 格式分类报告
-            print_classification_report(y_true_test, final_test_pred, rare_class=rare_class)
+        # 执行 scRareRefine 自适应融合拯救
+        final_test_pred, summary = run_post_hoc_rescue(
+            adata,
+            predictions_dict,
+            latents_dict,
+            selected_genes,
+            rare_class=rare_class,
+            strategy="fusion",
+            max_false_rescue_rate=max_false_rescue_rate
+        )
+
+        overall_metrics, _ = classification_tables(y_true_test, final_test_pred, rare_class=rare_class)
+        metrics_rows.append({
+            "method": "scRareRefine",
+            "seed": seed,
+            "rare_train_size": str(parsed_rare_size),
+            **overall_metrics,
+            "n_rescued": summary["n_rescued"],
+            "n_false_rescues": summary["n_false_rescues"],
+            "major_to_rare_false_rescue_rate": summary["n_false_rescues"] / int(y_true_test.ne(rare_class).sum()) if int(y_true_test.ne(rare_class).sum()) else 0.0
+        })
+        print_classification_report(y_true_test, final_test_pred, rare_class=rare_class)
 
         # 汇总策略评估记录并保存
         metrics_df = pd.DataFrame(metrics_rows)
