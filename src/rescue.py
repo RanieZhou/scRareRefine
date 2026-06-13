@@ -36,15 +36,68 @@ class PrototypeRescuer:
         self.classes = []
 
     def fit(self, train_latent: np.ndarray, train_labels: pd.Series, is_labeled: np.ndarray):
-        """ 计算训练集中各已知细胞类型的潜在表示中心作为原型中心向量 """
+        """ 计算训练集中各已知细胞类型的潜在表示中心作为原型中心向量，并估算可分性比率 """
         self.classes = sorted(train_labels[is_labeled].unique())
         if self.rare_class not in self.classes:
             raise ValueError(f"训练集中未发现稀有类别标签: {self.rare_class}")
-            
+
         self.prototypes = {
             cls: train_latent[is_labeled & train_labels.eq(cls).to_numpy()].mean(axis=0)
             for cls in self.classes
         }
+
+        # 各类「类内半径」（到原型距离的中位数，稳健抗离群）。用于各向异性隶属度评分的尺度归一化。
+        # 少于 3 个标注样本时无法可靠估计分布，改用保守默认半径 1.0，防止 score 被接近 0 的半径异常放大。
+        self.radii = {}
+        for cls in self.classes:
+            pts = train_latent[is_labeled & train_labels.eq(cls).to_numpy()]
+            if len(pts) < 3:
+                self.radii[cls] = 1.0
+            else:
+                d = np.sqrt(((pts - self.prototypes[cls]) ** 2).sum(1))
+                self.radii[cls] = max(float(np.median(d)), 1e-6)
+
+        # 基于训练集计算 separability：原型间距 / 类内稀有半径
+        # 稀有标注 < 3 时，类内半径估计不可靠（单点=0），强制 separability=0 触发弃权安全网。
+        proto_mat = np.vstack([self.prototypes[c] for c in self.classes])
+        rare_i = self.classes.index(self.rare_class)
+        rare_train = train_latent[is_labeled & train_labels.eq(self.rare_class).to_numpy()]
+        maj_i = [i for i, c in enumerate(self.classes) if c != self.rare_class]
+        d_to_maj = float(np.sqrt(((proto_mat[rare_i] - proto_mat[maj_i]) ** 2).sum(1)).min()) if maj_i else 0.0
+        if len(rare_train) < 3:
+            self.separability_ratio = 0.0
+        else:
+            intra_r = float(np.sqrt(((rare_train - proto_mat[rare_i]) ** 2).sum(1)).mean())
+            self.separability_ratio = d_to_maj / max(intra_r, 1e-8)
+
+    def rare_membership_score(self, query_latent: np.ndarray) -> np.ndarray:
+        """ 各向异性隶属度评分：softmax_c(-d_c / r_c) 的稀有类分量。
+
+        用每个类自己的类内半径 r_c 归一化距离（各向同性 Mahalanobis 近似），
+        让评分对各类尺度自适应，缓解边界可分数据集中稀有类被相邻多数类「侵入」的问题。
+        """
+        classes = self.classes
+        P = np.vstack([self.prototypes[c] for c in classes])
+        R = np.array([self.radii[c] for c in classes])
+        d = np.sqrt(((query_latent[:, None, :] - P[None]) ** 2).sum(2))
+        logits = -d / R[None]
+        logits -= logits.max(axis=1, keepdims=True)
+        e = np.exp(logits)
+        p = e / e.sum(axis=1, keepdims=True)
+        return p[:, classes.index(self.rare_class)]
+
+    def isotropic_rank1(self, query_latent: np.ndarray, predicted_labels: pd.Series) -> np.ndarray:
+        """ 候选掩膜：predicted != rare 且各向同性欧氏距离下稀有原型最近 (rank==1)。 """
+        classes = self.classes
+        P = np.vstack([self.prototypes[c] for c in classes])
+        d = np.sqrt(((query_latent[:, None, :] - P[None]) ** 2).sum(2))
+        rank1 = d.argmin(axis=1) == classes.index(self.rare_class)
+        not_rare = predicted_labels.to_numpy() != self.rare_class
+        return not_rare & rank1
+
+    # 可分性弃权线（CLAUDE.md 既定先验：separability < 1.1 时稀有类与多数类严重重叠，prototype 无结构优势）。
+    # 注意：此值是数据集无关的先验，不从 test 集选取；候选筛选的 margin_quantile / dratio_threshold 改由 validation 校准。
+    LOW_SEP = 1.1
 
     def predict_scores(
         self,
@@ -52,8 +105,19 @@ class PrototypeRescuer:
         predicted_labels: pd.Series,
         margin: np.ndarray,
         margin_quantile: float = 0.25,
+        dratio_threshold: float = 1.0,
+        margin_threshold: float | None = None,
+        verbose: bool = True,
     ) -> pd.DataFrame:
-        """ 计算测试细胞到各原型的距离，评估其距离稀有类的排名 (rank)，并标记候选人 """
+        """ 计算测试细胞到各原型的距离，评估其距离稀有类的排名 (rank)，并标记候选人。
+
+        候选条件（参数化，阈值由 validation 校准，见 select_gate_params_on_val）：
+            not_rare AND rank==1 AND margin_ok AND (dist_ratio < dratio_threshold)
+        - margin_threshold: 由 val 上预先计算的固定数值（优先于 margin_quantile，inductive 合规）。
+        - margin_quantile: 仅当 margin_threshold=None 时有效；在当前 split 上重算分位点（内部调试用）。
+        - dratio_threshold=1.0 表示不做几何过滤（rank==1 已隐含 dist_ratio<1）。
+        - separability < LOW_SEP 时直接弃权（安全网，数据集无关先验）。
+        """
         # 将各原型转化为堆叠矩阵
         proto_vecs = np.vstack([self.prototypes[cls] for cls in self.classes])
         diff = query_latent[:, None, :] - proto_vecs[None, :, :]
@@ -61,14 +125,14 @@ class PrototypeRescuer:
 
         class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
         rare_idx = class_to_idx[self.rare_class]
-        
+
         # 度量到预测类与稀有类的原型距离
         pred_dist = np.array([
             distances[i, class_to_idx[pred]] if pred in class_to_idx else np.nan
             for i, pred in enumerate(predicted_labels)
         ])
         rare_dist = distances[:, rare_idx]
-        
+
         # 计算细胞在距离稀有类别原型上的距离由近到远排名 (rank=1代表最接近)
         ranks = np.argsort(np.argsort(distances, axis=1), axis=1)[:, rare_idx] + 1
 
@@ -76,9 +140,27 @@ class PrototypeRescuer:
         d_nearest_majority = distances[:, non_rare_idx].min(axis=1) if non_rare_idx else np.full(len(query_latent), np.nan)
         dist_ratio = np.where(d_nearest_majority > 1e-10, rare_dist / d_nearest_majority, np.nan)
 
-        # 筛选不确定性较高的细胞：模型初步预测不是稀有类，但原型距离上稀有类位居前两位，且分类 margin 低于阈值
-        threshold = float(np.quantile(margin, margin_quantile))
-        candidates = (predicted_labels.to_numpy() != self.rare_class) & (ranks <= 2) & (margin <= threshold)
+        sep = getattr(self, "separability_ratio", 1.0)
+        not_rare = predicted_labels.to_numpy() != self.rare_class
+        rank1 = ranks == 1
+
+        if sep < self.LOW_SEP:
+            # 不可分：弃权安全网
+            candidates = np.zeros(len(query_latent), dtype=bool)
+        else:
+            if margin_threshold is not None:
+                # 使用 validation 上预先计算的固定阈值（inductive 合规：不依赖当前 split 分布）
+                margin_ok = (margin <= margin_threshold) if np.isfinite(margin_threshold) else np.ones(len(query_latent), dtype=bool)
+            elif margin_quantile >= 1.0:
+                margin_ok = np.ones(len(query_latent), dtype=bool)
+            else:
+                threshold = float(np.quantile(margin, margin_quantile))
+                margin_ok = margin <= threshold
+            dratio_ok = (dist_ratio < dratio_threshold) | np.isnan(dist_ratio)
+            candidates = not_rare & rank1 & margin_ok & dratio_ok
+
+        if verbose:
+            print(f"   [候选筛选] separability={sep:.3f}  margin_q={margin_quantile}  dratio_th={dratio_threshold}  候选数={int(candidates.sum())}")
 
         return pd.DataFrame({
             f"distance_to_{self.rare_class}": rare_dist,
@@ -89,6 +171,60 @@ class PrototypeRescuer:
             f"dist_ratio_{self.rare_class}": dist_ratio,
             "prototype_rescue_candidate": candidates,
         }, index=predicted_labels.index)
+
+    def select_gate_params_on_val(
+        self,
+        val_latent: np.ndarray,
+        val_predicted: pd.Series,
+        val_true: pd.Series,
+        val_margin: np.ndarray,
+        max_false_rescue_rate: float = 0.001,
+    ) -> dict:
+        """ 在 validation 集上用 FFR 约束 grid search 候选门控阈值 (margin_quantile, dratio_threshold)。
+
+        Inductive：只用 val 的标签选阈值，不接触 test。返回的阈值之后同时应用于 val 与 test。
+        目标：在 false rescue rate <= max_false_rescue_rate 约束下，最大化 val 候选对真稀有的召回。
+        若 separability < LOW_SEP 或无任何组合带来正候选，则返回最严格组合（实际等于弃权）。
+        """
+        val_true = pd.Series(val_true).astype(str).reset_index(drop=True)
+        val_predicted = pd.Series(val_predicted).astype(str).reset_index(drop=True)
+        rare = self.rare_class
+        # val 中被 baseline 误判的真稀有（候选筛选的召回目标）与非稀有总数（FFR 分母）
+        missed_rare = (val_true.eq(rare) & val_predicted.ne(rare)).to_numpy()
+        non_rare = val_true.ne(rare).to_numpy()
+        n_nonrare = int(non_rare.sum())
+        n_missed = int(missed_rare.sum())
+
+        # 弃权 fallback：dratio_threshold=0.0 保证 dist_ratio<0 不可能 → 0 候选
+        default = {"margin_threshold": None, "dratio_threshold": 0.0}
+        if getattr(self, "separability_ratio", 1.0) < self.LOW_SEP or n_missed == 0 or n_nonrare == 0:
+            return default
+
+        margin_grid = [0.25, 0.5, 0.75, 1.0]   # 1.0 = 不过滤 margin
+        dratio_grid = [0.90, 0.95, 1.0]        # 1.0 = 不过滤几何
+        best = None  # (recall, -ffr, mq, dt)
+        for mq in margin_grid:
+            for dt in dratio_grid:
+                scores = self.predict_scores(val_latent, val_predicted, val_margin,
+                                             margin_quantile=mq, dratio_threshold=dt, verbose=False)
+                cand = scores["prototype_rescue_candidate"].to_numpy(bool)
+                n_cand = int(cand.sum())
+                if n_cand == 0:
+                    continue
+                false_rescues = int((cand & non_rare).sum())
+                ffr = false_rescues / n_nonrare
+                if ffr > max_false_rescue_rate:
+                    continue
+                recall = int((cand & missed_rare).sum()) / n_missed
+                key = (recall, -ffr, mq, dt)  # 优先高 recall，平手时优先低 FFR
+                if best is None or key > best:
+                    best = key
+        if best is None:
+            return default
+        mq, dt = best[2], best[3]
+        # 把 quantile level 转成 val 上的固定数值阈值；test 只使用此固定值，不依赖 test 自身分布
+        val_margin_th = float("inf") if mq >= 1.0 else float(np.quantile(val_margin, mq))
+        return {"margin_threshold": val_margin_th, "dratio_threshold": dt}
 
 # ==========================================
 # 策略二：基于 Marker 表达丰度验证的精细拯救
@@ -277,8 +413,8 @@ class FusionRescuer:
         ]
         
         best_f1 = -1.0
-        best_combo = (1.0, 0.2, 0.5)
-        
+        best_combo = None  # 无合法组合时 → abstain，不使用硬编码默认参数
+
         for temp, alpha, th in grid:
             p_proto = self.get_prototype_probabilities(val_latent, ref_latent, ref_labels, ref_is_labeled, temperature=temp)
             fused_pred = self.gated_fuse(val_pred, scanvi_val, p_proto, val_mask, alpha, th)
@@ -295,11 +431,59 @@ class FusionRescuer:
                     best_f1 = overall["rare_f1"]
                     best_combo = (temp, alpha, th)
                     
-        self.best_params = {
-            "temperature": best_combo[0],
-            "alpha": best_combo[1],
-            "rare_prob_threshold": best_combo[2],
-        }
+        if best_combo is None:
+            self.best_params = None  # 无满足 accuracy+FFR 约束的组合 → 外层 abstain
+        else:
+            self.best_params = {
+                "temperature": best_combo[0],
+                "alpha": best_combo[1],
+                "rare_prob_threshold": best_combo[2],
+            }
+
+# ==========================================
+# 策略四：Conformal 重排序拯救（综合方案，跨数据集泛化、无 per-dataset 阈值）
+# ==========================================
+class ConformalRescuer:
+    """ 综合稀有细胞拯救：各向同性 rank=1 定候选 + 各向异性隶属度评分 + conformal 阈值控 FFR。
+
+    设计动机（解决 gate/fusion 框架的 val/test 阈值漂移）：
+    - 候选筛选 rank=1（各向同性欧氏）：对高/低可分数据集都提供强精度约束。
+    - 稀有性 score（各向异性隶属度，PrototypeRescuer.rare_membership_score）：按各类紧致度归一化。
+    - Conformal 阈值：tau 取「全体 val 非稀有细胞」score 的有限样本 (1-alpha) 顺序统计量。
+      用大样本（数百~数千非稀有）校准而非小候选集 grid search，给出分布无关的 FFR<=alpha 上界。
+    高可分数据集：真稀有 score 远高于 val 非稀有分位 → tau 低 → 不影响（recall 不退化）。
+    边界数据集：相邻多数类细胞 score 较高 → tau 自动抬升 → 挡住假阳性。整套逻辑无数据集相关常量。
+    """
+    def __init__(self, rare_class: str, alpha: float = 0.01):
+        self.rare_class = rare_class
+        self.alpha = alpha   # 目标 FFR 上界（发表标准 <=0.01），跨数据集固定，非调参
+        self.tau = None
+
+    @staticmethod
+    def _conformal_quantile(scores: np.ndarray, alpha: float) -> float:
+        """ 有限样本保守上分位：第 ceil((1-alpha)(n+1)) 个顺序统计量（n 不足以保证时返回 +inf=不拯救）。 """
+        s = np.sort(np.asarray(scores, dtype=float))
+        n = len(s)
+        if n == 0:
+            return float("inf")
+        k = int(np.ceil((1.0 - alpha) * (n + 1)))
+        return float("inf") if k > n else float(s[k - 1])
+
+    def calibrate(self, val_scores: np.ndarray, val_true: pd.Series) -> float:
+        """ 在 validation 的非稀有细胞 score 上校准 conformal 阈值 tau（不接触 test）。 """
+        val_true = pd.Series(val_true).astype(str).to_numpy()
+        nonrare_scores = np.asarray(val_scores)[val_true != self.rare_class]
+        self.tau = self._conformal_quantile(nonrare_scores, self.alpha)
+        return self.tau
+
+    def relabel(self, predicted_labels: pd.Series, candidate_mask: np.ndarray, test_scores: np.ndarray) -> pd.Series:
+        """ 对候选且 score>=tau 的细胞重标注为稀有类。 """
+        result = predicted_labels.astype(str).copy()
+        if self.tau is None or not np.isfinite(self.tau):
+            return result
+        fire = candidate_mask & (np.asarray(test_scores) >= self.tau)
+        result.iloc[np.where(fire)[0]] = self.rare_class
+        return result
 
 # ==========================================
 # 8. 顶层端到端 Post-hoc 拯救流水线主入口
@@ -313,17 +497,20 @@ def run_post_hoc_rescue(
     rare_class: str,
     strategy: str = "gate_marker",
     max_false_rescue_rate: float = 0.001,
+    conformal_alpha: float = 0.01,
 ) -> tuple[pd.Series, dict]:
     """ 端到端执行 Post-hoc 细胞身份精细校正与重标注。
-    
+
     Args:
         adata: 全局 AnnData 表达矩阵
         predictions_dict: model 模块产出的预测结果 DataFrame 字典 ('train', 'validation', 'test')
         latents_dict: model 模块产出的潜表征 DataFrame 字典 ('train', 'validation', 'test')
         selected_genes: 训练用的 HVG 基因列表
         rare_class: 稀有细胞的真实类别名
-        strategy: 拯救策略，可选值为 "gate_only" | "gate_marker" | "fusion"
-        max_false_rescue_rate: 允许对非稀有类细胞进行重标定的最大容忍错判率
+        strategy: 拯救策略，可选值为 "gate_only" | "gate_marker" | "fusion" | "conformal"
+        max_false_rescue_rate: gate/marker/fusion 路径的 FFR 约束（默认 0.001）
+        conformal_alpha: conformal 路径的 FFR 校准目标（默认 0.01，发表级 FFR 上界）；
+                         与 max_false_rescue_rate 语义独立，不互相覆盖
         
     Returns:
         final_test_pred: 校正后最终的测试集细胞类别预测 Series (index为cell_id, values为预测值)
@@ -349,13 +536,61 @@ def run_post_hoc_rescue(
     
     proto_rescuer = PrototypeRescuer(rare_class)
     proto_rescuer.fit(ref_lat, ref_labels, ref_is_labeled)
-    
-    val_scores = proto_rescuer.predict_scores(_latent_matrix(val_latent), val_pred["predicted_label"], val_pred["margin"].to_numpy())
-    test_scores = proto_rescuer.predict_scores(_latent_matrix(test_latent), test_pred["predicted_label"], test_pred["margin"].to_numpy())
 
-    # 提取 rank=1 候选细胞掩膜 (即初步预测不是稀有类但原型极其相似的细胞)
+    # ===== 策略四：Conformal 重排序（综合方案，默认） =====
+    if strategy == "conformal":
+        val_lat = _latent_matrix(val_latent)
+        test_lat = _latent_matrix(test_latent)
+        # 候选：各向同性 rank=1；评分：各向异性隶属度
+        test_cand = proto_rescuer.isotropic_rank1(test_lat, test_pred["predicted_label"])
+        val_score = proto_rescuer.rare_membership_score(val_lat)
+        test_score = proto_rescuer.rare_membership_score(test_lat)
+
+        conf = ConformalRescuer(rare_class, alpha=conformal_alpha)
+        # 弃权安全网：separability 低于"rescue 有效"阈值时不拯救。
+        # CLAUDE.md 规范：sep≥1.3 rescue 有效，<1.1 必须弃权。
+        # conformal 用 isotropic_rank1 候选（比 gate 宽松），在 1.1-1.3 区间候选精度
+        # 可能极低（<50%），因此对 conformal 用 sep<1.3 弃权，高于全局 LOW_SEP=1.1。
+        CONFORMAL_LOW_SEP = 1.3
+        if proto_rescuer.separability_ratio < CONFORMAL_LOW_SEP:
+            print(f"-> [Conformal] separability={proto_rescuer.separability_ratio:.3f} < {CONFORMAL_LOW_SEP}（rescue 有效下限），弃权不拯救。")
+            final_test_pred = test_pred["predicted_label"].astype(str).copy()
+        else:
+            tau = conf.calibrate(val_score, val_pred["true_label"])
+            final_test_pred = conf.relabel(test_pred["predicted_label"], test_cand, test_score)
+            print(f"-> [Conformal] separability={proto_rescuer.separability_ratio:.3f} | alpha={conf.alpha} | "
+                  f"tau={tau:.4f} | rank1候选={int(test_cand.sum())} | 实际拯救={int(final_test_pred.ne(test_pred['predicted_label'].astype(str)).sum())}")
+
+        y_true_test = test_pred["true_label"].astype(str)
+        base_pred_test = test_pred["predicted_label"].astype(str)
+        n_rescued = int((final_test_pred.ne(base_pred_test) & final_test_pred.eq(rare_class)).sum())
+        n_false_rescues = int((final_test_pred.ne(base_pred_test) & final_test_pred.eq(rare_class) & y_true_test.ne(rare_class)).sum())
+        bl_metrics, _ = classification_tables(y_true_test, base_pred_test, rare_class=rare_class)
+        final_metrics, _ = classification_tables(y_true_test, final_test_pred, rare_class=rare_class)
+        summary = {
+            "n_rescued": n_rescued, "n_false_rescues": n_false_rescues,
+            "baseline_f1": bl_metrics["rare_f1"], "rescued_f1": final_metrics["rare_f1"],
+            "f1_gain": final_metrics["rare_f1"] - bl_metrics["rare_f1"],
+            "overall_accuracy": final_metrics["overall_accuracy"],
+        }
+        print(f"   [拯救完成] 拯救={n_rescued} | 误拯救={n_false_rescues} | "
+              f"F1: {summary['baseline_f1']:.4f} -> {summary['rescued_f1']:.4f} (提升 {summary['f1_gain']:.4f})")
+        print(f"====== [scRareRefine 拯救中心] 后处理精细校正计算运行完毕 ======\n")
+        return final_test_pred, summary
+
+    # Inductive：在 validation 上用 FFR 约束选候选门控阈值，再同时应用到 val 与 test（不接触 test 标签）
+    gate_params = proto_rescuer.select_gate_params_on_val(
+        _latent_matrix(val_latent), val_pred["predicted_label"], val_pred["true_label"],
+        val_pred["margin"].to_numpy(), max_false_rescue_rate=max_false_rescue_rate,
+    )
+    print(f"-> [候选门控调优] separability={proto_rescuer.separability_ratio:.3f} | val 选定门控: {gate_params}")
+
+    val_scores = proto_rescuer.predict_scores(_latent_matrix(val_latent), val_pred["predicted_label"], val_pred["margin"].to_numpy(), **gate_params)
+    test_scores = proto_rescuer.predict_scores(_latent_matrix(test_latent), test_pred["predicted_label"], test_pred["margin"].to_numpy(), **gate_params)
+
+    # 提取候选细胞掩膜（v2: prototype_rescue_candidate 已经是 rank==1，无需二次过滤）
     def _rank1_mask(pred_df, score_df):
-        return (score_df["prototype_rescue_candidate"] & score_df[f"prototype_rank_{rare_class}"].eq(1)).to_numpy(dtype=bool)
+        return score_df["prototype_rescue_candidate"].to_numpy(dtype=bool)
 
     val_mask = _rank1_mask(val_pred, val_scores)
     test_mask = _rank1_mask(test_pred, test_scores)
@@ -415,18 +650,19 @@ def run_post_hoc_rescue(
             val_pred, _latent_matrix(val_latent), ref_lat, ref_labels, ref_is_labeled, val_mask, val_baseline_accuracy["overall_accuracy"]
         )
         bp = fusion_rescuer.best_params
-        print(f"   [验证调优] 融合最佳超参: T={bp['temperature']}, alpha={bp['alpha']}, threshold={bp['rare_prob_threshold']}")
-        
-        # 应用至测试集
-        prob_cols = [c for c in test_pred.columns if c.startswith("prob_")]
-        scanvi_test = test_pred[prob_cols].rename(columns=lambda c: c.removeprefix("prob_"))
-        
-        p_proto_test = fusion_rescuer.get_prototype_probabilities(
-            _latent_matrix(test_latent), ref_lat, ref_labels, ref_is_labeled, temperature=bp["temperature"]
-        )
-        final_test_pred = fusion_rescuer.gated_fuse(
-            test_pred, scanvi_test, p_proto_test, test_mask, alpha=bp["alpha"], rare_prob_threshold=bp["rare_prob_threshold"]
-        )
+        if bp is None:
+            print("   [验证调优] 融合: 无合法参数组合满足 accuracy+FFR 约束，弃权不拯救。")
+        else:
+            print(f"   [验证调优] 融合最佳超参: T={bp['temperature']}, alpha={bp['alpha']}, threshold={bp['rare_prob_threshold']}")
+            # 应用至测试集
+            prob_cols = [c for c in test_pred.columns if c.startswith("prob_")]
+            scanvi_test = test_pred[prob_cols].rename(columns=lambda c: c.removeprefix("prob_"))
+            p_proto_test = fusion_rescuer.get_prototype_probabilities(
+                _latent_matrix(test_latent), ref_lat, ref_labels, ref_is_labeled, temperature=bp["temperature"]
+            )
+            final_test_pred = fusion_rescuer.gated_fuse(
+                test_pred, scanvi_test, p_proto_test, test_mask, alpha=bp["alpha"], rare_prob_threshold=bp["rare_prob_threshold"]
+            )
 
     # 3. 统计拯救结果与相比于 baseline 的收益指标
     y_true_test = test_pred["true_label"].astype(str)

@@ -1,0 +1,16 @@
+dataset,method,n_ok,f1_mean,f1_std,fp_rate_max
+immune_dc,scANVI,3,0.0251,0.0188,0.0
+immune_dc,kNN,3,0.6725,0.0662,0.0
+immune_dc,CellTypist,3,0.5598,0.0388,0.0
+immune_dc,scBalance,3,0.5574,0.0697,0.0
+immune_dc,scRareRefine,3,0.9394,0.0096,0.0005
+pancreas_baron,scANVI,3,0.8246,0.0456,0.001832
+pancreas_baron,kNN,3,0.6165,0.1833,0.001221
+pancreas_baron,CellTypist,3,0.6277,0.1256,0.0
+pancreas_baron,scBalance,3,0.7091,0.0887,0.001221
+pancreas_baron,scRareRefine,3,0.8494,0.0274,0.006716
+tabula_lung_endo,scANVI,3,0.9694,0.0062,0.001748
+tabula_lung_endo,kNN,3,0.9519,0.0065,0.000583
+tabula_lung_endo,CellTypist,3,0.7751,0.0362,0.000583
+tabula_lung_endo,scBalance,3,0.923,0.0364,0.001166
+tabula_lung_endo,scRareRefine,3,0.9799,0.0035,0.001748

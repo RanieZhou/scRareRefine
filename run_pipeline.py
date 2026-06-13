@@ -188,7 +188,7 @@ def main() -> None:
             latents_dict,
             selected_genes,
             rare_class=rare_class,
-            strategy="fusion",
+            strategy="conformal",
             max_false_rescue_rate=max_false_rescue_rate
         )
 
