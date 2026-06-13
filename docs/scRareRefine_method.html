@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>scRareRefine 方法详解 · 可交互</title>
+<style>
+  :root{
+    --rare:#E08043; --rescued:#3DA35D; --major:#AEB7C4; --tau:#C0392B;
+    --ink:#2C3E50; --latent:#4A6FA5; --bg:#f7f8fa; --card:#ffffff;
+    --line:#e2e6eb; --muted:#6b7785; --accent:#3a6ea5; --hl:#fff6ec;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"Segoe UI",system-ui,"Microsoft YaHei",sans-serif;
+    line-height:1.65; font-size:15px;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px}
+  header.hero{
+    background:linear-gradient(160deg,#2c3e50,#3a5573); color:#fff;
+    padding:46px 0 38px;
+  }
+  header.hero h1{margin:0 0 6px; font-size:30px; letter-spacing:.5px}
+  header.hero .sub{font-size:15px; opacity:.9; font-weight:400; max-width:760px}
+  header.hero .tag{
+    display:inline-block; margin-top:14px; font-size:12.5px; letter-spacing:1px;
+    background:rgba(255,255,255,.14); padding:4px 12px; border-radius:20px;
+  }
+  nav.toc{
+    position:sticky; top:0; z-index:30; background:rgba(255,255,255,.92);
+    backdrop-filter:blur(6px); border-bottom:1px solid var(--line);
+  }
+  nav.toc .wrap{display:flex; gap:6px; flex-wrap:wrap; padding-top:9px; padding-bottom:9px}
+  nav.toc a{
+    font-size:13px; color:var(--muted); text-decoration:none; padding:4px 11px;
+    border-radius:6px; white-space:nowrap;
+  }
+  nav.toc a:hover{background:var(--hl); color:var(--ink)}
+  section{padding:40px 0 8px}
+  h2{font-size:22px; margin:0 0 4px; display:flex; align-items:center; gap:10px}
+  h2 .n{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:30px; height:30px; border-radius:50%; background:var(--ink); color:#fff;
+    font-size:15px; flex:none;
+  }
+  h3{font-size:16px; margin:22px 0 6px; color:var(--accent)}
+  .lead{color:var(--muted); margin:2px 0 18px; max-width:820px}
+  p{margin:8px 0}
+  code{background:#eef1f4; padding:1px 6px; border-radius:4px; font-size:13px;
+    font-family:"SFMono-Regular",Consolas,monospace}
+  .eq{
+    background:#f3f5f8; border-left:3px solid var(--accent); border-radius:0 6px 6px 0;
+    padding:12px 16px; margin:12px 0; font-size:15px; overflow-x:auto;
+    font-family:"Cambria Math","Times New Roman",Georgia,serif;
+  }
+  .eq .v{font-style:italic}
+  sub,sup{font-size:.72em}
+  /* pipeline overview */
+  .pipe{display:flex; align-items:stretch; gap:0; flex-wrap:wrap; margin:18px 0 6px}
+  .pstep{
+    flex:1 1 0; min-width:150px; background:var(--card); border:1px solid var(--line);
+    border-radius:10px; padding:13px 14px; position:relative; text-align:center;
+  }
+  .pstep .pn{font-size:11px; color:#fff; background:var(--accent); border-radius:5px;
+    padding:1px 7px; font-weight:600}
+  .pstep.s5 .pn{background:var(--rescued)}
+  .pstep.s0 .pn{background:var(--muted)}
+  .pstep h4{margin:9px 0 3px; font-size:13.5px}
+  .pstep small{color:var(--muted); font-size:11.5px; line-height:1.4; display:block}
+  .arrow{display:flex; align-items:center; color:#b9c2cd; font-size:20px; padding:0 3px}
+  /* interactive panel */
+  .lab{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:20px 22px 24px; margin:18px 0 6px; box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .ctrl{display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:8px}
+  .ctrl label{font-size:13px; color:var(--muted)}
+  .ctrl input[type=range]{width:240px; vertical-align:middle; accent-color:var(--accent)}
+  .badge{font-size:12.5px; padding:3px 10px; border-radius:20px; font-weight:600}
+  .badge.ok{background:#e7f5ec; color:#1f7a3d}
+  .badge.abs{background:#fdeceb; color:#c0392b}
+  .grid5{display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-top:14px}
+  .pan{border:1px solid var(--line); border-radius:9px; padding:8px 8px 6px; background:#fcfdfe}
+  .pan .t{font-size:11.5px; font-weight:600; color:var(--ink); margin-bottom:2px}
+  .pan .d{font-size:10.5px; color:var(--muted); height:26px; line-height:1.25}
+  .pan canvas{width:100%; height:auto; display:block; border-radius:4px}
+  .stats{display:flex; gap:22px; flex-wrap:wrap; margin-top:16px; padding-top:14px;
+    border-top:1px dashed var(--line)}
+  .stat{font-size:13px}
+  .stat b{font-size:19px; display:block; line-height:1.2}
+  .stat span{color:var(--muted); font-size:11.5px}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:12px}
+  .legend i{display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:5px; vertical-align:-1px}
+  /* tables */
+  table{border-collapse:collapse; width:100%; margin:14px 0; font-size:13.5px}
+  th,td{border:1px solid var(--line); padding:8px 11px; text-align:left}
+  th{background:#eef2f6; font-weight:600}
+  td.src{color:var(--accent); font-weight:600}
+  td.no{color:#c0392b}
+  .pill{font-size:11px; padding:1px 8px; border-radius:10px; background:#eef2f6; color:var(--muted)}
+  /* callouts */
+  .note{background:var(--hl); border:1px solid #f0dcc4; border-radius:10px; padding:14px 18px; margin:16px 0}
+  .note b{color:#b9722e}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media(max-width:820px){ .grid5{grid-template-columns:repeat(2,1fr)} .two{grid-template-columns:1fr} }
+  .resimg{width:100%; border:1px solid var(--line); border-radius:10px; margin:10px 0}
+  figcaption{font-size:12.5px; color:var(--muted); margin:-2px 0 18px}
+  footer{color:var(--muted); font-size:12.5px; padding:30px 0 50px; border-top:1px solid var(--line); margin-top:30px}
+  .kbd{font-family:monospace; font-size:12px; background:#eef1f4; padding:1px 6px; border-radius:4px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>scRareRefine</h1>
+    <div class="sub">一个 <b>post-hoc（后处理）稀有细胞拯救模块</b>：不改动 scANVI 的训练，
+      只在其输出的 latent embedding 与预测标签之上，对被漏判的稀有细胞执行
+      「可分性弃权 → 候选筛选 → 各向异性评分 → conformal 阈值校准 → 重标注」的拯救流程。</div>
+    <div class="tag">conformal rescue · distribution-free FFR ≤ α · inductive-safe</div>
+  </div>
+</header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#overview">流程总览</a>
+  <a href="#play">交互演示</a>
+  <a href="#s1">① 原型与可分性</a>
+  <a href="#s2">② 候选筛选</a>
+  <a href="#s3">③ 各向异性评分</a>
+  <a href="#s4">④ Conformal 校准</a>
+  <a href="#s5">⑤ 重标注与弃权</a>
+  <a href="#induct">数据隔离</a>
+  <a href="#why">设计动机</a>
+  <a href="#results">实验验证</a>
+</div></nav>
+
+<div class="wrap">
+
+<!-- ===================== OVERVIEW ===================== -->
+<section id="overview">
+  <h2><span class="n">▸</span>流程总览</h2>
+  <p class="lead">输入是 scANVI 的两样产物：每个细胞的 latent 向量 <span class="eq" style="display:inline;border:0;padding:0;background:0">z ∈ ℝ<sup>d</sup></span>
+    和预测标签 <code>base_pred</code>。scRareRefine 只读这两样，输出修正后的预测，全程不接触 test 标签。</p>
+
+  <div class="pipe">
+    <div class="pstep s0"><span class="pn">输入</span><h4>scANVI 输出</h4><small>latent z，base_pred，类别概率</small></div>
+    <div class="arrow">→</div>
+    <div class="pstep"><span class="pn">①</span><h4>原型 + 可分性</h4><small>train 标注集算 μ<sub>c</sub>, r<sub>c</sub>, sep</small></div>
+    <div class="arrow">→</div>
+    <div class="pstep"><span class="pn">②</span><h4>候选筛选</h4><small>各向同性 rank-1 闸门</small></div>
+    <div class="arrow">→</div>
+    <div class="pstep"><span class="pn">③</span><h4>隶属度评分</h4><small>各向异性 softmax(-d/r)</small></div>
+    <div class="arrow">→</div>
+    <div class="pstep"><span class="pn">④</span><h4>Conformal τ</h4><small>val 非稀有细胞校准</small></div>
+    <div class="arrow">→</div>
+    <div class="pstep s5"><span class="pn">⑤</span><h4>重标注 / 弃权</h4><small>fire = 候选 ∧ score≥τ</small></div>
+  </div>
+  <p class="lead" style="margin-top:14px">一句话：<b>对 scANVI 漏判（≠rare）、几何上又最靠近 rare 原型（rank-1）的细胞，用各向异性隶属度打分，
+    只有分数超过「用 val 非稀有细胞按 1% 假阳性率校准出的阈值 τ」才改判为 rare；若该数据集稀有类与多数类不可分（sep&lt;1.3），整体弃权不救。</b></p>
+</section>
+
+<!-- ===================== INTERACTIVE ===================== -->
+<section id="play">
+  <h2><span class="n">▸</span>交互演示：看得见的几何过程</h2>
+  <p class="lead">下面是一份<b>合成的 latent 空间</b>（3 个多数类簇 + 1 个稀有簇）。拖动滑块改变稀有簇与最近多数类的<b>间隔</b>，
+    所有面板与统计会实时重算——原型、可分性 sep、conformal 阈值 τ、救回与误救数量全部由真实公式驱动，
+    与 <code>src/rescue.py</code> 一致。把滑块拉到最左，可观察 <b>sep&lt;1.3 触发整体弃权</b>。</p>
+
+  <div class="lab">
+    <div class="ctrl">
+      <label>稀有簇可分性（间隔）：低 <input id="sep" type="range" min="0" max="100" value="74"> 高</label>
+      <span id="sepBadge" class="badge ok">sep = –</span>
+      <span style="font-size:12.5px;color:var(--muted)">目标假救率 α = 0.01 → 弃权线 sep = 1.3</span>
+    </div>
+
+    <div class="grid5">
+      <div class="pan"><div class="t">① 原型 + 可分性</div><div class="d">μ<sub>c</sub>=类均值，虚线圈=稀有半径 r<sub>rare</sub></div><canvas id="c1" width="300" height="260"></canvas></div>
+      <div class="pan"><div class="t">② 候选（rank-1）</div><div class="d">scANVI 漏判 & 最近原型=rare（黑描边）</div><canvas id="c2" width="300" height="260"></canvas></div>
+      <div class="pan"><div class="t">③ 隶属度评分</div><div class="d">颜色深=score 高（softmax -d/r）</div><canvas id="c3" width="300" height="260"></canvas></div>
+      <div class="pan"><div class="t">④ Conformal τ</div><div class="d">val 非稀有 score 分布 + τ 分位线</div><canvas id="c4" width="300" height="260"></canvas></div>
+      <div class="pan"><div class="t">⑤ 重标注结果</div><div class="d">★=救回，空心橙=仍漏判</div><canvas id="c5" width="300" height="260"></canvas></div>
+    </div>
+
+    <div class="legend">
+      <span><i style="background:var(--major)"></i>多数类细胞</span>
+      <span><i style="background:var(--rare)"></i>稀有细胞（真值）</span>
+      <span><i style="background:var(--rescued)"></i>被救回</span>
+      <span><i style="background:var(--tau)"></i>conformal 阈值 τ</span>
+      <span>✕ 原型 μ<sub>c</sub></span>
+    </div>
+
+    <div class="stats" id="stats">
+      <div class="stat"><b id="stSep">–</b><span>separability sep</span></div>
+      <div class="stat"><b id="stTau">–</b><span>conformal τ</span></div>
+      <div class="stat"><b id="stRecB">–</b><span>scANVI 召回</span></div>
+      <div class="stat"><b id="stRecA" style="color:var(--rescued)">–</b><span>rescue 后召回</span></div>
+      <div class="stat"><b id="stTP" style="color:var(--rescued)">–</b><span>救回 (TP)</span></div>
+      <div class="stat"><b id="stFP" style="color:var(--tau)">–</b><span>误救 (FP)</span></div>
+      <div class="stat"><b id="stFFR">–</b><span>假救率 FFR</span></div>
+    </div>
+    <div id="absNote" class="note" style="display:none"><b>⚠ 弃权安全网触发：</b>当前 sep &lt; 1.3，稀有类与多数类在 latent 中重叠严重，候选精度不可靠，
+      模块直接返回 scANVI 原始预测、<b>不做任何改判</b>（救回=0，误救=0）。这对应代码
+      <code>if separability_ratio &lt; CONFORMAL_LOW_SEP: return base_pred</code>。</div>
+  </div>
+</section>
+
+<!-- ===================== STEP 1 ===================== -->
+<section id="s1">
+  <h2><span class="n">①</span>原型与可分性 <span class="pill">来源：train 有标签子集</span></h2>
+  <p class="lead">在 latent 空间用训练集<b>有标签</b>样本估计每个细胞类型的中心（原型），并量化稀有类是否「几何上可分」。</p>
+  <div class="two">
+    <div>
+      <h3>类原型</h3>
+      <div class="eq"><span class="v">μ</span><sub>c</sub> = mean{ <span class="v">z</span> : label = c, 有标签 }</div>
+      <h3>类内半径（稳健尺度）</h3>
+      <div class="eq"><span class="v">r</span><sub>c</sub> = median<sub>i∈c</sub> ‖<span class="v">z</span><sub>i</sub> − <span class="v">μ</span><sub>c</sub>‖<br>
+        <small style="font-family:sans-serif;color:var(--muted)">类样本 &lt; 3 时退化为 r<sub>c</sub> = 1.0，防止半径≈0 放大评分</small></div>
+    </div>
+    <div>
+      <h3>可分性比率</h3>
+      <div class="eq">sep = <sup>min<sub>c≠rare</sub> ‖<span class="v">μ</span><sub>rare</sub> − <span class="v">μ</span><sub>c</sub>‖</sup>&frasl;<sub>mean ‖<span class="v">z</span><sub>rare</sub> − <span class="v">μ</span><sub>rare</sub>‖</sub></div>
+      <p style="font-size:13.5px;color:var(--muted)">分子=稀有原型到最近多数类原型的距离；分母=稀有簇平均半径。
+        <b>sep 越大，稀有簇越"独立成团"</b>。稀有标注&lt;3 时强制 sep=0（触发弃权）。</p>
+      <div class="note" style="margin-top:10px"><b>两条先验阈值（数据集无关，不调参）：</b>
+        sep ≥ 1.3 → rescue 有效；sep &lt; 1.3 → conformal 路径整体弃权。</div>
+    </div>
+  </div>
+  <p style="font-size:13px;color:var(--muted)">对应代码：<code>PrototypeRescuer.fit()</code> · <a href="#" style="color:var(--accent)">src/rescue.py:38–71</a></p>
+</section>
+
+<!-- ===================== STEP 2 ===================== -->
+<section id="s2">
+  <h2><span class="n">②</span>候选筛选：各向同性 rank-1 闸门</h2>
+  <p class="lead">只挑出「scANVI 没判成稀有」<b>且</b>「在普通欧氏距离下离稀有原型最近」的细胞作为候选。这是高精度的硬闸门。</p>
+  <div class="eq">cand(<span class="v">z</span>) = [ base_pred(<span class="v">z</span>) ≠ rare ] &nbsp;∧&nbsp; [ argmin<sub>c</sub> ‖<span class="v">z</span> − <span class="v">μ</span><sub>c</sub>‖ = rare ]</div>
+  <p>第一项排除已被正确识别的稀有细胞（无需处理）；第二项要求该细胞在几何上确实最像稀有类。
+    在演示面板②中，被黑色描边标出的就是候选——它们大多是落在橙色稀有簇里、却被 scANVI 判成灰色多数类的「漏网细胞」。</p>
+  <p style="font-size:13px;color:var(--muted)">对应代码：<code>PrototypeRescuer.isotropic_rank1()</code> · src/rescue.py:89–96</p>
+</section>
+
+<!-- ===================== STEP 3 ===================== -->
+<section id="s3">
+  <h2><span class="n">③</span>各向异性隶属度评分</h2>
+  <p class="lead">给每个细胞一个连续的「稀有性」分数。关键是<b>每个类用自己的半径 r<sub>c</sub> 归一化距离</b>（各向同性 Mahalanobis 近似），
+    让评分对各类尺度自适应，缓解边界数据集中相邻多数类「侵入」稀有类。</p>
+  <div class="eq"><span class="v">s</span>(<span class="v">z</span>) = softmax<sub>c</sub>( − ‖<span class="v">z</span> − <span class="v">μ</span><sub>c</sub>‖ / r<sub>c</sub> ) &nbsp;的稀有类分量</div>
+  <p>对比 ③（各向异性，除以 r<sub>c</sub>）与朴素的各向同性 softmax(−d)：当稀有簇较紧致、相邻多数类较松散时，
+    归一化能把稀有细胞的分数顶上去、把多数类压下来，这正是消融实验中 V4（各向异性）在 borderline 数据集优于 V3（各向同性）的原因。</p>
+  <p style="font-size:13px;color:var(--muted)">对应代码：<code>PrototypeRescuer.rare_membership_score()</code> · src/rescue.py:73–87</p>
+</section>
+
+<!-- ===================== STEP 4 ===================== -->
+<section id="s4">
+  <h2><span class="n">④</span>Conformal 阈值校准 <span class="pill">来源：val 非稀有细胞</span></h2>
+  <p class="lead">不在小候选集上 grid-search 阈值（会过拟合、val→test 漂移），而是用 <b>validation 集里数百~数千个非稀有细胞</b>的分数，
+    取一个保守上分位作为阈值 τ，给出<b>分布无关</b>的假阳性率上界。</p>
+  <div class="eq">τ = <span class="v">s</span><sub>(k)</sub>，&nbsp; k = ⌈(1 − α)(n + 1)⌉，&nbsp; α = 0.01（固定）<br>
+    <small style="font-family:sans-serif;color:var(--muted)">n = val 非稀有细胞数；样本不足以保证时 τ = +∞（即不救）。这是有限样本 conformal 上分位。</small></div>
+  <p>它的自适应性是整套方法的精髓：</p>
+  <table>
+    <tr><th>场景</th><th>val 非稀有分数</th><th>τ</th><th>效果</th></tr>
+    <tr><td>高可分数据集</td><td>普遍很低</td><td>低</td><td>真稀有分数远高于 τ → 召回不退化</td></tr>
+    <tr><td>边界数据集</td><td>相邻多数类分数偏高</td><td>自动抬升</td><td>挡住会被误救的多数类 → 控制 FFR</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--muted)">对应代码：<code>ConformalRescuer.calibrate() / _conformal_quantile()</code> · src/rescue.py:462–477</p>
+</section>
+
+<!-- ===================== STEP 5 ===================== -->
+<section id="s5">
+  <h2><span class="n">⑤</span>重标注与弃权安全网</h2>
+  <p class="lead">同时满足「是候选」且「分数过阈」的细胞才改判为稀有类；其余一律保留 scANVI 原判。</p>
+  <div class="eq">fire(<span class="v">z</span>) = cand(<span class="v">z</span>) ∧ ( <span class="v">s</span>(<span class="v">z</span>) ≥ τ ) &nbsp;⟹&nbsp; label := rare</div>
+  <div class="note"><b>弃权安全网（最先执行）：</b>若 sep &lt; 1.3，跳过以上全部，直接返回 <code>base_pred</code>。
+    宁可不救，也不在不可分的场景制造大量误救——这保证了方法在难数据集上「无害」。</div>
+  <p style="font-size:13px;color:var(--muted)">对应代码：<code>ConformalRescuer.relabel()</code> + 弃权判断 · src/rescue.py:479–486 / compare_baselines.py:158</p>
+</section>
+
+<!-- ===================== INDUCTIVE ===================== -->
+<section id="induct">
+  <h2><span class="n">▸</span>数据隔离（Inductive 合规）</h2>
+  <p class="lead">每一个被「学习」出来的量都有唯一来源，test 标签只在最终评估时出现，代码层面严格隔离、无泄漏。</p>
+  <table>
+    <tr><th>量</th><th>唯一来源</th><th>绝不接触</th></tr>
+    <tr><td>原型 μ<sub>c</sub>、半径 r<sub>c</sub>、可分性 sep</td><td class="src">train 有标签子集</td><td>val / test</td></tr>
+    <tr><td>conformal 阈值 τ</td><td class="src">validation 非稀有细胞 score</td><td>test</td></tr>
+    <tr><td>test 标签</td><td class="src">仅用于最终评估指标</td><td class="no">不参与任何原型 / 阈值 / 调参</td></tr>
+  </table>
+</section>
+
+<!-- ===================== WHY ===================== -->
+<section id="why">
+  <h2><span class="n">▸</span>关键设计动机</h2>
+  <div class="two">
+    <div class="note"><b>为何 conformal 而非 grid-search 阈值？</b><br>
+      旧方案（gate / marker / fusion）在 val 上 grid-search 阈值，存在 val→test 阈值漂移；
+      conformal 用数百~数千个非稀有细胞校准，给出分布无关的 FFR ≤ α 上界，且<b>没有任何 per-dataset 常量</b>。</div>
+    <div class="note"><b>为何候选与评分解耦？</b><br>
+      候选用各向同性 rank-1（强精度约束），评分用各向异性 softmax(−d/r)（尺度自适应）。
+      两者配合，在高可分与边界数据集上都稳健——这一点由消融实验逐组件验证。</div>
+  </div>
+</section>
+
+<!-- ===================== RESULTS ===================== -->
+<section id="results">
+  <h2><span class="n">▸</span>实验验证</h2>
+  <p class="lead">在三个数据集（immune_dc / pancreas_baron / tabula_lung_endo）× 3 seed 上，对比 scANVI / kNN / CellTypist / scBalance。</p>
+
+  <h3>对比实验（rare F1 均值）</h3>
+  <table>
+    <tr><th>数据集</th><th>scANVI</th><th>kNN</th><th>CellTypist</th><th>scBalance</th><th>scRareRefine</th></tr>
+    <tr><td>immune_dc</td><td>0.025</td><td>0.673</td><td>0.560</td><td>0.557</td><td><b style="color:var(--rescued)">0.939</b></td></tr>
+    <tr><td>pancreas_baron</td><td>0.825</td><td>0.617</td><td>0.628</td><td>0.709</td><td><b style="color:var(--rescued)">0.849</b></td></tr>
+    <tr><td>tabula_lung_endo</td><td>0.969</td><td>0.952</td><td>0.775</td><td>0.923</td><td><b style="color:var(--rescued)">0.980</b></td></tr>
+  </table>
+
+  <h3>消融实验：逐组件贡献 + FFR 约束</h3>
+  <figure>
+    <img class="resimg" src="../results/ablation/ablation_bars.png" alt="ablation" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+    <figcaption>只有完整方法 V4（rank-1 + 各向异性 + conformal）在所有数据集 FFR ≤ 1% 且 F1 最高。
+      <span style="display:none;color:#c0392b">（图未找到：请先运行 <span class="kbd">python tools/plot_ablation.py</span>）</span></figcaption>
+  </figure>
+
+  <h3>稳健性扫描：稀有标注量从极少到全部</h3>
+  <figure>
+    <img class="resimg" src="../results/sweep_rts/sweep_rts_curves.png" alt="sweep" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+    <figcaption>稀有标注越稀缺，scRareRefine 优势越大；标注充足时与监督方法趋同 → 定位「标注稀缺」场景。
+      <span style="display:none;color:#c0392b">（图未找到：请先运行 <span class="kbd">python tools/plot_sweep_rts.py</span>）</span></figcaption>
+  </figure>
+</section>
+
+<footer>
+  <div>scRareRefine 方法说明 · 可视化由本页内联生成，数学与 <code>src/rescue.py</code> 的 conformal 路径一致。</div>
+  <div style="margin-top:4px">主张限制：在所评估的数据集上，scRareRefine 相比原始 scANVI 提升了稀有细胞相关指标；不声称解决稀有细胞识别问题或全面最优。</div>
+</footer>
+
+</div>
+
+<script>
+/* ===== 可复现伪随机 ===== */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function randn(rng){let u=0,v=0;while(u===0)u=rng();while(v===0)v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+/* ===== 世界坐标 → 屏幕 ===== */
+const W=300,H=260, WX=[-6.5,6.5], WY=[-7.5,8.5];
+function sx(x){return (x-WX[0])/(WX[1]-WX[0])*(W-24)+12;}
+function sy(y){return H-12-(y-WY[0])/(WY[1]-WY[0])*(H-24);}
+
+const MAJ=[[-3.4,2.2],[3.3,2.6],[0.2,-4.2]];      // 3 个多数类中心
+const RARE_NEAR=[3.3,2.6], RARE_FAR=[-0.6,6.6];   // 稀有中心随 slider 在二者间插值
+
+let cache=null;
+function build(sepKnob){
+  const rng=mulberry32(20240611);
+  const t=sepKnob/100;
+  const rc=[RARE_NEAR[0]+(RARE_FAR[0]-RARE_NEAR[0])*t, RARE_NEAR[1]+(RARE_FAR[1]-RARE_NEAR[1])*t];
+  const SIG_M=0.95, SIG_R=0.85;
+  const cls=['M0','M1','M2','rare'];
+  const centers={M0:MAJ[0],M1:MAJ[1],M2:MAJ[2],rare:rc};
+
+  function gen(nMaj,nRare){
+    const pts=[];
+    for(let m=0;m<3;m++) for(let i=0;i<nMaj;i++)
+      pts.push({x:MAJ[m][0]+randn(rng)*SIG_M, y:MAJ[m][1]+randn(rng)*SIG_M, true:'M'+m});
+    for(let i=0;i<nRare;i++)
+      pts.push({x:rc[0]+randn(rng)*SIG_R, y:rc[1]+randn(rng)*SIG_R, true:'rare'});
+    return pts;
+  }
+  const test=gen(34,13), val=gen(95,30);
+
+  // 原型 = 各类真值均值（来自“训练集”，此处用 val 充当有标签 reference）
+  const proto={}, radius={};
+  cls.forEach(c=>{
+    const p=val.filter(d=>d.true===c);
+    const mx=p.reduce((s,d)=>s+d.x,0)/p.length, my=p.reduce((s,d)=>s+d.y,0)/p.length;
+    proto[c]=[mx,my];
+    const ds=p.map(d=>Math.hypot(d.x-mx,d.y-my)).sort((a,b)=>a-b);
+    radius[c]=Math.max(ds[Math.floor(ds.length/2)],1e-6);
+  });
+  // separability
+  const dRareMaj=Math.min(...['M0','M1','M2'].map(c=>Math.hypot(proto.rare[0]-proto[c][0],proto.rare[1]-proto[c][1])));
+  const rareTrain=val.filter(d=>d.true==='rare');
+  const intra=rareTrain.reduce((s,d)=>s+Math.hypot(d.x-proto.rare[0],d.y-proto.rare[1]),0)/rareTrain.length;
+  const sep=dRareMaj/Math.max(intra,1e-8);
+
+  function dist(d,c){return Math.hypot(d.x-proto[c][0],d.y-proto[c][1]);}
+  function nearestProto(d){let best='M0',bd=1e9;cls.forEach(c=>{const v=dist(d,c);if(v<bd){bd=v;best=c;}});return best;}
+  // base_pred：多数类基本判对；稀有类 70% 被漏判成最近多数类
+  function basePred(d){
+    if(d.true==='rare'){
+      if(rng()<0.30) return 'rare';
+      let best='M0',bd=1e9;['M0','M1','M2'].forEach(c=>{const v=dist(d,c);if(v<bd){bd=v;best=c;}});
+      return best;
+    }
+    return d.true; // 多数类判对
+  }
+  // 各向异性 score（稀有分量）
+  function score(d){
+    const logit=cls.map(c=>-dist(d,c)/radius[c]);
+    const mx=Math.max(...logit); const e=logit.map(v=>Math.exp(v-mx)); const sum=e.reduce((a,b)=>a+b,0);
+    return e[3]/sum; // rare 在 cls 第4位
+  }
+  test.forEach(d=>{d.base=basePred(d); d.np=nearestProto(d); d.s=score(d); d.cand=(d.base!=='rare')&&(d.np==='rare');});
+  val.forEach(d=>{d.base=basePred(d); d.s=score(d);});
+
+  // conformal τ：val 非稀有 score 的 ceil((1-α)(n+1)) 顺序统计量
+  const ALPHA=0.01;
+  const nonRare=val.filter(d=>d.true!=='rare').map(d=>d.s).sort((a,b)=>a-b);
+  const n=nonRare.length, k=Math.ceil((1-ALPHA)*(n+1));
+  let tau=(k>n)?Infinity:nonRare[k-1];
+
+  const ABSTAIN=sep<1.3;
+  test.forEach(d=>{ d.fire = !ABSTAIN && d.cand && isFinite(tau) && d.s>=tau; });
+
+  // 统计
+  const rareTest=test.filter(d=>d.true==='rare');
+  const nRare=rareTest.length;
+  const recB=rareTest.filter(d=>d.base==='rare').length/nRare;
+  const afterRare=d=>d.fire||d.base==='rare';
+  const recA=rareTest.filter(afterRare).length/nRare;
+  const TP=test.filter(d=>d.fire&&d.true==='rare').length;
+  const FP=test.filter(d=>d.fire&&d.true!=='rare').length;
+  const nNon=test.filter(d=>d.true!=='rare').length;
+  const ffr=FP/Math.max(nNon,1);
+
+  cache={test,val,proto,radius,sep,tau,ABSTAIN,recB,recA,TP,FP,ffr,nonRare,ALPHA};
+  return cache;
+}
+
+const COL={major:'#AEB7C4',rare:'#E08043',rescued:'#3DA35D',tau:'#C0392B',ink:'#2C3E50'};
+function ctxOf(id){const cv=document.getElementById(id);const dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);return c;}
+function dot(c,x,y,r,fill,stroke,sw){c.beginPath();c.arc(sx(x),sy(y),r,0,7);c.fillStyle=fill;c.fill();if(stroke){c.lineWidth=sw||1;c.strokeStyle=stroke;c.stroke();}}
+function cross(c,p){const X=sx(p[0]),Y=sy(p[1]);c.strokeStyle=COL.ink;c.lineWidth=2;c.beginPath();c.moveTo(X-5,Y-5);c.lineTo(X+5,Y+5);c.moveTo(X+5,Y-5);c.lineTo(X-5,Y+5);c.stroke();}
+function star(c,x,y,r,fill){const X=sx(x),Y=sy(y);c.beginPath();for(let i=0;i<10;i++){const ang=Math.PI/5*i-Math.PI/2;const rr=i%2?r*0.45:r;c.lineTo(X+Math.cos(ang)*rr,Y+Math.sin(ang)*rr);}c.closePath();c.fillStyle=fill;c.fill();c.lineWidth=0.8;c.strokeStyle='#1c6b35';c.stroke();}
+
+function render(){
+  const d=cache;
+  // ① 原型 + 半径
+  let c=ctxOf('c1');
+  d.test.forEach(p=>dot(c,p.x,p.y,3.1,p.true==='rare'?COL.rare:COL.major));
+  // rare 半径虚线圈
+  c.setLineDash([4,3]);c.strokeStyle=COL.rare;c.lineWidth=1.3;c.beginPath();
+  const cx=sx(d.proto.rare[0]),cy=sy(d.proto.rare[1]);
+  const rpix=Math.abs(sx(d.proto.rare[0]+d.radius.rare)-sx(d.proto.rare[0]));
+  c.arc(cx,cy,rpix,0,7);c.stroke();c.setLineDash([]);
+  ['M0','M1','M2','rare'].forEach(k=>cross(c,d.proto[k]));
+
+  // ② 候选：按 base_pred 上色（漏判 rare 显示为多数色），候选黑描边
+  c=ctxOf('c2');
+  d.test.forEach(p=>{
+    const fill=p.base==='rare'?COL.rare:COL.major;
+    dot(c,p.x,p.y,3.1,fill, p.cand?'#222':null, p.cand?1.8:0);
+  });
+  cross(c,d.proto.rare);
+
+  // ③ score 着色
+  c=ctxOf('c3');
+  d.test.forEach(p=>{
+    const t=p.s; // 0..1
+    const col=`rgb(${Math.round(245-150*t)},${Math.round(238-150*t)},${Math.round(225-150*t)})`;
+    const hot=`rgb(${Math.round(224)},${Math.round(128- 60*t)},${Math.round(67-40*t)})`;
+    dot(c,p.x,p.y,3.3, t>0.25?hot:col, '#cfd6de',0.6);
+  });
+  cross(c,d.proto.rare);
+
+  // ④ 直方图 + τ
+  c=ctxOf('c4');
+  const NB=26, bins=new Array(NB).fill(0);
+  d.nonRare.forEach(s=>{let b=Math.min(NB-1,Math.floor(s*NB));bins[b]++;});
+  const mxb=Math.max(...bins,1);
+  const x0=18,x1=W-12,y0=H-26,y1=14;
+  // 轴
+  c.strokeStyle='#cfd6de';c.lineWidth=1;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y0);c.stroke();
+  for(let i=0;i<NB;i++){
+    const bw=(x1-x0)/NB; const bh=(bins[i]/mxb)*(y0-y1);
+    c.fillStyle='#9bb4d4';c.fillRect(x0+i*bw+0.5,y0-bh,bw-1,bh);
+  }
+  // val 非稀有标签
+  c.fillStyle='#6b7785';c.font='9px sans-serif';c.fillText('val non-rare score',x0,y1-2);
+  c.fillText('0',x0-2,y0+11);c.fillText('1',x1-6,y0+11);
+  // τ 线
+  if(isFinite(d.tau)){
+    const xt=x0+d.tau*(x1-x0);
+    c.strokeStyle=COL.tau;c.lineWidth=1.8;c.setLineDash([4,3]);c.beginPath();c.moveTo(xt,y1-4);c.lineTo(xt,y0);c.stroke();c.setLineDash([]);
+    c.fillStyle=COL.tau;c.font='bold 9px sans-serif';c.fillText('τ',xt-3,y1-5);
+  }
+  // test 候选 score 落点（x 轴上方小三角）
+  d.test.filter(p=>p.cand).forEach(p=>{
+    const xt=x0+Math.min(1,p.s)*(x1-x0);
+    c.fillStyle=p.fire?COL.rescued:COL.rare;
+    c.beginPath();c.moveTo(xt,y0-2);c.lineTo(xt-3,y0+4);c.lineTo(xt+3,y0+4);c.closePath();c.fill();
+  });
+
+  // ⑤ 结果
+  c=ctxOf('c5');
+  d.test.forEach(p=>{
+    if(p.fire){star(c,p.x,p.y,5.2,COL.rescued);}
+    else if(p.true==='rare'&&!p.fire&&p.base!=='rare'){dot(c,p.x,p.y,3.3,'#fff',COL.rare,1.6);} // 仍漏判：空心橙
+    else if(p.base==='rare'){dot(c,p.x,p.y,3.1,COL.rare);} // 本就判对
+    else {dot(c,p.x,p.y,3.0,COL.major);}
+  });
+  cross(c,d.proto.rare);
+
+  // 统计文本
+  const f=x=>x.toFixed(2);
+  document.getElementById('stSep').textContent=d.sep.toFixed(2);
+  document.getElementById('stTau').textContent=isFinite(d.tau)?d.tau.toFixed(2):'∞';
+  document.getElementById('stRecB').textContent=(d.recB*100).toFixed(0)+'%';
+  document.getElementById('stRecA').textContent=(d.recA*100).toFixed(0)+'%';
+  document.getElementById('stTP').textContent=d.TP;
+  document.getElementById('stFP').textContent=d.FP;
+  document.getElementById('stFFR').textContent=(d.ffr*100).toFixed(2)+'%';
+  const bd=document.getElementById('sepBadge');
+  bd.textContent='sep = '+d.sep.toFixed(2);
+  bd.className='badge '+(d.ABSTAIN?'abs':'ok');
+  document.getElementById('absNote').style.display=d.ABSTAIN?'block':'none';
+}
+
+const slider=document.getElementById('sep');
+function update(){build(+slider.value);render();}
+slider.addEventListener('input',update);
+update();
+</script>
+</body>
+</html>

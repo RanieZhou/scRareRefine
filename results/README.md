@@ -19,8 +19,8 @@ results/
 
 | 目录 | 轮次 | 文件 | 生成脚本 |
 |------|------|------|---------|
-| `ablation/` | 第五轮 | `ablation_summary.csv`（逐 run×变体）、`ablation_summary_agg.csv`（3-seed 聚合）、`ablation_log.md` | `tools/ablation.py` |
-| `comparison/` | 第六轮 | `comparison_summary.csv`、`comparison_summary_agg.csv`、`comparison_log.md` | `tools/compare_baselines.py` |
+| `ablation/` | 第五轮 | `ablation_summary.csv`（逐 run×变体）、`ablation_summary_agg.csv`（3-seed 聚合）、`ablation_log.md`、`ablation_bars.png/.pdf`（双指标对比图） | `tools/ablation.py`、`tools/plot_ablation.py` |
+| `comparison/` | 第六轮 | `comparison_summary.csv`、`comparison_summary_agg.csv`、`comparison_log.md`、`comparison_bars.png/.pdf`（方法对比柱状图） | `tools/compare_baselines.py`、`tools/plot_comparison.py` |
 | `sweep_rts/` | 第七轮 | `sweep_rts_summary.csv`（180 行）、`sweep_rts_agg.csv`（60 行）、`sweep_rts_log.md`、`sweep_rts_curves.png/.pdf` | `tools/sweep_rare_train_size.py`、`tools/plot_sweep_rts.py` |
 | `umap/` | 第八轮 | `umap_rescue_{immune_dc,pancreas_baron}.png/.npz`、`umap_contrast_sep.png/.pdf` | `tools/plot_umap_rescue.py`、`tools/plot_umap_contrast.py` |
 | `legacy/` | 第四轮 | `eval_summary.csv`（baseline/gate/conformal 9-run 评估，已被 comparison 取代） | — |
