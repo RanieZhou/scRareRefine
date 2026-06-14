@@ -36,6 +36,10 @@ METHODS = [
     ("kNN",          "#1f77b4"),
     ("CellTypist",   "#ff7f0e"),
     ("scBalance",    "#9467bd"),
+    ("ProtoCloud",   "#e377c2"),   # 粉色，Cell Genomics 2026
+    ("HiCat",        "#17becf"),   # 青色，Briefings in Bioinformatics 2025
+    ("scCAD",        "#d62728"),   # 红色，Nature Commun 2024
+    ("TOSICA",       "#8c564b"),   # 棕色，Nature Commun 2023
     ("scRareRefine", "#2ca02c"),
 ]
 
@@ -58,27 +62,33 @@ def main():
                    rec_std=("rare_recall", "std"))
               .reset_index())
 
-    x = np.arange(len(METHODS))
-    colors  = [c for _, c in METHODS]
-    xlabels = [m for m, _ in METHODS]
+    # 只绘制数据中实际存在的方法
+    present = set(agg["method"].unique())
+    active_methods = [(m, c) for m, c in METHODS if m in present]
+
+    x = np.arange(len(active_methods))
+    colors  = [c for _, c in active_methods]
+    xlabels = [m for m, _ in active_methods]
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 8.6), sharex=True)
 
     for col, (ds, title) in enumerate(DATASETS):
         sub = agg[agg["dataset"] == ds].set_index("method")
 
-        f1s      = [sub.loc[m, "f1_mean"]  for m, _ in METHODS]
-        f1_sds   = [sub.loc[m, "f1_std"]   for m, _ in METHODS]
-        recs     = [sub.loc[m, "rec_mean"] for m, _ in METHODS]
-        rec_sds  = [sub.loc[m, "rec_std"]  for m, _ in METHODS]
+        sub = sub.reindex([m for m, _ in active_methods])  # 缺失方法填 NaN
+        f1s      = sub["f1_mean"].fillna(0).tolist()
+        f1_sds   = sub["f1_std"].fillna(0).tolist()
+        recs     = sub["rec_mean"].fillna(0).tolist()
+        rec_sds  = sub["rec_std"].fillna(0).tolist()
 
         # ── 上排：F1 ─────────────────────────────────────────────────
         ax = axes[0, col]
         bars = ax.bar(x, f1s, yerr=f1_sds, color=colors, edgecolor="k",
                       linewidth=0.7, capsize=4, error_kw={"elinewidth": 1.0})
-        bars[-1].set_linewidth(2.0)
+        ours_idx = next((i for i, (m, _) in enumerate(active_methods) if m == "scRareRefine"), len(active_methods)-1)
+        bars[ours_idx].set_linewidth(2.0)
         for xi, f1, sd in zip(x, f1s, f1_sds):
-            is_ours = (xi == x[-1])
+            is_ours = (xi == x[ours_idx])
             ax.text(xi, f1 + sd + 0.022, f"{f1:.3f}",
                     ha="center", va="bottom", fontsize=9,
                     fontweight="bold" if is_ours else "normal",
@@ -95,9 +105,9 @@ def main():
         ax = axes[1, col]
         bars2 = ax.bar(x, recs, yerr=rec_sds, color=colors, edgecolor="k",
                        linewidth=0.7, capsize=4, error_kw={"elinewidth": 1.0})
-        bars2[-1].set_linewidth(2.0)
+        bars2[ours_idx].set_linewidth(2.0)
         for xi, r, sd in zip(x, recs, rec_sds):
-            is_ours = (xi == x[-1])
+            is_ours = (xi == x[ours_idx])
             ax.text(xi, r + sd + 0.022, f"{r:.3f}",
                     ha="center", va="bottom", fontsize=9,
                     fontweight="bold" if is_ours else "normal",
@@ -114,13 +124,13 @@ def main():
     # 图例
     legend_handles = [Patch(facecolor=c, edgecolor="k",
                             label=("scRareRefine (ours)" if m == "scRareRefine" else m))
-                      for m, c in METHODS]
-    fig.legend(handles=legend_handles, loc="upper center", ncol=5,
+                      for m, c in active_methods]
+    fig.legend(handles=legend_handles, loc="upper center", ncol=len(active_methods),
                frameon=True, bbox_to_anchor=(0.5, 1.02), fontsize=10)
     fig.suptitle(
         "Comparison of rare-cell identification methods across 3 datasets (3-seed average)\n"
-        "scRareRefine achieves highest F1 and recall on all datasets",
-        fontsize=12.5, y=1.10)
+        "scRareRefine achieves top F1 on tabula_lung_endo; TOSICA leads on immune_dc and pancreas_baron",
+        fontsize=11.5, y=1.10)
 
     fig.tight_layout(rect=[0, 0, 1, 0.99])
     OUT_PNG.parent.mkdir(parents=True, exist_ok=True)

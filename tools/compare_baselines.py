@@ -59,15 +59,21 @@ import scBalance
 
 # ── run 列表 ─────────────────────────────────────────────────────────────────
 RUNS = [
-    ("configs/immune_dc.yaml",        42, "0.05"),
-    ("configs/immune_dc.yaml",        43, "0.05"),
-    ("configs/immune_dc.yaml",        44, "0.05"),
-    ("configs/pancreas_baron.yaml",   42, "0.10"),
-    ("configs/pancreas_baron.yaml",   43, "0.10"),
-    ("configs/pancreas_baron.yaml",   44, "0.10"),
-    ("configs/tabula_lung_endo.yaml", 42, "0.10"),
-    ("configs/tabula_lung_endo.yaml", 43, "0.10"),
-    ("configs/tabula_lung_endo.yaml", 44, "0.10"),
+    ("configs/immune_dc.yaml",              42, "0.05"),
+    ("configs/immune_dc.yaml",              43, "0.05"),
+    ("configs/immune_dc.yaml",              44, "0.05"),
+    ("configs/pancreas_baron.yaml",         42, "0.10"),
+    ("configs/pancreas_baron.yaml",         43, "0.10"),
+    ("configs/pancreas_baron.yaml",         44, "0.10"),
+    ("configs/tabula_lung_endo.yaml",       42, "0.10"),
+    ("configs/tabula_lung_endo.yaml",       43, "0.10"),
+    ("configs/tabula_lung_endo.yaml",       44, "0.10"),
+    ("configs/tabula_small_intestine.yaml", 42, "20"),
+    ("configs/tabula_small_intestine.yaml", 43, "20"),
+    ("configs/tabula_small_intestine.yaml", 44, "20"),
+    ("configs/tabula_lung_stroma.yaml",     42, "20"),
+    ("configs/tabula_lung_stroma.yaml",     43, "20"),
+    ("configs/tabula_lung_stroma.yaml",     44, "20"),
 ]
 
 KNN_K_GRID      = [3, 5, 10, 15]

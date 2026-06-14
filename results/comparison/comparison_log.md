@@ -25,18 +25,28 @@ rescue_ffr（仅逐 run 明细）= 相对 scANVI 改判的误救率，仅对 scR
 | immune_dc | scANVI | 0.0251 | 0.0188 | 0.00000 | 3 |
 | immune_dc | kNN | 0.6725 | 0.0662 | 0.00000 | 3 |
 | immune_dc | CellTypist | 0.5598 | 0.0388 | 0.00000 | 3 |
-| immune_dc | scBalance | 0.5574 | 0.0697 | 0.00000 | 3 |
+| immune_dc | scBalance | 0.5440 | 0.0345 | 0.00000 | 3 |
 | immune_dc | scRareRefine | 0.9394 | 0.0096 | 0.00050 | 3 |
 | pancreas_baron | scANVI | 0.8246 | 0.0456 | 0.00183 | 3 |
 | pancreas_baron | kNN | 0.6165 | 0.1833 | 0.00122 | 3 |
 | pancreas_baron | CellTypist | 0.6277 | 0.1256 | 0.00000 | 3 |
-| pancreas_baron | scBalance | 0.7091 | 0.0887 | 0.00122 | 3 |
+| pancreas_baron | scBalance | 0.7102 | 0.1110 | 0.00061 | 3 |
 | pancreas_baron | scRareRefine | 0.8494 | 0.0274 | 0.00672 | 3 |
 | tabula_lung_endo | scANVI | 0.9694 | 0.0062 | 0.00175 | 3 |
 | tabula_lung_endo | kNN | 0.9519 | 0.0065 | 0.00058 | 3 |
 | tabula_lung_endo | CellTypist | 0.7751 | 0.0362 | 0.00058 | 3 |
-| tabula_lung_endo | scBalance | 0.9230 | 0.0364 | 0.00117 | 3 |
+| tabula_lung_endo | scBalance | 0.9177 | 0.0137 | 0.00117 | 3 |
 | tabula_lung_endo | scRareRefine | 0.9799 | 0.0035 | 0.00175 | 3 |
+| tabula_small_intestine | scANVI | 0.9799 | 0.0035 | 0.00048 | 3 |
+| tabula_small_intestine | kNN | 0.9721 | 0.0038 | 0.00048 | 3 |
+| tabula_small_intestine | CellTypist | 0.9822 | 0.0036 | 0.00032 | 3 |
+| tabula_small_intestine | scBalance | 0.9669 | 0.0040 | 0.00048 | 3 |
+| tabula_small_intestine | scRareRefine | 0.9774 | 0.0060 | 0.00064 | 3 |
+| tabula_lung_stroma | scANVI | 0.3902 | 0.0303 | 0.33498 | 3 |
+| tabula_lung_stroma | kNN | 0.3537 | 0.0469 | 0.23645 | 3 |
+| tabula_lung_stroma | CellTypist | 0.2049 | 0.0655 | 0.25123 | 3 |
+| tabula_lung_stroma | scBalance | 0.2890 | 0.0373 | 0.32512 | 3 |
+| tabula_lung_stroma | scRareRefine | 0.3902 | 0.0303 | 0.33498 | 3 |
 
 ## 逐 run 明细
 
@@ -45,45 +55,75 @@ rescue_ffr（仅逐 run 明细）= 相对 scANVI 改判的误救率，仅对 scR
 | immune_dc | 42 | 2.387 | scANVI | ok | 0.0000 | 0.0000 | 0.0000 | 0.00000 | 0.00000 |
 | immune_dc | 42 | 2.387 | kNN | ok | 0.7255 | 0.5692 | 1.0000 | 0.00000 | 0.00000 |
 | immune_dc | 42 | 2.387 | CellTypist | ok | 0.5946 | 0.4231 | 1.0000 | 0.00000 | 0.00000 |
-| immune_dc | 42 | 2.387 | scBalance | ok | 0.5311 | 0.3615 | 1.0000 | 0.00000 | 0.00000 |
+| immune_dc | 42 | 2.387 | scBalance | ok | 0.5792 | 0.4077 | 1.0000 | 0.00000 | 0.00000 |
 | immune_dc | 42 | 2.387 | scRareRefine | ok | 0.9486 | 0.9231 | 0.9756 | 0.00050 | 0.00050 |
 | immune_dc | 43 | 2.026 | scANVI | ok | 0.0303 | 0.0154 | 1.0000 | 0.00000 | 0.00000 |
 | immune_dc | 43 | 2.026 | kNN | ok | 0.7129 | 0.5538 | 1.0000 | 0.00000 | 0.00000 |
 | immune_dc | 43 | 2.026 | CellTypist | ok | 0.5057 | 0.3385 | 1.0000 | 0.00000 | 0.00000 |
-| immune_dc | 43 | 2.026 | scBalance | ok | 0.6528 | 0.4846 | 1.0000 | 0.00000 | 0.00000 |
+| immune_dc | 43 | 2.026 | scBalance | ok | 0.4971 | 0.3308 | 1.0000 | 0.00000 | 0.00000 |
 | immune_dc | 43 | 2.026 | scRareRefine | ok | 0.9262 | 0.8692 | 0.9912 | 0.00017 | 0.00017 |
 | immune_dc | 44 | 1.808 | scANVI | ok | 0.0451 | 0.0231 | 1.0000 | 0.00000 | 0.00000 |
 | immune_dc | 44 | 1.808 | kNN | ok | 0.5792 | 0.4077 | 1.0000 | 0.00000 | 0.00000 |
 | immune_dc | 44 | 1.808 | CellTypist | ok | 0.5792 | 0.4077 | 1.0000 | 0.00000 | 0.00000 |
-| immune_dc | 44 | 1.808 | scBalance | ok | 0.4884 | 0.3231 | 1.0000 | 0.00000 | 0.00000 |
+| immune_dc | 44 | 1.808 | scBalance | ok | 0.5556 | 0.3846 | 1.0000 | 0.00000 | 0.00000 |
 | immune_dc | 44 | 1.808 | scRareRefine | ok | 0.9435 | 0.9000 | 0.9915 | 0.00017 | 0.00017 |
 | pancreas_baron | 42 | 1.404 | scANVI | ok | 0.8056 | 0.6744 | 1.0000 | 0.00000 | 0.00000 |
 | pancreas_baron | 42 | 1.404 | kNN | ok | 0.3619 | 0.2209 | 1.0000 | 0.00000 | 0.00000 |
 | pancreas_baron | 42 | 1.404 | CellTypist | ok | 0.4505 | 0.2907 | 1.0000 | 0.00000 | 0.00000 |
-| pancreas_baron | 42 | 1.404 | scBalance | ok | 0.7068 | 0.5465 | 1.0000 | 0.00000 | 0.00000 |
+| pancreas_baron | 42 | 1.404 | scBalance | ok | 0.5738 | 0.4070 | 0.9722 | 0.00061 | 0.00061 |
 | pancreas_baron | 42 | 1.404 | scRareRefine | ok | 0.8366 | 0.7442 | 0.9552 | 0.00183 | 0.00183 |
 | pancreas_baron | 43 | 1.554 | scANVI | ok | 0.7808 | 0.6628 | 0.9500 | 0.00183 | 0.00000 |
 | pancreas_baron | 43 | 1.554 | kNN | ok | 0.7015 | 0.5465 | 0.9792 | 0.00061 | 0.00000 |
 | pancreas_baron | 43 | 1.554 | CellTypist | ok | 0.7259 | 0.5698 | 1.0000 | 0.00000 | 0.00000 |
-| pancreas_baron | 43 | 1.554 | scBalance | ok | 0.8188 | 0.7093 | 0.9683 | 0.00122 | 0.00061 |
+| pancreas_baron | 43 | 1.554 | scBalance | ok | 0.8456 | 0.7326 | 1.0000 | 0.00000 | 0.00000 |
 | pancreas_baron | 43 | 1.554 | scRareRefine | ok | 0.8242 | 0.7907 | 0.8608 | 0.00672 | 0.00488 |
 | pancreas_baron | 44 | 1.124 | scANVI | ok | 0.8875 | 0.8256 | 0.9595 | 0.00183 | 0.00000 |
 | pancreas_baron | 44 | 1.124 | kNN | ok | 0.7862 | 0.6628 | 0.9661 | 0.00122 | 0.00000 |
 | pancreas_baron | 44 | 1.124 | CellTypist | ok | 0.7068 | 0.5465 | 1.0000 | 0.00000 | 0.00000 |
-| pancreas_baron | 44 | 1.124 | scBalance | ok | 0.6016 | 0.4302 | 1.0000 | 0.00000 | 0.00000 |
+| pancreas_baron | 44 | 1.124 | scBalance | ok | 0.7111 | 0.5581 | 0.9796 | 0.00061 | 0.00000 |
 | pancreas_baron | 44 | 1.124 | scRareRefine | ok | 0.8875 | 0.8256 | 0.9595 | 0.00183 | 0.00000 |
 | tabula_lung_endo | 42 | 1.659 | scANVI | ok | 0.9771 | 0.9846 | 0.9697 | 0.00117 | 0.00000 |
 | tabula_lung_endo | 42 | 1.659 | kNN | ok | 0.9600 | 0.9231 | 1.0000 | 0.00000 | 0.00000 |
 | tabula_lung_endo | 42 | 1.659 | CellTypist | ok | 0.7890 | 0.6615 | 0.9773 | 0.00058 | 0.00000 |
-| tabula_lung_endo | 42 | 1.659 | scBalance | ok | 0.9440 | 0.9077 | 0.9833 | 0.00058 | 0.00000 |
+| tabula_lung_endo | 42 | 1.659 | scBalance | ok | 0.9268 | 0.8769 | 0.9828 | 0.00058 | 0.00000 |
 | tabula_lung_endo | 42 | 1.659 | scRareRefine | ok | 0.9774 | 1.0000 | 0.9559 | 0.00175 | 0.00058 |
 | tabula_lung_endo | 43 | 1.734 | scANVI | ok | 0.9618 | 0.9692 | 0.9545 | 0.00175 | 0.00000 |
 | tabula_lung_endo | 43 | 1.734 | kNN | ok | 0.9440 | 0.9077 | 0.9833 | 0.00058 | 0.00000 |
 | tabula_lung_endo | 43 | 1.734 | CellTypist | ok | 0.8108 | 0.6923 | 0.9783 | 0.00058 | 0.00058 |
-| tabula_lung_endo | 43 | 1.734 | scBalance | ok | 0.8718 | 0.7846 | 0.9808 | 0.00058 | 0.00000 |
+| tabula_lung_endo | 43 | 1.734 | scBalance | ok | 0.8983 | 0.8154 | 1.0000 | 0.00000 | 0.00000 |
 | tabula_lung_endo | 43 | 1.734 | scRareRefine | ok | 0.9774 | 1.0000 | 0.9559 | 0.00175 | 0.00000 |
 | tabula_lung_endo | 44 | 1.689 | scANVI | ok | 0.9692 | 0.9692 | 0.9692 | 0.00117 | 0.00000 |
 | tabula_lung_endo | 44 | 1.689 | kNN | ok | 0.9516 | 0.9077 | 1.0000 | 0.00000 | 0.00000 |
 | tabula_lung_endo | 44 | 1.689 | CellTypist | ok | 0.7255 | 0.5692 | 1.0000 | 0.00000 | 0.00000 |
-| tabula_lung_endo | 44 | 1.689 | scBalance | ok | 0.9531 | 0.9385 | 0.9683 | 0.00117 | 0.00000 |
+| tabula_lung_endo | 44 | 1.689 | scBalance | ok | 0.9280 | 0.8923 | 0.9667 | 0.00117 | 0.00000 |
 | tabula_lung_endo | 44 | 1.689 | scRareRefine | ok | 0.9848 | 1.0000 | 0.9701 | 0.00117 | 0.00000 |
+| tabula_small_intestine | 42 | 2.474 | scANVI | ok | 0.9774 | 1.0000 | 0.9559 | 0.00048 | 0.00000 |
+| tabula_small_intestine | 42 | 2.474 | kNN | ok | 0.9774 | 1.0000 | 0.9559 | 0.00048 | 0.00000 |
+| tabula_small_intestine | 42 | 2.474 | CellTypist | ok | 0.9848 | 1.0000 | 0.9701 | 0.00032 | 0.00000 |
+| tabula_small_intestine | 42 | 2.474 | scBalance | ok | 0.9697 | 0.9846 | 0.9552 | 0.00048 | 0.00000 |
+| tabula_small_intestine | 42 | 2.474 | scRareRefine | ok | 0.9701 | 1.0000 | 0.9420 | 0.00064 | 0.00016 |
+| tabula_small_intestine | 43 | 3.008 | scANVI | ok | 0.9774 | 1.0000 | 0.9559 | 0.00048 | 0.00000 |
+| tabula_small_intestine | 43 | 3.008 | kNN | ok | 0.9697 | 0.9846 | 0.9552 | 0.00048 | 0.00000 |
+| tabula_small_intestine | 43 | 3.008 | CellTypist | ok | 0.9848 | 1.0000 | 0.9701 | 0.00032 | 0.00000 |
+| tabula_small_intestine | 43 | 3.008 | scBalance | ok | 0.9612 | 0.9538 | 0.9688 | 0.00032 | 0.00000 |
+| tabula_small_intestine | 43 | 3.008 | scRareRefine | ok | 0.9774 | 1.0000 | 0.9559 | 0.00048 | 0.00000 |
+| tabula_small_intestine | 44 | 2.355 | scANVI | ok | 0.9848 | 1.0000 | 0.9701 | 0.00032 | 0.00000 |
+| tabula_small_intestine | 44 | 2.355 | kNN | ok | 0.9692 | 0.9692 | 0.9692 | 0.00032 | 0.00000 |
+| tabula_small_intestine | 44 | 2.355 | CellTypist | ok | 0.9771 | 0.9846 | 0.9697 | 0.00032 | 0.00000 |
+| tabula_small_intestine | 44 | 2.355 | scBalance | ok | 0.9697 | 0.9846 | 0.9552 | 0.00048 | 0.00016 |
+| tabula_small_intestine | 44 | 2.355 | scRareRefine | ok | 0.9848 | 1.0000 | 0.9701 | 0.00032 | 0.00000 |
+| tabula_lung_stroma | 42 | 0.802 | scANVI | ok | 0.3906 | 0.7143 | 0.2688 | 0.33498 | 0.00000 |
+| tabula_lung_stroma | 42 | 0.802 | kNN | ok | 0.4167 | 0.4286 | 0.4054 | 0.10837 | 0.00000 |
+| tabula_lung_stroma | 42 | 0.802 | CellTypist | ok | 0.2388 | 0.2286 | 0.2500 | 0.11823 | 0.00000 |
+| tabula_lung_stroma | 42 | 0.802 | scBalance | ok | 0.2963 | 0.3429 | 0.2609 | 0.16749 | 0.00000 |
+| tabula_lung_stroma | 42 | 0.802 | scRareRefine | ok | 0.3906 | 0.7143 | 0.2688 | 0.33498 | 0.00000 |
+| tabula_lung_stroma | 43 | 0.877 | scANVI | ok | 0.3529 | 0.4286 | 0.3000 | 0.17241 | 0.00000 |
+| tabula_lung_stroma | 43 | 0.877 | kNN | ok | 0.3043 | 0.4000 | 0.2456 | 0.21182 | 0.08374 |
+| tabula_lung_stroma | 43 | 0.877 | CellTypist | ok | 0.2626 | 0.3714 | 0.2031 | 0.25123 | 0.11823 |
+| tabula_lung_stroma | 43 | 0.877 | scBalance | ok | 0.3306 | 0.5714 | 0.2326 | 0.32512 | 0.15763 |
+| tabula_lung_stroma | 43 | 0.877 | scRareRefine | ok | 0.3529 | 0.4286 | 0.3000 | 0.17241 | 0.00000 |
+| tabula_lung_stroma | 44 | 0.828 | scANVI | ok | 0.4272 | 0.6286 | 0.3235 | 0.22660 | 0.00000 |
+| tabula_lung_stroma | 44 | 0.828 | kNN | ok | 0.3400 | 0.4857 | 0.2615 | 0.23645 | 0.04926 |
+| tabula_lung_stroma | 44 | 0.828 | CellTypist | ok | 0.1132 | 0.0857 | 0.1667 | 0.07389 | 0.00985 |
+| tabula_lung_stroma | 44 | 0.828 | scBalance | ok | 0.2400 | 0.3429 | 0.1846 | 0.26108 | 0.05419 |
+| tabula_lung_stroma | 44 | 0.828 | scRareRefine | ok | 0.4272 | 0.6286 | 0.3235 | 0.22660 | 0.00000 |

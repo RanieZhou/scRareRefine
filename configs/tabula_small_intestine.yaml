@@ -1,0 +1,44 @@
+# ==============================================================================
+# scRareRefine 实验配置: tabula_small_intestine (Tabula Sapiens Small Intestine 10X)
+# 从 tabula_sapiens_small_intestine.h5ad 提取 method=10X 子集
+# 40350 细胞 × 60606 基因 | 5 个供体批次 (TSP2/14/25/26/27)
+# 细胞类型: 肠上皮(各段肠细胞 60%+) T细胞(21%) | 稀有类: tuft cell(435, 1.1%)
+# tuft cell per donor (10X): TSP14(188) TSP2(83) TSP25(65) TSP26(55) TSP27(44)
+# ==============================================================================
+
+dataset:
+  name: tabula_small_intestine
+  path: data/raw/tabula_sapiens_small_intestine/tabula_si_10x.h5ad
+  use_raw: false                        # 提取时已把 raw counts 放入 X
+  label_key: cell_type
+  batch_key: donor_id                   # TSP2 / TSP14 / TSP25 / TSP26 / TSP27
+
+experiment:
+  rare_class: intestinal tuft cell      # 435 个 (1.1%)，5 donor 均有
+  split_mode: batch_heldout
+  rare_train_sizes:
+    - 10
+    - 20
+    - 50
+    - all
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+
+model:
+  n_top_hvg: 3000                       # 4万细胞规模，3000 HVG
+  n_latent: 20
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 128
+
+analysis:
+  rare_threshold: 0.05
+  rare_max_cells: 200
+  review_fractions:
+    - 0.01
+    - 0.05
+    - 0.10
+    - 0.20

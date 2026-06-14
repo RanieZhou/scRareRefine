@@ -32,3 +32,13 @@ checkpoints/
 *.rar
 
 tests/
+baseline/catboost_info/
+baseline/AnnoGCD/
+baseline/HiCat/
+baseline/ProtoCloud/
+baseline/TOSICA/
+baseline/scCAD/
+catboost_info/
+
+catboost_info/
+runs/
