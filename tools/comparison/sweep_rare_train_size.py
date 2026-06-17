@@ -9,8 +9,8 @@
 
 目的：验证「有标签稀有细胞从极少→全部」全谱下各方法稳健性的跨数据集一致性。
 
-依赖：复用 tools/compare_baselines.py 的方法实现（import 时自动应用 CellTypist 兼容 patch）。
-前置：需先用 tools/train_cache.py 训练好各 (数据集,seed,rare_train_size) 的 scANVI 缓存。
+依赖：复用 tools/comparison/compare_baselines.py 的方法实现（import 时自动应用 CellTypist 兼容 patch）。
+前置：需先用 tools/analysis/train_cache.py 训练好各 (数据集,seed,rare_train_size) 的 scANVI 缓存。
 
 输出：
   results/sweep_rts/sweep_rts_summary.csv  （机读，每行 dataset×seed×rts×method）
@@ -26,13 +26,13 @@ import numpy as np
 import pandas as pd
 import anndata as ad
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from src.utils import load_config, make_run_dir, parse_rare_train_size, classification_tables, load_adata
 from src.rescue import PrototypeRescuer
 
 # 复用 compare_baselines 的方法实现（import 触发 CellTypist monkey-patch）
-import tools.compare_baselines as cb
+import tools.comparison.compare_baselines as cb
 
 # ── 扫描矩阵 ─────────────────────────────────────────────────────────────────
 DATASETS = [

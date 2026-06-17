@@ -7,8 +7,8 @@
   (d) Rescue outcome      — TP救回/漏判/误救 分解
 
 用法：
-  python tools/plot_umap_rescue.py --config configs/immune_dc.yaml --seed 42 --rts 0.05
-  python tools/plot_umap_rescue.py --config configs/pancreas_baron.yaml --seed 42 --rts 0.10
+  python tools/analysis/plot_umap_rescue.py --config configs/immune_dc.yaml --seed 42 --rts 0.05
+  python tools/analysis/plot_umap_rescue.py --config configs/pancreas_baron.yaml --seed 42 --rts 0.10
 """
 import argparse
 from pathlib import Path
@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import umap
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from src.rescue import PrototypeRescuer, ConformalRescuer
 from src.utils import load_config, make_run_dir, parse_rare_train_size
 

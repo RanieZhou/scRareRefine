@@ -15,14 +15,14 @@
   results/ablation/ablation_log.md        （人读，含均值±σ 汇总表）
 
 用法：
-    python tools/ablation.py
+    python tools/analysis/ablation.py
 """
 import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from src.utils import load_config, make_run_dir, parse_rare_train_size, classification_tables
 from src.rescue import PrototypeRescuer, ConformalRescuer

@@ -78,9 +78,9 @@
 3. `run_post_hoc_rescue._rank1_mask()` 简化为直接读 `prototype_rescue_candidate`（L358-359）
 
 **新增工具**:
-- `tools/train_cache.py`：一次性训练 + 缓存，后续迭代免重训
-- `tools/diagnose.py`：Step 1 标准化诊断（5个指标）
-- `tools/evaluate_all.py`：批量评估多数据集 × 多 seed
+- `tools/analysis/train_cache.py`：一次性训练 + 缓存，后续迭代免重训
+- `tools/analysis/diagnose.py`：Step 1 标准化诊断（5个指标）
+- `tools/analysis/evaluate_all.py`：批量评估多数据集 × 多 seed
 
 ### 实验结果（strategy=fusion）
 
@@ -273,7 +273,7 @@ relabel: 候选 AND score≥τ → rare
 | 稀有类 | endothelial cell of lymphatic vessel（307 细胞，3.0%） |
 | 特点 | scANVI baseline 已很强（F1~0.96-0.98），只有 1-2 个漏判 |
 
-数据提取工具：[tools/extract_tabula_endo.py](../tools/extract_tabula_endo.py)
+数据提取工具：[tools/extract/extract_tabula_endo.py](../tools/extract/extract_tabula_endo.py)
 配置：[configs/tabula_lung_endo.yaml](../configs/tabula_lung_endo.yaml)
 
 ### 实验结果（seed=42/43/44，rare_train_size=10%）
@@ -339,7 +339,7 @@ conformal 候选精度仅 30%（23 候选中 16 个假），调整 conformal 弃
 | V3 isotropic | 各向同性 rank=1 | 各向同性 softmax(-d) | conformal (val 非稀有) | sep < 1.3 | 量化各向异性归一化的价值 |
 | V4 full（完整方法） | 各向同性 rank=1 | 各向异性 softmax(-d/r) | conformal (val 非稀有) | sep < 1.3 | 完整方法基准 |
 
-**数据**：3 数据集 × 3 seed（9 run），复用已缓存 embedding（无重训），基于 `tools/ablation.py`。
+**数据**：3 数据集 × 3 seed（9 run），复用已缓存 embedding（无重训），基于 `tools/analysis/ablation.py`。
 
 ### 3-seed 均值 ± σ 结果
 
@@ -472,7 +472,7 @@ scRareRefine 在全部 3 个数据集的 3-seed **均值 F1 最高**，且 **σ 
 ### 环境补充
 
 - 新增依赖：`celltypist==1.7.1`、`scBalance==1.2.0`
-- 兼容性处理：CellTypist 内部 `LogisticRegression(multi_class='ovr')` 与 sklearn 1.8.0 不兼容，在 `tools/compare_baselines.py` 中以运行时 monkey-patch（`_patched_LRClassifier`）修复，未改动 site-packages
+- 兼容性处理：CellTypist 内部 `LogisticRegression(multi_class='ovr')` 与 sklearn 1.8.0 不兼容，在 `tools/comparison/compare_baselines.py` 中以运行时 monkey-patch（`_patched_LRClassifier`）修复，未改动 site-packages
 - numpy 锁定 1.26.4（scBalance/torch 需 numpy<2）
 
 ---
@@ -488,7 +488,7 @@ scRareRefine 在全部 3 个数据集的 3-seed **均值 F1 最高**，且 **σ 
 - **变量**：`rare_train_size ∈ {0.01, 0.05, 0.10, all}`，实际标注数 = `max(5, int(p × 训练池稀有数))`
 - **方法**：scANVI / kNN / CellTypist / scBalance / scRareRefine
 - **机制说明**：rare_train_size 是「标签下采样」——全部稀有细胞留在训练集参与 scANVI 半监督表示学习，只有 `lab_rare` 个被赋真实标签，其余标为 Unknown。监督 baseline（kNN/CellTypist/scBalance）只能用 `lab_rare` 个标注训练。
-- 工具：`tools/sweep_rare_train_size.py`（复用 compare_baselines 方法实现），36 run × 5 方法。
+- 工具：`tools/comparison/sweep_rare_train_size.py`（复用 compare_baselines 方法实现），36 run × 5 方法。
 
 ### 实际标注稀有数（lab_rare = max(5, int(p × 池)) ）
 
@@ -572,7 +572,7 @@ scRareRefine 在全部 3 个数据集的 3-seed **均值 F1 最高**，且 **σ 
 - `results/sweep_rts/sweep_rts_summary.csv`：逐 run × 方法明细（180 行，机读）
 - `results/sweep_rts/sweep_rts_agg.csv`：3-seed 聚合（60 行，机读）
 - `results/sweep_rts/sweep_rts_log.md`：本轮完整报告（人读，每数据集一张透视表）
-- `results/sweep_rts/sweep_rts_curves.png` / `.pdf`：论文级稳健性曲线图（1×3 子图，5 方法 × 4 比例，均值±σ 误差带，300 dpi + 矢量），由 `tools/plot_sweep_rts.py` 生成
+- `results/sweep_rts/sweep_rts_curves.png` / `.pdf`：论文级稳健性曲线图（1×3 子图，5 方法 × 4 比例，均值±σ 误差带，300 dpi + 矢量），由 `tools/analysis/plot_sweep_rts.py` 生成
 
 ---
 
@@ -584,7 +584,7 @@ scRareRefine 在全部 3 个数据集的 3-seed **均值 F1 最高**，且 **σ 
 
 - **案例**：immune_dc，seed=42，rare_train_size=0.05（13 标注），test 集 130 个 ASDC
 - **方法**：test latent → UMAP（n_neighbors=15, min_dist=0.3, random_state=42），叠加 true / scANVI / scRareRefine 标注
-- **工具**：`tools/plot_umap_rescue.py`
+- **工具**：`tools/analysis/plot_umap_rescue.py`
 
 **2×2 面板**：(a) 真值 | (b) scANVI 预测 | (c) scRareRefine 预测 | (d) rescue 结果分解
 
@@ -602,7 +602,7 @@ rescue 结果分解：救对 (TP) 120、误救 (FP) 3、仍漏判 10、scANVI �
 
 ### 高可分 vs 边界可分对照（解释为何低 sep 时优势收窄）
 
-对 pancreas_baron（seed=42，rare_train_size=0.10，gamma，sep=1.40）做同样 UMAP，与 immune 并排对照（`tools/plot_umap_contrast.py`）。
+对 pancreas_baron（seed=42，rare_train_size=0.10，gamma，sep=1.40）做同样 UMAP，与 immune 并排对照（`tools/analysis/plot_umap_contrast.py`）。
 
 | 指标 | immune_dc (sep=2.39) | pancreas_baron (sep=1.40) |
 |------|---------------------|--------------------------|
@@ -622,7 +622,7 @@ rescue 结果分解：救对 (TP) 120、误救 (FP) 3、仍漏判 10、scANVI �
 
 ### 论文级稳健性配图
 
-升级 `tools/plot_sweep_rts.py`：300 dpi PNG + 矢量 PDF，统一图例、marker 黑边、σ 误差带、规范字号。scRareRefine 红色粗线突出。
+升级 `tools/analysis/plot_sweep_rts.py`：300 dpi PNG + 矢量 PDF，统一图例、marker 黑边、σ 误差带、规范字号。scRareRefine 红色粗线突出。
 
 ### 输出文件
 

@@ -2,7 +2,7 @@
 输出 baseline + scRareRefine (gate_only / gate_marker / fusion) 对比表。
 
 用法:
-    python tools/evaluate_all.py
+    python tools/analysis/evaluate_all.py
 """
 import sys
 import json
@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from src.preprocess import run_preprocessing
 from src.utils import load_config, load_adata, make_run_dir, parse_rare_train_size, classification_tables
@@ -69,9 +69,12 @@ for cfg_path, seed, rts_str in RUNS:
         split_mode=split_mode, seed=seed, rare_class=rare_class)
 
     for strat in ["gate_only", "fusion", "conformal"]:
+        # conformal 分支只读 conformal_alpha，不读 max_false_rescue_rate（语义独立，
+        # 详见 src/rescue.py run_post_hoc_rescue docstring）；两个都传 0.001 才能让
+        # 三种策略在同一 FFR 预算下做公平对比，否则 conformal 会静默退回默认 alpha=0.01。
         final_pred, summ = run_post_hoc_rescue(
             adata, preds, lats, genes, rare_class=rare_class,
-            strategy=strat, max_false_rescue_rate=0.001)
+            strategy=strat, max_false_rescue_rate=0.001, conformal_alpha=0.001)
         m, _ = classification_tables(y_true, final_pred.astype(str).to_numpy(), rare_class=rare_class)
         n_nonrare = int((y_true != rare_class).sum())
         row = {

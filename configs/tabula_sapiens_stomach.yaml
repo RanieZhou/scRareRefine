@@ -1,0 +1,46 @@
+# ==============================================================================
+# scRareRefine 实验配置: tabula_sapiens_stomach (Tabula Sapiens Stomach 10X 为主)
+# 原始文件: data/raw/tabula_sapiens_stomach/tabula_sapiens_stomach.h5ad
+# 33064 细胞 × 60606 基因 | 其中 10X: 32690 (98.8%)、smartseq: 374 (1.2%)
+# 3 个供体批次 (TSP20/TSP25/TSP27)，batch_heldout 每个供体恰好分到一个 split
+# 细胞类型: fibroblast(20%) CD4-T(17%) mononuclear_phagocyte(16%) plasma(13%)...
+# 稀有类: mast cell (957 cells, 2.9%)
+# mast cell 每供体分布: TSP25(884) TSP27(52) TSP20(21) — 浓缩于 TSP25
+# ==============================================================================
+
+dataset:
+  name: tabula_sapiens_stomach
+  path: data/raw/tabula_sapiens_stomach/tabula_sapiens_stomach.h5ad
+  use_raw: false                        # X 层已含原始 count，自适应体检决定是否归一化
+  label_key: cell_type
+  batch_key: donor_id                   # TSP20 / TSP25 / TSP27（共 3 个供体）
+
+experiment:
+  rare_class: mast cell                 # 957 个 (2.9%)，3 供体均有，供体间分布不均（TSP25 为主）
+  split_mode: batch_heldout             # 3 供体恰好满足最低要求（>=3），各供体独立分到一个 split
+  rare_train_sizes:                     # 批量对比实验中稀有细胞已标注样本规模列表
+    - 0.01                              # 代表标注该稀有细胞训练样本的 1%
+    - 0.05                              # 代表标注该稀有细胞训练样本的 5%
+    - 0.10                              # 代表标注该稀有细胞训练样本的 10%
+    - all
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+
+model:
+  n_top_hvg: 3000                       # 3 万细胞规模，3000 HVG
+  n_latent: 20
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 128
+
+analysis:
+  rare_threshold: 0.05
+  rare_max_cells: 200
+  review_fractions:
+    - 0.01
+    - 0.05
+    - 0.10
+    - 0.20

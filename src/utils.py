@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import os
+import subprocess
 import threading
 import time
 from dataclasses import dataclass, field
@@ -117,6 +120,103 @@ def make_split_path(config: dict[str, Any], split_mode: str, seed: int) -> Path:
     """ 依据配置计算样本三路切分结果存储路径 """
     dataset_name = config["dataset"]["name"]
     return Path("data") / "splits" / dataset_name / f"{split_mode}_seed{seed}" / "split.csv"
+
+
+# ==========================================
+# 3b. 缓存 provenance（manifest）：run_pipeline.py / train_cache.py /
+#     run_scrarerefine_comparison.py 共用同一份实现，避免各自维护一份后产生漂移
+# ==========================================
+def git_sha() -> str:
+    """ 当前代码版本短 SHA（不在 git 仓库或 git 不可用时返回 unknown） """
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL, text=True).strip()
+    except Exception:
+        return "unknown"
+
+
+def compute_split_hash(predictions_dict: dict[str, pd.DataFrame]) -> str:
+    """ 对 train/val/test 的 cell_id split 取稳定哈希（排序后），用于缓存 provenance 校验 """
+    h = hashlib.sha256()
+    for s in ["train", "validation", "test"]:
+        ids = sorted(predictions_dict[s]["cell_id"].astype(str).tolist())
+        h.update(s.encode())
+        h.update("\n".join(ids).encode())
+    return h.hexdigest()[:16]
+
+
+def build_manifest(
+    config: dict[str, Any],
+    config_path: str | Path,
+    *,
+    label_column: str,
+    batch_key: str,
+    split_mode: str,
+    seed: int,
+    rare_class: str,
+    rare_train_size: float | int | str,
+    predictions_dict: dict[str, pd.DataFrame],
+    n_train: int,
+    n_val: int,
+    n_test: int,
+) -> dict[str, Any]:
+    """ 构建 provenance manifest（实验参数 + split 哈希 + 代码版本），供缓存复用前校验 """
+    return {
+        "config": str(config_path),
+        "dataset": config["dataset"]["name"],
+        "dataset_path": config["dataset"]["path"],
+        "label_key": label_column,
+        "batch_key": batch_key,
+        "split_mode": split_mode,
+        "seed": seed,
+        "rare_class": rare_class,
+        "rare_train_size": str(rare_train_size),
+        "n_train": int(n_train),
+        "n_val": int(n_val),
+        "n_test": int(n_test),
+        "split_hash": compute_split_hash(predictions_dict),
+        "git_sha": git_sha(),
+    }
+
+
+def check_manifest(
+    run_dir: Path,
+    config: dict[str, Any],
+    *,
+    seed: int,
+    rare_class: str,
+    rare_train_size: float | int | str,
+    label_column: str | None = None,
+    batch_key: str | None = None,
+    split_mode: str | None = None,
+) -> bool:
+    """ 校验 run_dir/manifest.json 与当前实验参数是否一致。
+
+    缺失 manifest（旧缓存，未来都会补写）时放行并打印警告；
+    manifest 存在但任意字段不匹配当前 config/seed/rare_train_size 等时拒绝（返回 False）。
+    """
+    mf = run_dir / "manifest.json"
+    if not mf.exists():
+        print("  [provenance] WARNING: 无 manifest.json（旧缓存，无法校验 split/代码版本）")
+        return True
+    m = json.loads(mf.read_text(encoding="utf-8"))
+    exp = config.get("experiment", {})
+    checks = {
+        "dataset_path": config["dataset"]["path"],
+        "label_key": label_column or config["dataset"].get("label_key"),
+        "batch_key": batch_key or config["dataset"].get("batch_key"),
+        "split_mode": split_mode or exp.get("split_mode", "batch_heldout"),
+        "rare_class": rare_class,
+        "seed": seed,
+        "rare_train_size": str(rare_train_size),
+    }
+    mism = [(k, m.get(k), v) for k, v in checks.items() if str(m.get(k)) != str(v)]
+    if mism:
+        print(f"  [provenance] ERROR: manifest 与当前配置不匹配: {mism}")
+        return False
+    print(f"  [provenance] OK  split_hash={m.get('split_hash')}  git_sha={m.get('git_sha')}")
+    return True
 
 
 # ==========================================

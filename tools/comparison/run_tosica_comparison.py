@@ -4,7 +4,7 @@ TOSICA（Nature Communications 2023）：Transformer + pathway token 可解释�
 以 train cells 为参考集训练 TOSICA，预测 test cells 细胞类型。
 
 运行：
-  D:/setup/anaconda/envs/sandbox310/python.exe tools/run_tosica_comparison.py
+  D:/setup/anaconda/envs/sandbox310/python.exe tools/comparison/run_tosica_comparison.py
 """
 from __future__ import annotations
 
@@ -26,31 +26,45 @@ from sklearn.metrics import precision_recall_fscore_support
 
 import TOSICA
 
-# ── 实验配置 ──────────────────────────────────────────────────────────────────
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _conda_python import conda_python
+
+# ── run 列表（5 个数据集 × seed=42 × 全部 4 个比例，不含 tabula_lung_stroma）──────
 RUNS = [
-    ("configs/immune_dc.yaml",              42, "0.05"),
-    ("configs/immune_dc.yaml",              43, "0.05"),
-    ("configs/immune_dc.yaml",              44, "0.05"),
-    ("configs/pancreas_baron.yaml",         42, "0.10"),
-    ("configs/pancreas_baron.yaml",         43, "0.10"),
-    ("configs/pancreas_baron.yaml",         44, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       42, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       43, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       44, "0.10"),
-    ("configs/tabula_small_intestine.yaml", 42, "20"),
-    ("configs/tabula_small_intestine.yaml", 43, "20"),
-    ("configs/tabula_small_intestine.yaml", 44, "20"),
-    ("configs/tabula_lung_stroma.yaml",     42, "20"),
-    ("configs/tabula_lung_stroma.yaml",     43, "20"),
-    ("configs/tabula_lung_stroma.yaml",     44, "20"),
+    # immune_dc
+    ("configs/immune_dc.yaml",                42, "0.01"),
+    ("configs/immune_dc.yaml",                42, "0.05"),
+    ("configs/immune_dc.yaml",                42, "0.10"),
+    ("configs/immune_dc.yaml",                42, "all"),
+    # pancreas_baron
+    ("configs/pancreas_baron.yaml",           42, "0.01"),
+    ("configs/pancreas_baron.yaml",           42, "0.05"),
+    ("configs/pancreas_baron.yaml",           42, "0.10"),
+    ("configs/pancreas_baron.yaml",           42, "all"),
+    # tabula_lung_endo
+    ("configs/tabula_lung_endo.yaml",         42, "0.01"),
+    ("configs/tabula_lung_endo.yaml",         42, "0.05"),
+    ("configs/tabula_lung_endo.yaml",         42, "0.10"),
+    ("configs/tabula_lung_endo.yaml",         42, "all"),
+    # tabula_small_intestine
+    ("configs/tabula_small_intestine.yaml",   42, "0.01"),
+    ("configs/tabula_small_intestine.yaml",   42, "0.05"),
+    ("configs/tabula_small_intestine.yaml",   42, "0.10"),
+    ("configs/tabula_small_intestine.yaml",   42, "all"),
+    # tabula_sapiens_stomach
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.01"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.05"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.10"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "all"),
 ]
 
 GMT_MAP = {
-    "immune_dc":              "human_immune",
-    "pancreas_baron":         "human_gobp",
-    "tabula_lung_endo":       "human_gobp",
-    "tabula_small_intestine": "human_gobp",
-    "tabula_lung_stroma":     "human_gobp",
+    "immune_dc":               "human_gobp",
+    "pancreas_baron":          "human_gobp",
+    "tabula_lung_endo":        "human_gobp",
+    "tabula_lung_stroma":      "human_gobp",
+    "tabula_small_intestine":  "human_gobp",
+    "tabula_sapiens_stomach":  "human_gobp",
 }
 
 ALL_METHODS = ["scANVI", "kNN", "CellTypist", "scBalance",
@@ -61,8 +75,8 @@ TOSICA_MAX_GS    = 100   # 限制 pathway 数量：模型从 ~172 MB 缩小到 ~
 OUT_DIR          = Path("results/comparison")
 SUMMARY_CSV      = OUT_DIR / "comparison_summary.csv"
 AGG_CSV          = OUT_DIR / "comparison_summary_agg.csv"
-SCANVI311_PYTHON = "D:/setup/anaconda/envs/scanvi311/python.exe"
-SANDBOX_PYTHON   = "D:/setup/anaconda/envs/sandbox310/python.exe"
+SCANVI311_PYTHON = conda_python("scanvi311")
+SANDBOX_PYTHON   = conda_python("sandbox310")
 
 
 # ── 工具函数 ──────────────────────────────────────────────────────────────────
@@ -256,7 +270,7 @@ def _load_counts_direct(adata_sub: ad.AnnData, config: dict) -> np.ndarray:
 
 # ── TOSICA 核心 ───────────────────────────────────────────────────────────────
 
-def run_tosica(cfg_path: str, config: dict, run_dir: Path, seed: int) -> np.ndarray:
+def run_tosica(cfg_path: str, config: dict, run_dir: Path, seed: int, rts_str: str) -> np.ndarray:
     emb_dir    = run_dir / "embeddings"
     cached_csv = emb_dir / "tosica_test_predictions.csv"
 
@@ -264,9 +278,10 @@ def run_tosica(cfg_path: str, config: dict, run_dir: Path, seed: int) -> np.ndar
     test_df   = pd.read_csv(emb_dir / "test_predictions.csv",  dtype={"cell_id": str})
     hvg_genes = pd.read_csv(run_dir / "selected_hvg_genes.csv")["gene"].tolist()
 
-    unlabeled_cat = config["experiment"].get("unlabeled_category", "Unknown")
-    labeled_mask  = train_df["true_label"].astype(str) != str(unlabeled_cat)
-    train_df      = train_df[labeled_mask]
+    # 使用 is_labeled_for_scanvi 而非 true_label != Unknown，
+    # 保证不同 rare_train_size 下 rare cells 的 label 可见性与 scANVI 完全一致
+    labeled_mask = train_df["is_labeled_for_scanvi"].astype(bool)
+    train_df     = train_df[labeled_mask]
 
     train_ids    = train_df["cell_id"].tolist()
     train_labels = train_df["true_label"].astype(str).tolist()
@@ -327,7 +342,9 @@ def run_tosica(cfg_path: str, config: dict, run_dir: Path, seed: int) -> np.ndar
                            var=pd.DataFrame(index=var_names))
 
     # ── 训练 TOSICA ───────────────────────────────────────────────────────
-    project       = f"tmp/tosica/{dataset}_seed{seed}"
+    # 目录包含 rts_str，防止不同标注比例复用旧模型权重造成跨比例污染
+    safe_rts      = rts_str.replace(".", "p")
+    project       = f"tmp/tosica/{dataset}_seed{seed}_rts{safe_rts}"
     project_path  = Path(project)
     project_path.mkdir(parents=True, exist_ok=True)
 
@@ -393,9 +410,19 @@ def run_tosica(cfg_path: str, config: dict, run_dir: Path, seed: int) -> np.ndar
 # ── 主逻辑 ────────────────────────────────────────────────────────────────────
 
 def main():
+    # 只替换本次 RUNS 覆盖的 (dataset, seed, rts) 行，其余 TOSICA 行保留
+    run_key_set = {
+        (load_config(c)["dataset"]["name"], str(int(s)), str(r))
+        for c, s, r in RUNS
+    }
     if SUMMARY_CSV.exists():
-        existing = pd.read_csv(SUMMARY_CSV)
-        existing = existing[existing["method"] != "TOSICA"]
+        existing = pd.read_csv(SUMMARY_CSV, dtype={"rare_train_size": str})
+        is_tosica = existing["method"] == "TOSICA"
+        in_runs   = existing.apply(
+            lambda row: (str(row["dataset"]), str(int(float(row["seed"]))), str(row["rare_train_size"])) in run_key_set,
+            axis=1
+        )
+        existing = existing[~(is_tosica & in_runs)]
     else:
         existing = pd.DataFrame()
 
@@ -420,7 +447,7 @@ def main():
         status  = "ok"
         ts_pred = None
         try:
-            ts_pred = run_tosica(cfg_path, config, run_dir, seed)
+            ts_pred = run_tosica(cfg_path, config, run_dir, seed, rts_str)
         except Exception as e:
             import traceback; traceback.print_exc()
             print(f"  FAILED: {e}"); status = "failed"
@@ -446,36 +473,40 @@ def main():
     full_df[col_order].to_csv(SUMMARY_CSV, index=False)
     print(f"\n[saved] {SUMMARY_CSV}  ({len(full_df)} 行)")
 
-    # 重聚合
+    # 重聚合（按 dataset × rare_train_size × method）
     ok = full_df[full_df["status"] == "ok"]
     agg_rows = []
     print("\n=== 聚合结果 ===")
     for ds in ok["dataset"].unique():
-        for method in ALL_METHODS:
-            sub = ok[(ok["dataset"] == ds) & (ok["method"] == method)]
-            if sub.empty: continue
-            f1s  = sub["rare_f1"].to_numpy()
-            recs = sub["rare_recall"].to_numpy()
-            fps  = sub["rare_fp_rate"].to_numpy()
-            agg_rows.append({
-                "dataset": ds, "method": method, "n_ok": len(sub),
-                "f1_mean":     round(float(f1s.mean()),  4),
-                "f1_std":      round(float(f1s.std()),   4),
-                "rec_mean":    round(float(recs.mean()), 4),
-                "rec_std":     round(float(recs.std()),  4),
-                "fp_rate_max": round(float(fps.max()), 6),
-            })
-            print(f"  {ds:25s} {method:15s}: "
-                  f"F1={agg_rows[-1]['f1_mean']:.4f}±{agg_rows[-1]['f1_std']:.4f}  "
-                  f"rec={agg_rows[-1]['rec_mean']:.4f}  (n={len(sub)})")
+        for rts in sorted(ok[ok["dataset"] == ds]["rare_train_size"].unique()):
+            for method in ALL_METHODS:
+                sub = ok[
+                    (ok["dataset"] == ds) &
+                    (ok["rare_train_size"] == rts) &
+                    (ok["method"] == method)
+                ]
+                if sub.empty: continue
+                f1s  = sub["rare_f1"].to_numpy()
+                recs = sub["rare_recall"].to_numpy()
+                fps  = sub["rare_fp_rate"].to_numpy()
+                agg_rows.append({
+                    "dataset": ds, "rare_train_size": rts, "method": method, "n_ok": len(sub),
+                    "f1_mean":     round(float(f1s.mean()),  4),
+                    "f1_std":      round(float(f1s.std()),   4),
+                    "rec_mean":    round(float(recs.mean()), 4),
+                    "rec_std":     round(float(recs.std()),  4),
+                    "fp_rate_max": round(float(fps.max()), 6),
+                })
+                print(f"  {ds:25s} rts={rts:4s}  {method:15s}: "
+                      f"F1={agg_rows[-1]['f1_mean']:.4f}±{agg_rows[-1]['f1_std']:.4f}  "
+                      f"rec={agg_rows[-1]['rec_mean']:.4f}  (n={len(sub)})")
 
     pd.DataFrame(agg_rows).to_csv(AGG_CSV, index=False)
     print(f"[saved] {AGG_CSV}")
 
     print("\n重绘 comparison_bars ...")
-    subprocess.run([SANDBOX_PYTHON, "tools/plot_comparison.py"], check=False)
-    subprocess.run(["D:/setup/anaconda/envs/scanvi311/python.exe",
-                    "tools/plot_comparison.py"], check=False)
+    subprocess.run([SANDBOX_PYTHON, "tools/comparison/plot_comparison.py"], check=False)
+    subprocess.run([SCANVI311_PYTHON, "tools/comparison/plot_comparison.py"], check=False)
 
 
 if __name__ == "__main__":

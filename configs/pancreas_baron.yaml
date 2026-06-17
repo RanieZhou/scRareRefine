@@ -15,10 +15,10 @@ dataset:
 experiment:
   rare_class: gamma                     # 255 个细胞 (2.98%)，批次泛化下训练集约 150 个，最小标注可用
   split_mode: batch_heldout             # 4 个 donor 批次，按批次划分 train/val/test
-  rare_train_sizes:
-    - 0.05                              # ~7-9 个已标注稀有细胞
-    - 0.10                              # ~15-18 个
-    - 0.25                              # ~37-45 个
+  rare_train_sizes:                     # 批量对比实验中稀有细胞已标注样本规模列表
+    - 0.01                              # 代表标注该稀有细胞训练样本的 1%
+    - 0.05                              # 代表标注该稀有细胞训练样本的 5%
+    - 0.10                              # 代表标注该稀有细胞训练样本的 10%
     - all
   seeds:
     - 42

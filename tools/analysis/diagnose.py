@@ -1,7 +1,7 @@
 """Step 1 失败诊断：加载缓存 embedding，量化候选筛选 / 可分性 / 阈值泛化 / 融合分解 / 误拯救来源。
 
 用法:
-    python tools/diagnose.py --config configs/immune_dc.yaml --seed 42 --rare_train_size 0.05
+    python tools/analysis/diagnose.py --config configs/immune_dc.yaml --seed 42 --rare_train_size 0.05
 """
 import sys
 import argparse
@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from src.preprocess import run_preprocessing
 from src.utils import load_config, load_adata, make_run_dir, parse_rare_train_size, classification_tables
@@ -126,9 +126,12 @@ def main():
         split_mode=split_mode, seed=args.seed, rare_class=rare_class)
     strat_f1 = {}
     for strat in ["gate_only", "gate_marker", "fusion", "conformal"]:
+        # conformal 分支只读 conformal_alpha，不读 max_false_rescue_rate（语义独立，
+        # 详见 src/rescue.py run_post_hoc_rescue docstring）；两个都传 0.001 才能让
+        # 四种策略在同一 FFR 预算下做公平对比，否则 conformal 会静默退回默认 alpha=0.01。
         final_pred, summ = run_post_hoc_rescue(
             adata, preds, lats, genes, rare_class=rare_class, strategy=strat,
-            max_false_rescue_rate=0.001)
+            max_false_rescue_rate=0.001, conformal_alpha=0.001)
         m, _ = classification_tables(y_true, final_pred.astype(str).to_numpy(), rare_class=rare_class)
         strat_f1[strat] = {
             "rare_f1": round(m["rare_f1"], 4), "rare_recall": round(m["rare_recall"], 4),

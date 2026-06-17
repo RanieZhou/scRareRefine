@@ -3,62 +3,33 @@
 缓存一次后，rescue 迭代与诊断均可离线进行，无需重训。
 
 用法:
-    python tools/train_cache.py --config configs/immune_dc.yaml --seed 42 --rare_train_size 0.05
+    python tools/analysis/train_cache.py --config configs/immune_dc.yaml --seed 42 --rare_train_size 0.05
 """
 import sys
 import json
-import hashlib
 import argparse
-import subprocess
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from src.preprocess import run_preprocessing
 from src.model import run_model_training
 from src.utils import (
     load_config, load_adata, make_run_dir, parse_rare_train_size, write_table,
+    build_manifest,
 )
-
-
-def _git_sha() -> str:
-    """当前代码版本短 SHA（不在 git 仓库时返回 unknown）。"""
-    try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
-            stderr=subprocess.DEVNULL, text=True).strip()
-    except Exception:
-        return "unknown"
-
-
-def _split_hash(predictions_dict) -> str:
-    """对 train/val/test 的 cell_id split 取稳定哈希（排序后），用于缓存 provenance 校验。"""
-    h = hashlib.sha256()
-    for s in ["train", "validation", "test"]:
-        ids = sorted(predictions_dict[s]["cell_id"].astype(str).tolist())
-        h.update(s.encode()); h.update("\n".join(ids).encode())
-    return h.hexdigest()[:16]
 
 
 def _build_manifest(config, args, label_column, batch_key, split_mode,
                     rare_class, parsed_size, pred_dict, n_train, n_val, n_test) -> dict:
-    """构建 provenance manifest（参数 + split 哈希 + 代码版本）。"""
-    return {
-        "config":          args.config,
-        "dataset":         config["dataset"]["name"],
-        "dataset_path":    config["dataset"]["path"],
-        "label_key":       label_column,
-        "batch_key":       batch_key,
-        "split_mode":      split_mode,
-        "seed":            args.seed,
-        "rare_class":      rare_class,
-        "rare_train_size": str(parsed_size),
-        "n_train":         int(n_train),
-        "n_val":           int(n_val),
-        "n_test":          int(n_test),
-        "split_hash":      _split_hash(pred_dict),
-        "git_sha":         _git_sha(),
-    }
+    """构建 provenance manifest（参数 + split 哈希 + 代码版本）。委托给 src.utils.build_manifest
+    （与 run_pipeline.py / run_scrarerefine_comparison.py 共用同一实现，避免漂移）。"""
+    return build_manifest(
+        config, args.config,
+        label_column=label_column, batch_key=batch_key, split_mode=split_mode,
+        seed=args.seed, rare_class=rare_class, rare_train_size=parsed_size,
+        predictions_dict=pred_dict, n_train=n_train, n_val=n_val, n_test=n_test,
+    )
 
 
 def main():

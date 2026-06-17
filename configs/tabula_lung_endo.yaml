@@ -15,10 +15,10 @@ dataset:
 experiment:
   rare_class: endothelial cell of lymphatic vessel  # 307 个 (3.0%)，4 donor 均有
   split_mode: batch_heldout
-  rare_train_sizes:
-    - 0.05
-    - 0.10
-    - 0.25
+  rare_train_sizes:                     # 批量对比实验中稀有细胞已标注样本规模列表
+    - 0.01                              # 代表标注该稀有细胞训练样本的 1%
+    - 0.05                              # 代表标注该稀有细胞训练样本的 5%
+    - 0.10                              # 代表标注该稀有细胞训练样本的 10%
     - all
   seeds:
     - 42

@@ -28,11 +28,11 @@ experiment:
 
 # scVI / scANVI 神经网络模型超参数
 model:
-  n_top_hvg: 3000                       # 高变基因选择数量（特征筛选，默认取前 3000 个方差最高的基因）
-  n_latent: 30                          # 潜在空间表示维度（低维隐空间 Bottleneck 瓶颈层大小，默认 30 维）
+  n_top_hvg: 3000                       # 高变基因选择数量（2.3万细胞规模，3000 HVG，与其他大规模数据集一致）
+  n_latent: 20                          # 潜在空间表示维度（与 pancreas_baron/tabula_* 统一为 20，原 30 为早期遗留设置）
   scvi_max_epochs: 200                  # 第一阶段：无监督 VAE 预训练的最大 Epoch 轮数
   scanvi_max_epochs: 100                 # 第二阶段：半监督 scANVI 表示微调的最大 Epoch 轮数
-  batch_size: 256                       # 神经网络训练的批大小（Batch Size）
+  batch_size: 128                       # 神经网络训练的批大小（与 pancreas_baron/tabula_* 统一为 128，原 256 为早期遗留设置）
 
 # 下游评估分析参数
 analysis:

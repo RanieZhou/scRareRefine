@@ -443,6 +443,14 @@ class FusionRescuer:
 # ==========================================
 # 策略四：Conformal 重排序拯救（综合方案，跨数据集泛化、无 per-dataset 阈值）
 # ==========================================
+
+# 单一来源的 conformal 默认参数：run_pipeline.py 与 tools/comparison/run_scrarerefine_comparison.py
+# 均从此处导入，避免两处各自硬编码同一语义的常量而产生数值漂移。
+DEFAULT_CONFORMAL_ALPHA = 0.01   # 发表级 FFR 上界，跨数据集固定，非调参
+CONFORMAL_LOW_SEP = 1.3          # conformal 策略弃权下限（高于 PrototypeRescuer.LOW_SEP=1.1，因
+                                  # conformal 用的 isotropic_rank1 候选比 gate 宽松，1.1-1.3 区间候选精度可能很低）
+
+
 class ConformalRescuer:
     """ 综合稀有细胞拯救：各向同性 rank=1 定候选 + 各向异性隶属度评分 + conformal 阈值控 FFR。
 
@@ -454,7 +462,7 @@ class ConformalRescuer:
     高可分数据集：真稀有 score 远高于 val 非稀有分位 → tau 低 → 不影响（recall 不退化）。
     边界数据集：相邻多数类细胞 score 较高 → tau 自动抬升 → 挡住假阳性。整套逻辑无数据集相关常量。
     """
-    def __init__(self, rare_class: str, alpha: float = 0.01):
+    def __init__(self, rare_class: str, alpha: float = DEFAULT_CONFORMAL_ALPHA):
         self.rare_class = rare_class
         self.alpha = alpha   # 目标 FFR 上界（发表标准 <=0.01），跨数据集固定，非调参
         self.tau = None
@@ -497,7 +505,7 @@ def run_post_hoc_rescue(
     rare_class: str,
     strategy: str = "gate_marker",
     max_false_rescue_rate: float = 0.001,
-    conformal_alpha: float = 0.01,
+    conformal_alpha: float = DEFAULT_CONFORMAL_ALPHA,
 ) -> tuple[pd.Series, dict]:
     """ 端到端执行 Post-hoc 细胞身份精细校正与重标注。
 
@@ -547,11 +555,8 @@ def run_post_hoc_rescue(
         test_score = proto_rescuer.rare_membership_score(test_lat)
 
         conf = ConformalRescuer(rare_class, alpha=conformal_alpha)
-        # 弃权安全网：separability 低于"rescue 有效"阈值时不拯救。
-        # CLAUDE.md 规范：sep≥1.3 rescue 有效，<1.1 必须弃权。
-        # conformal 用 isotropic_rank1 候选（比 gate 宽松），在 1.1-1.3 区间候选精度
-        # 可能极低（<50%），因此对 conformal 用 sep<1.3 弃权，高于全局 LOW_SEP=1.1。
-        CONFORMAL_LOW_SEP = 1.3
+        # 弃权安全网：separability 低于"rescue 有效"阈值时不拯救（模块级 CONFORMAL_LOW_SEP=1.3，
+        # 高于全局 PrototypeRescuer.LOW_SEP=1.1，原因见该常量旁注释）。
         if proto_rescuer.separability_ratio < CONFORMAL_LOW_SEP:
             print(f"-> [Conformal] separability={proto_rescuer.separability_ratio:.3f} < {CONFORMAL_LOW_SEP}（rescue 有效下限），弃权不拯救。")
             final_test_pred = test_pred["predicted_label"].astype(str).copy()

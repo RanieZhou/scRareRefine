@@ -33,7 +33,7 @@ import pandas as pd
 import scipy.sparse as sp
 import anndata as ad
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from src.utils import load_config, make_run_dir, parse_rare_train_size, classification_tables, load_adata
 from src.rescue import PrototypeRescuer, ConformalRescuer
@@ -57,23 +57,73 @@ _ct_mod._LRClassifier = _patched_LRClassifier
 
 import scBalance
 
-# ── run 列表 ─────────────────────────────────────────────────────────────────
+# ── run 列表（不含 immune_dc，human_immune_health 已有完整结果）────────────
 RUNS = [
-    ("configs/immune_dc.yaml",              42, "0.05"),
-    ("configs/immune_dc.yaml",              43, "0.05"),
-    ("configs/immune_dc.yaml",              44, "0.05"),
-    ("configs/pancreas_baron.yaml",         42, "0.10"),
-    ("configs/pancreas_baron.yaml",         43, "0.10"),
-    ("configs/pancreas_baron.yaml",         44, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       42, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       43, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       44, "0.10"),
-    ("configs/tabula_small_intestine.yaml", 42, "20"),
-    ("configs/tabula_small_intestine.yaml", 43, "20"),
-    ("configs/tabula_small_intestine.yaml", 44, "20"),
-    ("configs/tabula_lung_stroma.yaml",     42, "20"),
-    ("configs/tabula_lung_stroma.yaml",     43, "20"),
-    ("configs/tabula_lung_stroma.yaml",     44, "20"),
+    # pancreas_baron
+    ("configs/pancreas_baron.yaml",           42, "0.01"),
+    ("configs/pancreas_baron.yaml",           43, "0.01"),
+    ("configs/pancreas_baron.yaml",           44, "0.01"),
+    ("configs/pancreas_baron.yaml",           42, "0.05"),
+    ("configs/pancreas_baron.yaml",           43, "0.05"),
+    ("configs/pancreas_baron.yaml",           44, "0.05"),
+    ("configs/pancreas_baron.yaml",           42, "0.10"),
+    ("configs/pancreas_baron.yaml",           43, "0.10"),
+    ("configs/pancreas_baron.yaml",           44, "0.10"),
+    ("configs/pancreas_baron.yaml",           42, "all"),
+    ("configs/pancreas_baron.yaml",           43, "all"),
+    ("configs/pancreas_baron.yaml",           44, "all"),
+    # tabula_lung_endo
+    ("configs/tabula_lung_endo.yaml",         42, "0.01"),
+    ("configs/tabula_lung_endo.yaml",         43, "0.01"),
+    ("configs/tabula_lung_endo.yaml",         44, "0.01"),
+    ("configs/tabula_lung_endo.yaml",         42, "0.05"),
+    ("configs/tabula_lung_endo.yaml",         43, "0.05"),
+    ("configs/tabula_lung_endo.yaml",         44, "0.05"),
+    ("configs/tabula_lung_endo.yaml",         42, "0.10"),
+    ("configs/tabula_lung_endo.yaml",         43, "0.10"),
+    ("configs/tabula_lung_endo.yaml",         44, "0.10"),
+    ("configs/tabula_lung_endo.yaml",         42, "all"),
+    ("configs/tabula_lung_endo.yaml",         43, "all"),
+    ("configs/tabula_lung_endo.yaml",         44, "all"),
+    # tabula_lung_stroma
+    ("configs/tabula_lung_stroma.yaml",       42, "0.01"),
+    ("configs/tabula_lung_stroma.yaml",       43, "0.01"),
+    ("configs/tabula_lung_stroma.yaml",       44, "0.01"),
+    ("configs/tabula_lung_stroma.yaml",       42, "0.05"),
+    ("configs/tabula_lung_stroma.yaml",       43, "0.05"),
+    ("configs/tabula_lung_stroma.yaml",       44, "0.05"),
+    ("configs/tabula_lung_stroma.yaml",       42, "0.10"),
+    ("configs/tabula_lung_stroma.yaml",       43, "0.10"),
+    ("configs/tabula_lung_stroma.yaml",       44, "0.10"),
+    ("configs/tabula_lung_stroma.yaml",       42, "all"),
+    ("configs/tabula_lung_stroma.yaml",       43, "all"),
+    ("configs/tabula_lung_stroma.yaml",       44, "all"),
+    # tabula_small_intestine
+    ("configs/tabula_small_intestine.yaml",   42, "0.01"),
+    ("configs/tabula_small_intestine.yaml",   43, "0.01"),
+    ("configs/tabula_small_intestine.yaml",   44, "0.01"),
+    ("configs/tabula_small_intestine.yaml",   42, "0.05"),
+    ("configs/tabula_small_intestine.yaml",   43, "0.05"),
+    ("configs/tabula_small_intestine.yaml",   44, "0.05"),
+    ("configs/tabula_small_intestine.yaml",   42, "0.10"),
+    ("configs/tabula_small_intestine.yaml",   43, "0.10"),
+    ("configs/tabula_small_intestine.yaml",   44, "0.10"),
+    ("configs/tabula_small_intestine.yaml",   42, "all"),
+    ("configs/tabula_small_intestine.yaml",   43, "all"),
+    ("configs/tabula_small_intestine.yaml",   44, "all"),
+    # tabula_sapiens_stomach
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.01"),
+    ("configs/tabula_sapiens_stomach.yaml",   43, "0.01"),
+    ("configs/tabula_sapiens_stomach.yaml",   44, "0.01"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.05"),
+    ("configs/tabula_sapiens_stomach.yaml",   43, "0.05"),
+    ("configs/tabula_sapiens_stomach.yaml",   44, "0.05"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.10"),
+    ("configs/tabula_sapiens_stomach.yaml",   43, "0.10"),
+    ("configs/tabula_sapiens_stomach.yaml",   44, "0.10"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "all"),
+    ("configs/tabula_sapiens_stomach.yaml",   43, "all"),
+    ("configs/tabula_sapiens_stomach.yaml",   44, "all"),
 ]
 
 KNN_K_GRID      = [3, 5, 10, 15]
@@ -201,12 +251,16 @@ def _metrics(y_true, pred, base_pred, rare_class):
     }
 
 
-def _check_manifest(run_dir: Path, config: dict, seed: int, rts_str: str) -> None:
-    """校验缓存 manifest 与当前配置一致；缺失或不匹配仅打印警告（兼容旧缓存，不 hard fail）。"""
+def _check_manifest(run_dir: Path, config: dict, seed: int, rts_str: str) -> bool:
+    """校验缓存 manifest 与当前配置一致。
+    - manifest 缺失：打印警告，返回 True（旧缓存兼容，继续计算）
+    - manifest 存在但不匹配：打印错误，返回 False（调用方应跳过此 run）
+    - manifest 匹配：返回 True
+    """
     mf = run_dir / "manifest.json"
     if not mf.exists():
-        print("  [provenance] ⚠️ 无 manifest.json（旧缓存，无法校验 split/代码版本）")
-        return
+        print("  [provenance] WARNING: 无 manifest.json（旧缓存，无法校验 split/代码版本）")
+        return True
     m   = json.loads(mf.read_text(encoding="utf-8"))
     exp = config.get("experiment", {})
     checks = {
@@ -220,9 +274,10 @@ def _check_manifest(run_dir: Path, config: dict, seed: int, rts_str: str) -> Non
     }
     mism = [(k, m.get(k), v) for k, v in checks.items() if str(m.get(k)) != str(v)]
     if mism:
-        print(f"  [provenance] ⚠️ manifest 与当前配置不一致: {mism}")
-    else:
-        print(f"  [provenance] OK  split_hash={m.get('split_hash')}  git_sha={m.get('git_sha')}")
+        print(f"  [provenance] ERROR: manifest 与当前配置不匹配，跳过此 run: {mism}")
+        return False
+    print(f"  [provenance] OK  split_hash={m.get('split_hash')}  git_sha={m.get('git_sha')}")
+    return True
 
 
 METHODS = ["scANVI", "kNN", "CellTypist", "scBalance", "scRareRefine"]
@@ -246,7 +301,10 @@ def main():
             print(f"[SKIP] {run_dir} 缓存不存在")
             continue
 
-        _check_manifest(run_dir, config, seed, rts_str)
+        if not _check_manifest(run_dir, config, seed, rts_str):
+            rows.append({"dataset": dataset, "seed": seed, "rare_train_size": rts_str,
+                         "rare_class": rare_class, "method": "ALL", "status": "failed"})
+            continue
         splits = ["train", "validation", "test"]
         preds  = {s: pd.read_csv(emb_dir / f"{s}_predictions.csv") for s in splits}
         lats   = {s: pd.read_csv(emb_dir / f"{s}_latent.csv")      for s in splits}
@@ -350,34 +408,57 @@ def main():
                   f"FP_rate={mres['rare_fp_rate']:.5f}{extra}")
             rows.append({**base_row, **mres})
 
-    # ── 保存 CSV ──────────────────────────────────────────────────────────────
+    # ── 保存 CSV（按 method+dataset+seed+rts 粒度保留已有结果）────────────
     out_dir = Path("results/comparison")
     out_dir.mkdir(exist_ok=True)
     df = pd.DataFrame(rows)
-    df.to_csv(out_dir / "comparison_summary.csv", index=False)
-    print(f"\n[saved] {out_dir}/comparison_summary.csv")
+    summary_path = out_dir / "comparison_summary.csv"
+    # 只替换本次实际计算的 (method, dataset, seed, rts) 行，其余一律保留
+    OWN_METHODS = set(METHODS)
+    run_key_set: set[tuple] = {
+        (str(r["dataset"]), str(int(r["seed"])), str(r["rare_train_size"]))
+        for _, r in df.iterrows()
+    } if len(df) > 0 else set()
+    if summary_path.exists():
+        existing = pd.read_csv(summary_path, dtype={"rare_train_size": str})
+        is_own   = existing["method"].isin(OWN_METHODS)
+        in_runs  = existing.apply(
+            lambda r: (str(r["dataset"]), str(int(float(r["seed"]))), str(r["rare_train_size"])) in run_key_set,
+            axis=1
+        )
+        other_rows = existing[~(is_own & in_runs)]
+        if not other_rows.empty:
+            df = pd.concat([df, other_rows], ignore_index=True)
+            print(f"  [保留已有结果 {len(other_rows)} 行（非本次 method/dataset/比例 组合）]")
+    df.to_csv(summary_path, index=False)
+    print(f"\n[saved] {summary_path}")
 
-    # ── 3-seed 聚合（仅 status==ok 的 run 进入均值）──────────────────────────
-    print("\n=== 3-seed 均值 ± σ（rare_f1）===")
+    # ── 聚合（按 dataset × rare_train_size × method，仅 status==ok）────────
+    print("\n=== 均值 ± σ（rare_f1，按比例分组）===")
     ok = df[df["status"] == "ok"]
     summary_rows = []
     for dataset in ok["dataset"].unique():
-        for method in METHODS:
-            sub = ok[(ok["dataset"] == dataset) & (ok["method"] == method)]
-            if sub.empty:
-                print(f"  {dataset:25s} {method:15s}: (无成功 run，跳过)")
-                continue
-            f1s = sub["rare_f1"].to_numpy()
-            fps = sub["rare_fp_rate"].to_numpy()
-            row = {
-                "dataset": dataset, "method": method, "n_ok": len(sub),
-                "f1_mean": round(f1s.mean(), 4), "f1_std": round(f1s.std(), 4),
-                "fp_rate_max": round(fps.max(), 6),
-            }
-            summary_rows.append(row)
-            print(f"  {dataset:25s} {method:15s}: "
-                  f"F1={row['f1_mean']:.4f}±{row['f1_std']:.4f}  "
-                  f"FP_rate_max={row['fp_rate_max']:.5f}  (n={len(sub)})")
+        for rts in sorted(ok[ok["dataset"] == dataset]["rare_train_size"].unique()):
+            for method in METHODS:
+                sub = ok[
+                    (ok["dataset"] == dataset) &
+                    (ok["rare_train_size"] == rts) &
+                    (ok["method"] == method)
+                ]
+                if sub.empty:
+                    continue
+                f1s = sub["rare_f1"].to_numpy()
+                fps = sub["rare_fp_rate"].to_numpy()
+                row = {
+                    "dataset": dataset, "rare_train_size": rts, "method": method,
+                    "n_ok": len(sub),
+                    "f1_mean": round(f1s.mean(), 4), "f1_std": round(f1s.std(), 4),
+                    "fp_rate_max": round(fps.max(), 6),
+                }
+                summary_rows.append(row)
+                print(f"  {dataset:25s} rts={rts:4s}  {method:15s}: "
+                      f"F1={row['f1_mean']:.4f}±{row['f1_std']:.4f}  "
+                      f"FP_rate_max={row['fp_rate_max']:.5f}  (n={len(sub)})")
 
     summary_df = pd.DataFrame(summary_rows)
     summary_df.to_csv(out_dir / "comparison_summary_agg.csv", index=False)
@@ -386,7 +467,7 @@ def main():
     md = [
         "# 对比实验报告（scRareRefine vs baselines）",
         "",
-        "实验日期：2026-06-12 | 数据集：3 | seed：42/43/44 | rare_train_size：5%/10%/10%",
+        "实验日期：2026-06-14 | 数据集：5（不含immune_dc） | seed：42/43/44 | rare_train_size：10%",
         "",
         "## 方法说明",
         "",

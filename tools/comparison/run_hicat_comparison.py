@@ -6,7 +6,7 @@
 使用与 scANVI 相同的 HVG 基因集和 train/test split，只追加 HiCat 行，不重跑其他方法。
 
 运行：
-  D:/setup/anaconda/envs/sandbox310/python.exe tools/run_hicat_comparison.py
+  D:/setup/anaconda/envs/sandbox310/python.exe tools/comparison/run_hicat_comparison.py
 """
 from __future__ import annotations
 
@@ -31,23 +31,36 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import precision_recall_fscore_support
 import umap as umap_lib
 
-# ── 实验配置 ──────────────────────────────────────────────────────────────────
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _conda_python import conda_python
+
+# ── run 列表（5 个数据集 × seed=42 × 全部 4 个比例，不含 tabula_lung_stroma）──────
 RUNS = [
-    ("configs/immune_dc.yaml",              42, "0.05"),
-    ("configs/immune_dc.yaml",              43, "0.05"),
-    ("configs/immune_dc.yaml",              44, "0.05"),
-    ("configs/pancreas_baron.yaml",         42, "0.10"),
-    ("configs/pancreas_baron.yaml",         43, "0.10"),
-    ("configs/pancreas_baron.yaml",         44, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       42, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       43, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       44, "0.10"),
-    ("configs/tabula_small_intestine.yaml", 42, "20"),
-    ("configs/tabula_small_intestine.yaml", 43, "20"),
-    ("configs/tabula_small_intestine.yaml", 44, "20"),
-    ("configs/tabula_lung_stroma.yaml",     42, "20"),
-    ("configs/tabula_lung_stroma.yaml",     43, "20"),
-    ("configs/tabula_lung_stroma.yaml",     44, "20"),
+    # immune_dc
+    ("configs/immune_dc.yaml",                42, "0.01"),
+    ("configs/immune_dc.yaml",                42, "0.05"),
+    ("configs/immune_dc.yaml",                42, "0.10"),
+    ("configs/immune_dc.yaml",                42, "all"),
+    # pancreas_baron
+    ("configs/pancreas_baron.yaml",           42, "0.01"),
+    ("configs/pancreas_baron.yaml",           42, "0.05"),
+    ("configs/pancreas_baron.yaml",           42, "0.10"),
+    ("configs/pancreas_baron.yaml",           42, "all"),
+    # tabula_lung_endo
+    ("configs/tabula_lung_endo.yaml",         42, "0.01"),
+    ("configs/tabula_lung_endo.yaml",         42, "0.05"),
+    ("configs/tabula_lung_endo.yaml",         42, "0.10"),
+    ("configs/tabula_lung_endo.yaml",         42, "all"),
+    # tabula_small_intestine
+    ("configs/tabula_small_intestine.yaml",   42, "0.01"),
+    ("configs/tabula_small_intestine.yaml",   42, "0.05"),
+    ("configs/tabula_small_intestine.yaml",   42, "0.10"),
+    ("configs/tabula_small_intestine.yaml",   42, "all"),
+    # tabula_sapiens_stomach
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.01"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.05"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.10"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "all"),
 ]
 
 HICAT_N_PCS       = 50
@@ -58,7 +71,7 @@ ALL_METHODS = ["scANVI", "kNN", "CellTypist", "scBalance", "ProtoCloud", "HiCat"
 OUT_DIR     = Path("results/comparison")
 SUMMARY_CSV = OUT_DIR / "comparison_summary.csv"
 AGG_CSV     = OUT_DIR / "comparison_summary_agg.csv"
-SCANVI311_PYTHON = "D:/setup/anaconda/envs/scanvi311/python.exe"
+SCANVI311_PYTHON = conda_python("scanvi311")
 
 
 # ── 工具函数 ──────────────────────────────────────────────────────────────────
@@ -245,6 +258,10 @@ def _lognorm(X: np.ndarray) -> np.ndarray:
 
 
 def run_hicat(config: dict, run_dir: Path, seed: int) -> np.ndarray:
+    # NOTE: HiCat is TRANSDUCTIVE — PCA/Harmony/UMAP/DBSCAN are fit on combined
+    # train+test features, and the confidence threshold is derived from test cluster
+    # statistics. Results are NOT directly comparable with inductive methods on equal
+    # footing; treat HiCat as a transductive upper-bound reference only.
     emb_dir = run_dir / "embeddings"
 
     # 读 split 信息
@@ -396,9 +413,21 @@ def run_hicat(config: dict, run_dir: Path, seed: int) -> np.ndarray:
 # ── 主逻辑 ────────────────────────────────────────────────────────────────────
 
 def main():
+    print("NOTE: HiCat is TRANSDUCTIVE (PCA/UMAP/DBSCAN fit on combined train+test).")
+    print("      It serves as a transductive upper-bound reference, not an inductive baseline.")
+    # 只替换本次 RUNS 覆盖的 (dataset, seed, rts) 行，其余 HiCat 行保留
+    run_key_set = {
+        (load_config(c)["dataset"]["name"], str(int(s)), str(r))
+        for c, s, r in RUNS
+    }
     if SUMMARY_CSV.exists():
-        existing = pd.read_csv(SUMMARY_CSV)
-        existing = existing[existing["method"] != "HiCat"]
+        existing = pd.read_csv(SUMMARY_CSV, dtype={"rare_train_size": str})
+        is_hicat = existing["method"] == "HiCat"
+        in_runs  = existing.apply(
+            lambda row: (str(row["dataset"]), str(int(float(row["seed"]))), str(row["rare_train_size"])) in run_key_set,
+            axis=1
+        )
+        existing = existing[~(is_hicat & in_runs)]
     else:
         existing = pd.DataFrame()
 
@@ -458,36 +487,41 @@ def main():
     full_df[col_order].to_csv(SUMMARY_CSV, index=False)
     print(f"\n[saved] {SUMMARY_CSV}  ({len(full_df)} 行)")
 
-    # 重聚合
+    # 重聚合（按 dataset × rare_train_size × method）
     ok = full_df[full_df["status"] == "ok"]
     agg_rows = []
     print("\n=== 聚合结果 ===")
     for ds in ok["dataset"].unique():
-        for method in ALL_METHODS:
-            sub = ok[(ok["dataset"] == ds) & (ok["method"] == method)]
-            if sub.empty:
-                continue
-            f1s  = sub["rare_f1"].to_numpy()
-            recs = sub["rare_recall"].to_numpy()
-            fps  = sub["rare_fp_rate"].to_numpy()
-            agg_rows.append({
-                "dataset": ds, "method": method, "n_ok": len(sub),
-                "f1_mean":  round(float(f1s.mean()),  4),
-                "f1_std":   round(float(f1s.std()),   4),
-                "rec_mean": round(float(recs.mean()), 4),
-                "rec_std":  round(float(recs.std()),  4),
-                "fp_rate_max": round(float(fps.max()), 6),
-            })
-            print(f"  {ds:25s} {method:15s}: "
-                  f"F1={agg_rows[-1]['f1_mean']:.4f}±{agg_rows[-1]['f1_std']:.4f}  "
-                  f"rec={agg_rows[-1]['rec_mean']:.4f}  (n={len(sub)})")
+        for rts in sorted(ok[ok["dataset"] == ds]["rare_train_size"].unique()):
+            for method in ALL_METHODS:
+                sub = ok[
+                    (ok["dataset"] == ds) &
+                    (ok["rare_train_size"] == rts) &
+                    (ok["method"] == method)
+                ]
+                if sub.empty:
+                    continue
+                f1s  = sub["rare_f1"].to_numpy()
+                recs = sub["rare_recall"].to_numpy()
+                fps  = sub["rare_fp_rate"].to_numpy()
+                agg_rows.append({
+                    "dataset": ds, "rare_train_size": rts, "method": method, "n_ok": len(sub),
+                    "f1_mean":  round(float(f1s.mean()),  4),
+                    "f1_std":   round(float(f1s.std()),   4),
+                    "rec_mean": round(float(recs.mean()), 4),
+                    "rec_std":  round(float(recs.std()),  4),
+                    "fp_rate_max": round(float(fps.max()), 6),
+                })
+                print(f"  {ds:25s} rts={rts:4s}  {method:15s}: "
+                      f"F1={agg_rows[-1]['f1_mean']:.4f}±{agg_rows[-1]['f1_std']:.4f}  "
+                      f"rec={agg_rows[-1]['rec_mean']:.4f}  (n={len(sub)})")
 
     pd.DataFrame(agg_rows).to_csv(AGG_CSV, index=False)
     print(f"[saved] {AGG_CSV}")
 
     # 更新图例和重绘（需先更新 plot_comparison.py 的 METHODS 列表）
     print("\n重绘 comparison_bars ...")
-    subprocess.run([SCANVI311_PYTHON, "tools/plot_comparison.py"], check=True)
+    subprocess.run([SCANVI311_PYTHON, "tools/comparison/plot_comparison.py"], check=True)
 
 
 if __name__ == "__main__":

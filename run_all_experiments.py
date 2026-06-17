@@ -31,10 +31,13 @@ from src.utils import load_config, parse_rare_train_size, make_run_dir
 # ==============================================================================
 EXPERIMENTS = [
     # (配置文件, 稀有细胞类型, 标注规模列表)
-    ("configs/immune_dc.yaml", "ASDC", ["0.01", "0.05", "0.1", "all"]),
-    ("configs/immune_dc_cdc1.yaml", "cDC1", ["0.01", "0.05", "0.1", "all"]),
-    ("configs/pancreas_gamma.yaml", "gamma", ["0.01", "0.05", "0.1", "all"]),
-    ("configs/tabula_spleen.yaml", "innate lymphoid cell", ["0.01", "0.05", "0.1", "all"]),
+    # immune_dc 已有完整结果，如需重跑取消注释
+    # ("configs/immune_dc.yaml", "ASDC", ["0.01", "0.05", "0.1", "all"]),
+    ("configs/pancreas_baron.yaml",         "gamma",                                  ["0.01", "0.05", "0.1", "all"]),
+    ("configs/tabula_lung_endo.yaml",       "endothelial cell of lymphatic vessel",   ["0.01", "0.05", "0.1", "all"]),
+    ("configs/tabula_lung_stroma.yaml",     "bronchial smooth muscle cell",           ["0.01", "0.05", "0.1", "all"]),
+    ("configs/tabula_small_intestine.yaml", "intestinal tuft cell",                   ["0.01", "0.05", "0.1", "all"]),
+    ("configs/tabula_sapiens_stomach.yaml", "mast cell",                              ["0.01", "0.05", "0.1", "all"]),
 ]
 SEEDS = [42, 43, 44]
 # ==============================================================================

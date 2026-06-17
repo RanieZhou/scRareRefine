@@ -31,30 +31,41 @@ DETAIL  = Path("results/comparison/comparison_summary.csv")
 OUT_PNG = Path("results/comparison/comparison_bars.png")
 OUT_PDF = Path("results/comparison/comparison_bars.pdf")
 
+# 图表只展示单一比例，避免把不同标注规模混入均值
+# 可选值：None（使用全部数据）、"0.01"、"0.05"、"0.10"、"all"
+SHOW_PROPORTION: str | None = "all"
+
 METHODS = [
     ("scANVI",       "#7f7f7f"),
     ("kNN",          "#1f77b4"),
     ("CellTypist",   "#ff7f0e"),
     ("scBalance",    "#9467bd"),
     ("ProtoCloud",   "#e377c2"),   # 粉色，Cell Genomics 2026
-    ("HiCat",        "#17becf"),   # 青色，Briefings in Bioinformatics 2025
+    ("HiCat",        "#17becf"),   # 青色，Briefings in Bioinformatics 2025（transductive†）
     ("scCAD",        "#d62728"),   # 红色，Nature Commun 2024
     ("TOSICA",       "#8c564b"),   # 棕色，Nature Commun 2023
     ("scRareRefine", "#2ca02c"),
 ]
 
 DATASETS = [
-    ("immune_dc",        "immune_dc\n(ASDC, high sep >2)"),
-    ("pancreas_baron",   "pancreas_baron\n(gamma, borderline sep~1.1–1.6)"),
-    ("tabula_lung_endo", "tabula_lung_endo\n(lymphatic, mid sep~1.7)"),
+    ("immune_dc",              "immune_dc\n(ASDC)"),
+    ("pancreas_baron",         "pancreas_baron\n(gamma)"),
+    ("tabula_lung_endo",       "tabula_lung_endo\n(lymph EC)"),
+    ("tabula_lung_stroma",     "tabula_lung_stroma\n(bronchial SMC)"),
+    ("tabula_small_intestine", "tabula_small_intestine\n(tuft cell)"),
+    ("tabula_sapiens_stomach", "tabula_sapiens_stomach\n(mast cell)"),
 ]
 
 
 def main():
-    raw = pd.read_csv(DETAIL)
+    raw = pd.read_csv(DETAIL, dtype={"rare_train_size": str})
     raw = raw[raw["status"] == "ok"]
 
-    # 按 dataset × method 聚合
+    # 过滤至指定比例，保证聚合语义正确（均值 = 3 seeds 均值，非混合比例）
+    if SHOW_PROPORTION is not None:
+        raw = raw[raw["rare_train_size"].astype(str) == SHOW_PROPORTION]
+
+    # 按 dataset × method 聚合（同一比例下 3 seeds 的均值）
     agg = (raw.groupby(["dataset", "method"])
               .agg(f1_mean=("rare_f1", "mean"),
                    f1_std=("rare_f1", "std"),
@@ -68,26 +79,37 @@ def main():
 
     x = np.arange(len(active_methods))
     colors  = [c for _, c in active_methods]
-    xlabels = [m for m, _ in active_methods]
+    # HiCat 是 transductive 方法，x 轴加 † 标记
+    xlabels = [m + "†" if m == "HiCat" else m for m, _ in active_methods]
 
-    fig, axes = plt.subplots(2, 3, figsize=(15, 8.6), sharex=True)
+    n_ds = len(DATASETS)
+    fig, axes = plt.subplots(2, n_ds, figsize=(4.5 * n_ds, 8.6), sharex=True)
 
     for col, (ds, title) in enumerate(DATASETS):
         sub = agg[agg["dataset"] == ds].set_index("method")
 
-        sub = sub.reindex([m for m, _ in active_methods])  # 缺失方法填 NaN
-        f1s      = sub["f1_mean"].fillna(0).tolist()
-        f1_sds   = sub["f1_std"].fillna(0).tolist()
-        recs     = sub["rec_mean"].fillna(0).tolist()
-        rec_sds  = sub["rec_std"].fillna(0).tolist()
+        sub = sub.reindex([m for m, _ in active_methods])  # 缺失方法保留 NaN
+        f1s      = sub["f1_mean"].tolist()   # NaN → 不画 bar
+        f1_sds   = [v if pd.notna(v) else 0.0 for v in sub["f1_std"].tolist()]
+        recs     = sub["rec_mean"].tolist()
+        rec_sds  = [v if pd.notna(v) else 0.0 for v in sub["rec_std"].tolist()]
 
         # ── 上排：F1 ─────────────────────────────────────────────────
         ax = axes[0, col]
-        bars = ax.bar(x, f1s, yerr=f1_sds, color=colors, edgecolor="k",
+        # 缺失方法画灰色斜线占位，有值方法画彩色 bar
+        f1s_plot = [v if pd.notna(v) else 0.0 for v in f1s]
+        bars = ax.bar(x, f1s_plot, yerr=f1_sds, color=colors, edgecolor="k",
                       linewidth=0.7, capsize=4, error_kw={"elinewidth": 1.0})
+        for i, v in enumerate(f1s):
+            if pd.isna(v):
+                bars[i].set_hatch("//")
+                bars[i].set_facecolor("#eeeeee")
         ours_idx = next((i for i, (m, _) in enumerate(active_methods) if m == "scRareRefine"), len(active_methods)-1)
         bars[ours_idx].set_linewidth(2.0)
         for xi, f1, sd in zip(x, f1s, f1_sds):
+            if pd.isna(f1):
+                ax.text(xi, 0.015, "N/A", ha="center", va="bottom", fontsize=7, color="#888888")
+                continue
             is_ours = (xi == x[ours_idx])
             ax.text(xi, f1 + sd + 0.022, f"{f1:.3f}",
                     ha="center", va="bottom", fontsize=9,
@@ -99,14 +121,23 @@ def main():
         ax.grid(True, axis="y", ls="--", alpha=0.4, linewidth=0.6)
         ax.tick_params(length=4, width=0.8)
         if col == 0:
-            ax.set_ylabel("Rare-cell F1\n(mean ± SD, 3 seeds)")
+            prop_label = SHOW_PROPORTION if SHOW_PROPORTION else "all proportions"
+            ax.set_ylabel(f"Rare-cell F1\n(mean ± SD, 3 seeds, rts={prop_label})")
 
         # ── 下排：Recall ──────────────────────────────────────────────
         ax = axes[1, col]
-        bars2 = ax.bar(x, recs, yerr=rec_sds, color=colors, edgecolor="k",
+        recs_plot = [v if pd.notna(v) else 0.0 for v in recs]
+        bars2 = ax.bar(x, recs_plot, yerr=rec_sds, color=colors, edgecolor="k",
                        linewidth=0.7, capsize=4, error_kw={"elinewidth": 1.0})
+        for i, v in enumerate(recs):
+            if pd.isna(v):
+                bars2[i].set_hatch("//")
+                bars2[i].set_facecolor("#eeeeee")
         bars2[ours_idx].set_linewidth(2.0)
         for xi, r, sd in zip(x, recs, rec_sds):
+            if pd.isna(r):
+                ax.text(xi, 0.015, "N/A", ha="center", va="bottom", fontsize=7, color="#888888")
+                continue
             is_ours = (xi == x[ours_idx])
             ax.text(xi, r + sd + 0.022, f"{r:.3f}",
                     ha="center", va="bottom", fontsize=9,
@@ -119,7 +150,7 @@ def main():
         ax.set_xticks(x)
         ax.set_xticklabels(xlabels, fontsize=9, rotation=15, ha="right")
         if col == 0:
-            ax.set_ylabel("Rare-cell Recall\n(mean ± SD, 3 seeds)")
+            ax.set_ylabel(f"Rare-cell Recall\n(mean ± SD, 3 seeds, rts={prop_label})")
 
     # 图例
     legend_handles = [Patch(facecolor=c, edgecolor="k",

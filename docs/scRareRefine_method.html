@@ -274,7 +274,7 @@
   <div class="eq">fire(<span class="v">z</span>) = cand(<span class="v">z</span>) ∧ ( <span class="v">s</span>(<span class="v">z</span>) ≥ τ ) &nbsp;⟹&nbsp; label := rare</div>
   <div class="note"><b>弃权安全网（最先执行）：</b>若 sep &lt; 1.3，跳过以上全部，直接返回 <code>base_pred</code>。
     宁可不救，也不在不可分的场景制造大量误救——这保证了方法在难数据集上「无害」。</div>
-  <p style="font-size:13px;color:var(--muted)">对应代码：<code>ConformalRescuer.relabel()</code> + 弃权判断 · src/rescue.py:479–486 / compare_baselines.py:158</p>
+  <p style="font-size:13px;color:var(--muted)">对应代码：<code>ConformalRescuer.relabel()</code> + 弃权判断 · src/rescue.py:479–486 / tools/comparison/compare_baselines.py:158</p>
 </section>
 
 <!-- ===================== INDUCTIVE ===================== -->
@@ -319,14 +319,14 @@
   <figure>
     <img class="resimg" src="../results/ablation/ablation_bars.png" alt="ablation" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
     <figcaption>只有完整方法 V4（rank-1 + 各向异性 + conformal）在所有数据集 FFR ≤ 1% 且 F1 最高。
-      <span style="display:none;color:#c0392b">（图未找到：请先运行 <span class="kbd">python tools/plot_ablation.py</span>）</span></figcaption>
+      <span style="display:none;color:#c0392b">（图未找到：请先运行 <span class="kbd">python tools/analysis/plot_ablation.py</span>）</span></figcaption>
   </figure>
 
   <h3>稳健性扫描：稀有标注量从极少到全部</h3>
   <figure>
     <img class="resimg" src="../results/sweep_rts/sweep_rts_curves.png" alt="sweep" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
     <figcaption>稀有标注越稀缺，scRareRefine 优势越大；标注充足时与监督方法趋同 → 定位「标注稀缺」场景。
-      <span style="display:none;color:#c0392b">（图未找到：请先运行 <span class="kbd">python tools/plot_sweep_rts.py</span>）</span></figcaption>
+      <span style="display:none;color:#c0392b">（图未找到：请先运行 <span class="kbd">python tools/analysis/plot_sweep_rts.py</span>）</span></figcaption>
   </figure>
 </section>
 

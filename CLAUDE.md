@@ -6,7 +6,10 @@ always reply in Chinese
 
 ## 项目目标
 
-scRareRefine 基于 scANVI 的预测概率和 latent embedding，设计稀有细胞识别 refinement 模块，提高 rare cell type 的识别效果。核心方法是 prototype 距离评分 + marker gene 验证的两阶段 rescue 流程。
+scRareRefine 基于 scANVI 的预测概率和 latent embedding，设计稀有细胞识别 refinement 模块，提高 rare cell type 的识别效果。核心方法是 prototype 距离评分 + marker gene 验证的两阶段 rescue 流程。、
+
+
+实验环境：虚拟环境：scanvi311  sandbox310
 
 ## 常用命令
 
@@ -31,28 +34,6 @@ python src/main.py --config configs/immune_dc.yaml --seed 42 --rare_class ASDC -
 pytest -v
 pytest tests/test_prototype.py
 pytest tests/test_prototype.py -k "test_separability"
-```
-
-## 目录结构
-
-```
-src/
-├── main.py                       # 简化版管道入口（baseline vs scRareRefine）
-├── utils.py                      # 共享工具：I/O、路径、指标、资源监控
-├── 01_split.py                   # 生成 train/val/test split
-├── 02_baseline_scanvi.py         # 训练 scANVI，输出 embeddings
-├── 03_prototype.py               # 原型距离评分 + 可分性指标
-├── 03b_knn_baseline.py           # kNN baseline（k=15）
-├── 03c_celltypist_baseline.py    # Logistic regression baseline
-├── 04_prototype_gate.py          # Prototype ranking 候选筛选
-├── 05_prototype_gate_marker.py   # Marker gene 验证 + validation 阈值选择
-├── 06_fusion.py                  # 概率融合（可选扩展）
-├── 07_evaluate.py                # 多 seed 汇总与对比
-└── 08_visualize.py               # UMAP 可视化
-configs/                          # YAML 配置（immune_dc、pancreas_epsilon、pancreas_gamma 等）
-data/raw/                         # 只读原始数据（.h5ad）
-data/splits/                      # 生成的 split 索引
-outputs/                          # 实验输出（按数据集 + run_id 组织）
 ```
 
 ## 架构要点

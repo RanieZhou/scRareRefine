@@ -5,7 +5,7 @@ append 进已有 comparison_summary.csv、重聚合、重绘图。
 不重跑 scANVI / kNN / CellTypist / scBalance / scRareRefine。
 
 运行：
-  D:/setup/anaconda/envs/sandbox310/python.exe tools/run_protocloud_comparison.py
+  D:/setup/anaconda/envs/sandbox310/python.exe tools/comparison/run_protocloud_comparison.py
 """
 from __future__ import annotations
 
@@ -23,23 +23,36 @@ import yaml
 import ProtoCloud as pc
 from sklearn.metrics import precision_recall_fscore_support
 
-# ── 实验配置 ──────────────────────────────────────────────────────────────────
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _conda_python import conda_python
+
+# ── run 列表（5 个数据集 × seed=42 × 全部 4 个比例，不含 tabula_lung_stroma）──────
 RUNS = [
-    ("configs/immune_dc.yaml",              42, "0.05"),
-    ("configs/immune_dc.yaml",              43, "0.05"),
-    ("configs/immune_dc.yaml",              44, "0.05"),
-    ("configs/pancreas_baron.yaml",         42, "0.10"),
-    ("configs/pancreas_baron.yaml",         43, "0.10"),
-    ("configs/pancreas_baron.yaml",         44, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       42, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       43, "0.10"),
-    ("configs/tabula_lung_endo.yaml",       44, "0.10"),
-    ("configs/tabula_small_intestine.yaml", 42, "20"),
-    ("configs/tabula_small_intestine.yaml", 43, "20"),
-    ("configs/tabula_small_intestine.yaml", 44, "20"),
-    ("configs/tabula_lung_stroma.yaml",     42, "20"),
-    ("configs/tabula_lung_stroma.yaml",     43, "20"),
-    ("configs/tabula_lung_stroma.yaml",     44, "20"),
+    # immune_dc
+    ("configs/immune_dc.yaml",                42, "0.01"),
+    ("configs/immune_dc.yaml",                42, "0.05"),
+    ("configs/immune_dc.yaml",                42, "0.10"),
+    ("configs/immune_dc.yaml",                42, "all"),
+    # pancreas_baron
+    ("configs/pancreas_baron.yaml",           42, "0.01"),
+    ("configs/pancreas_baron.yaml",           42, "0.05"),
+    ("configs/pancreas_baron.yaml",           42, "0.10"),
+    ("configs/pancreas_baron.yaml",           42, "all"),
+    # tabula_lung_endo
+    ("configs/tabula_lung_endo.yaml",         42, "0.01"),
+    ("configs/tabula_lung_endo.yaml",         42, "0.05"),
+    ("configs/tabula_lung_endo.yaml",         42, "0.10"),
+    ("configs/tabula_lung_endo.yaml",         42, "all"),
+    # tabula_small_intestine
+    ("configs/tabula_small_intestine.yaml",   42, "0.01"),
+    ("configs/tabula_small_intestine.yaml",   42, "0.05"),
+    ("configs/tabula_small_intestine.yaml",   42, "0.10"),
+    ("configs/tabula_small_intestine.yaml",   42, "all"),
+    # tabula_sapiens_stomach
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.01"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.05"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "0.10"),
+    ("configs/tabula_sapiens_stomach.yaml",   42, "all"),
 ]
 
 PROTOCLOUD_EPOCHS = 100
@@ -50,7 +63,7 @@ SUMMARY_CSV = OUT_DIR / "comparison_summary.csv"
 AGG_CSV     = OUT_DIR / "comparison_summary_agg.csv"
 
 # 重绘图用 scanvi311（plot_comparison.py 依赖 matplotlib Agg backend，两个环境都有）
-SCANVI311_PYTHON = "D:/setup/anaconda/envs/scanvi311/python.exe"
+SCANVI311_PYTHON = conda_python("scanvi311")
 
 
 # ── 工具函数（不依赖 src.utils）──────────────────────────────────────────────
@@ -312,10 +325,19 @@ def run_protocloud(config: dict, run_dir: Path, seed: int) -> np.ndarray:
 # ── 主逻辑 ────────────────────────────────────────────────────────────────────
 
 def main():
-    # 读已有结果，去掉旧 ProtoCloud 行（避免重复）
+    # 只替换本次 RUNS 覆盖的 (dataset, seed, rts) 行，其余 ProtoCloud 行保留
+    run_key_set = {
+        (load_config(c)["dataset"]["name"], str(int(s)), str(r))
+        for c, s, r in RUNS
+    }
     if SUMMARY_CSV.exists():
-        existing = pd.read_csv(SUMMARY_CSV)
-        existing = existing[existing["method"] != "ProtoCloud"]
+        existing = pd.read_csv(SUMMARY_CSV, dtype={"rare_train_size": str})
+        is_pc   = existing["method"] == "ProtoCloud"
+        in_runs = existing.apply(
+            lambda row: (str(row["dataset"]), str(int(float(row["seed"]))), str(row["rare_train_size"])) in run_key_set,
+            axis=1
+        )
+        existing = existing[~(is_pc & in_runs)]
     else:
         existing = pd.DataFrame()
 
@@ -373,34 +395,39 @@ def main():
     full_df[col_order].to_csv(SUMMARY_CSV, index=False)
     print(f"\n[saved] {SUMMARY_CSV}  ({len(full_df)} 行)")
 
-    # 重聚合
+    # 重聚合（按 dataset × rare_train_size × method）
     ok = full_df[full_df["status"] == "ok"]
     agg_rows = []
     print("\n=== 聚合结果 ===")
     for ds in ok["dataset"].unique():
-        for method in ALL_METHODS:
-            sub = ok[(ok["dataset"] == ds) & (ok["method"] == method)]
-            if sub.empty:
-                continue
-            f1s  = sub["rare_f1"].to_numpy()
-            recs = sub["rare_recall"].to_numpy()
-            fps  = sub["rare_fp_rate"].to_numpy()
-            agg_rows.append({
-                "dataset": ds, "method": method, "n_ok": len(sub),
-                "f1_mean":  round(f1s.mean(),  4), "f1_std":  round(f1s.std(),  4),
-                "rec_mean": round(recs.mean(), 4), "rec_std": round(recs.std(), 4),
-                "fp_rate_max": round(fps.max(), 6),
-            })
-            print(f"  {ds:25s} {method:15s}: "
-                  f"F1={agg_rows[-1]['f1_mean']:.4f}±{agg_rows[-1]['f1_std']:.4f}  "
-                  f"rec={agg_rows[-1]['rec_mean']:.4f}  (n={len(sub)})")
+        for rts in sorted(ok[ok["dataset"] == ds]["rare_train_size"].unique()):
+            for method in ALL_METHODS:
+                sub = ok[
+                    (ok["dataset"] == ds) &
+                    (ok["rare_train_size"] == rts) &
+                    (ok["method"] == method)
+                ]
+                if sub.empty:
+                    continue
+                f1s  = sub["rare_f1"].to_numpy()
+                recs = sub["rare_recall"].to_numpy()
+                fps  = sub["rare_fp_rate"].to_numpy()
+                agg_rows.append({
+                    "dataset": ds, "rare_train_size": rts, "method": method, "n_ok": len(sub),
+                    "f1_mean":  round(f1s.mean(),  4), "f1_std":  round(f1s.std(),  4),
+                    "rec_mean": round(recs.mean(), 4), "rec_std": round(recs.std(), 4),
+                    "fp_rate_max": round(fps.max(), 6),
+                })
+                print(f"  {ds:25s} rts={rts:4s}  {method:15s}: "
+                      f"F1={agg_rows[-1]['f1_mean']:.4f}±{agg_rows[-1]['f1_std']:.4f}  "
+                      f"rec={agg_rows[-1]['rec_mean']:.4f}  (n={len(sub)})")
 
     pd.DataFrame(agg_rows).to_csv(AGG_CSV, index=False)
     print(f"[saved] {AGG_CSV}")
 
     # 重绘柱状图（plot_comparison.py 在两个环境都能跑，用 scanvi311 保持一致）
     print("\n重绘 comparison_bars ...")
-    subprocess.run([SCANVI311_PYTHON, "tools/plot_comparison.py"], check=True)
+    subprocess.run([SCANVI311_PYTHON, "tools/comparison/plot_comparison.py"], check=True)
 
 
 if __name__ == "__main__":

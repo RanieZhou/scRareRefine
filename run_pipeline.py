@@ -5,6 +5,7 @@
 """
 
 import sys
+import json
 import argparse
 from pathlib import Path
 import pandas as pd
@@ -15,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from src.preprocess import run_preprocessing
 from src.model import run_model_training
-from src.rescue import run_post_hoc_rescue, MarkerRescuer, _load_expression_subset
+from src.rescue import run_post_hoc_rescue, MarkerRescuer, _load_expression_subset, DEFAULT_CONFORMAL_ALPHA
 from src.utils import (
     load_config,
     load_adata,
@@ -27,12 +28,30 @@ from src.utils import (
     plot_marker_violin,
     plot_method_comparison,
     plot_rescue_effect,
+    build_manifest,
+    check_manifest,
     ResourceMonitor
 )
 
 
-def _try_load_cached_embeddings(run_dir: Path) -> tuple | None:
-    """若 scANVI baseline 已保存嵌入文件，则直接加载并返回 (predictions_dict, latents_dict, selected_genes)。"""
+def _try_load_cached_embeddings(
+    run_dir: Path,
+    config: dict,
+    *,
+    seed: int,
+    rare_class: str,
+    rare_train_size,
+    label_column: str,
+    batch_key: str,
+    split_mode: str,
+    force: bool = False,
+) -> tuple | None:
+    """若 scANVI baseline 已保存嵌入文件且 manifest provenance 校验通过，
+    则直接加载并返回 (predictions_dict, latents_dict, selected_genes)；
+    否则（force=True / 文件缺失 / manifest 不匹配）返回 None 以触发重新训练。"""
+    if force:
+        return None
+
     splits = ["train", "validation", "test"]
     emb_dir = run_dir / "embeddings"
     hvg_file = run_dir / "selected_hvg_genes.csv"
@@ -40,6 +59,12 @@ def _try_load_cached_embeddings(run_dir: Path) -> tuple | None:
     required = [emb_dir / f"{s}_{t}.csv" for s in splits for t in ("predictions", "latent")]
     required.append(hvg_file)
     if not all(p.exists() for p in required):
+        return None
+
+    if not check_manifest(
+        run_dir, config, seed=seed, rare_class=rare_class, rare_train_size=rare_train_size,
+        label_column=label_column, batch_key=batch_key, split_mode=split_mode,
+    ):
         return None
 
     predictions_dict = {s: pd.read_csv(emb_dir / f"{s}_predictions.csv") for s in splits}
@@ -56,7 +81,10 @@ RARE_CLASS = None                        # 目标稀有类名称（若为 None �
 LABEL_COL = None                         # 细胞类型真实标签列名（若为 None 则从 yaml 配置的 dataset.label_key 读取）
 RARE_TRAIN_SIZE = None                   # 训练集稀有细胞显式标注数量（设为 None 则优先使用 YAML 中配置的列表首元素；也可配 float、int 或 'all'）
 SPLIT_MODE = None                        # 样本切分模式（设为 None 则默认 batch_heldout；可选 cell_stratified）
-MAX_FALSE_RESCUE_RATE = 0.001           # 后处理拯救所允许的最大误判率阈值
+# 后处理拯救所允许的最大误判率阈值（主路径为 conformal，实际作为 conformal_alpha 传入）。
+# 与 tools/comparison/run_scrarerefine_comparison.py 共用同一来源常量（src/rescue.py 的
+# DEFAULT_CONFORMAL_ALPHA），避免两处分别硬编码导致官方 baseline 对比和主流水线指标不可比。
+MAX_FALSE_RESCUE_RATE = DEFAULT_CONFORMAL_ALPHA
 # ==============================================================================
 
 
@@ -81,7 +109,11 @@ def main() -> None:
     parser.add_argument("--label_col", default=None, help="真实标签列名")
     parser.add_argument("--rare_train_size", default=None, help="稀有细胞显式标注规模")
     parser.add_argument("--split_mode", default=None, help="切分模式 (batch_heldout | cell_stratified)")
-    parser.add_argument("--max_false_rescue_rate", type=float, default=None, help="最大误拯救率")
+    parser.add_argument("--max_false_rescue_rate", type=float, default=None,
+                         help="最大误拯救率（主路径为 conformal，此值会作为 conformal_alpha 传入；"
+                              "对 gate_only/gate_marker/fusion 才是直接的 FFR 约束）")
+    parser.add_argument("--force", action="store_true",
+                         help="忽略已有 embeddings 缓存与 manifest 校验，强制重新训练")
     args = parser.parse_args()
 
     # 1. 载入配置文件与各参数的合并决策
@@ -143,7 +175,12 @@ def main() -> None:
         # ==========================================
         # 步骤 2：选择高变基因、两阶段模型训练与表征提取
         # ==========================================
-        cached = _try_load_cached_embeddings(run_dir)
+        cached = _try_load_cached_embeddings(
+            run_dir, config,
+            seed=seed, rare_class=rare_class, rare_train_size=parsed_rare_size,
+            label_column=label_column, batch_key=batch_key, split_mode=split_mode,
+            force=args.force,
+        )
         if cached is not None:
             print(">>> [步骤 2/4] 检测到已有 scANVI 嵌入缓存，跳过重新训练，直接加载...")
             predictions_dict, latents_dict, selected_genes = cached
@@ -161,6 +198,26 @@ def main() -> None:
                 config=config,
                 seed=seed
             )
+            # 保存 embeddings，供 compare_baselines.py 等脚本复用
+            emb_dir = run_dir / "embeddings"
+            emb_dir.mkdir(parents=True, exist_ok=True)
+            for _split in ["train", "validation", "test"]:
+                predictions_dict[_split].to_csv(emb_dir / f"{_split}_predictions.csv", index=False)
+                latents_dict[_split].to_csv(emb_dir / f"{_split}_latent.csv", index=False)
+            pd.DataFrame({"gene": selected_genes}).to_csv(run_dir / "selected_hvg_genes.csv", index=False)
+
+            # 写入 provenance manifest，供下次复用缓存前校验（与 train_cache.py /
+            # run_scrarerefine_comparison.py 共用 src/utils.build_manifest/check_manifest）
+            manifest = build_manifest(
+                config, cfg_file,
+                label_column=label_column, batch_key=batch_key, split_mode=split_mode,
+                seed=seed, rare_class=rare_class, rare_train_size=parsed_rare_size,
+                predictions_dict=predictions_dict,
+                n_train=len(train_idx), n_val=len(val_idx), n_test=len(test_idx),
+            )
+            (run_dir / "manifest.json").write_text(
+                json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f">>> [步骤 2/4] embeddings 已缓存至 {emb_dir}（manifest split_hash={manifest['split_hash']}）")
 
         # ==========================================
         # 步骤 3：提取预测标签及不确定性特征，进行后处理拯救校正
@@ -182,6 +239,9 @@ def main() -> None:
         }]
         
         # 执行 scRareRefine 自适应融合拯救
+        # 主路径为 conformal：conformal 分支只读 conformal_alpha，不读 max_false_rescue_rate
+        # （二者在 run_post_hoc_rescue 内语义独立，详见 src/rescue.py 的函数 docstring），
+        # 因此把 CLI 暴露的唯一阈值参数映射到当前实际生效的 conformal_alpha 上。
         final_test_pred, summary = run_post_hoc_rescue(
             adata,
             predictions_dict,
@@ -189,7 +249,7 @@ def main() -> None:
             selected_genes,
             rare_class=rare_class,
             strategy="conformal",
-            max_false_rescue_rate=max_false_rescue_rate
+            conformal_alpha=max_false_rescue_rate
         )
 
         overall_metrics, _ = classification_tables(y_true_test, final_test_pred, rare_class=rare_class)
