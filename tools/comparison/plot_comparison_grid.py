@@ -1,0 +1,123 @@
+"""对比柱状图（网格版）：5 数据集(行) × 4 比例(列) = 20 子图。
+
+每个子图为某 (数据集, rare_train_size) 下各方法的 rare-cell F1 柱状图，
+scRareRefine 绿色加粗高亮。数据源：results/comparison/comparison_summary_agg.csv
+（seed=42 单种子）。
+
+输出：results/comparison/comparison_bars_grid.png / .pdf
+"""
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+
+plt.rcParams.update({
+    "font.family":     "DejaVu Sans",
+    "font.size":       10,
+    "axes.linewidth":  0.9,
+    "axes.titlesize":  11,
+    "axes.labelsize":  10,
+    "xtick.labelsize": 8,
+    "ytick.labelsize": 9,
+    "legend.fontsize": 10,
+    "savefig.dpi":     300,
+})
+
+AGG     = Path("results/comparison/comparison_summary_agg.csv")
+OUT_PNG = Path("results/comparison/comparison_bars_grid.png")
+OUT_PDF = Path("results/comparison/comparison_bars_grid.pdf")
+
+RTS_ORDER = ["0.01", "0.05", "0.10", "all"]
+METHODS = [
+    ("scANVI",       "#7f7f7f"),
+    ("kNN",          "#1f77b4"),
+    ("CellTypist",   "#ff7f0e"),
+    ("scBalance",    "#9467bd"),
+    ("ProtoCloud",   "#e377c2"),
+    ("HiCat",        "#17becf"),
+    ("scCAD",        "#d62728"),
+    ("TOSICA",       "#8c564b"),
+    ("scRareRefine", "#2ca02c"),
+]
+DATASETS = [
+    ("immune_dc",              "immune_dc\n(ASDC)"),
+    ("pancreas_baron",         "pancreas_baron\n(gamma)"),
+    ("tabula_lung_endo",       "tabula_lung_endo\n(lymph EC)"),
+    ("tabula_small_intestine", "tabula_small_intestine\n(tuft cell)"),
+    ("tabula_sapiens_stomach", "tabula_sapiens_stomach\n(mast cell)"),
+    ("pancreas_integrated",    "pancreas_integrated\n(endothelial)"),
+]
+
+
+def main():
+    df = pd.read_csv(AGG, dtype={"rare_train_size": str})
+    x = np.arange(len(METHODS))
+    colors  = [c for _, c in METHODS]
+    xlabels = [m + "†" if m == "HiCat" else m for m, _ in METHODS]
+    ours_idx = [m for m, _ in METHODS].index("scRareRefine")
+
+    n_row, n_col = len(DATASETS), len(RTS_ORDER)
+    fig, axes = plt.subplots(n_row, n_col, figsize=(4.4 * n_col, 3.0 * n_row),
+                             sharey=True)
+
+    for r, (ds, ds_title) in enumerate(DATASETS):
+        for c, rts in enumerate(RTS_ORDER):
+            ax = axes[r, c]
+            sub = df[(df["dataset"] == ds) & (df["rare_train_size"] == rts)].set_index("method")
+            sub = sub.reindex([m for m, _ in METHODS])
+            f1s = sub["f1_mean"].tolist()
+
+            f1s_plot = [v if pd.notna(v) else 0.0 for v in f1s]
+            bars = ax.bar(x, f1s_plot, color=colors, edgecolor="k", linewidth=0.6)
+            for i, v in enumerate(f1s):
+                if pd.isna(v):
+                    bars[i].set_hatch("//"); bars[i].set_facecolor("#eeeeee")
+            bars[ours_idx].set_linewidth(2.0); bars[ours_idx].set_edgecolor("#1a6e1a")
+
+            # 每个方法柱子都标数值（横排，scRareRefine 加粗绿色；相邻交错上下高度防重叠）
+            for xi, v in zip(x, f1s):
+                if pd.isna(v):
+                    continue
+                is_ours = (xi == ours_idx)
+                offset = 0.02 if xi % 2 == 0 else 0.085   # 奇偶柱交错抬高
+                ax.text(xi, v + offset, f"{v:.2f}", ha="center", va="bottom",
+                        fontsize=6.5,
+                        fontweight="bold" if is_ours else "normal",
+                        color="#1a6e1a" if is_ours else "black")
+            ax.set_ylim(0, 1.22)
+            ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+            ax.grid(True, axis="y", ls="--", alpha=0.4, linewidth=0.6)
+            ax.tick_params(length=3, width=0.7)
+            ax.set_xticks(x)
+            if r == n_row - 1:
+                ax.set_xticklabels(xlabels, rotation=40, ha="right", fontsize=8)
+            else:
+                ax.set_xticklabels([])
+            if r == 0:
+                ax.set_title(f"rare_train_size = {rts}", fontsize=11, pad=6)
+            if c == 0:
+                ax.set_ylabel(f"{ds_title}\nrare-cell F1", fontsize=9.5)
+
+    legend_handles = [Patch(facecolor=c, edgecolor="k",
+                            label=("scRareRefine (ours)" if m == "scRareRefine" else
+                                   ("HiCat† (transductive)" if m == "HiCat" else m)))
+                      for m, c in METHODS]
+    fig.legend(handles=legend_handles, loc="upper center", ncol=len(METHODS),
+               frameon=True, bbox_to_anchor=(0.5, 1.015))
+    fig.suptitle("Rare-cell F1 by dataset (rows) × rare_train_size (cols)  —  scRareRefine vs. 8 baselines (seed=42)",
+                 fontsize=13, y=1.035)
+
+    fig.tight_layout(rect=[0, 0, 1, 0.985])
+    OUT_PNG.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT_PNG, bbox_inches="tight")
+    fig.savefig(OUT_PDF, bbox_inches="tight")
+    print(f"[saved] {OUT_PNG}")
+    print(f"[saved] {OUT_PDF}")
+
+
+if __name__ == "__main__":
+    main()

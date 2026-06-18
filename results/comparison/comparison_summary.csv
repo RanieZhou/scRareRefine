@@ -79,26 +79,6 @@ tabula_sapiens_stomach,42,0.01,mast cell,scBalance,ok,1.7794,,0.4706,0.5,0.4444,
 tabula_sapiens_stomach,42,0.05,mast cell,scBalance,ok,1.7794,,0.4,0.25,1.0,0.3434,0.0,3.0,0.0,0.0
 tabula_sapiens_stomach,42,0.10,mast cell,scBalance,ok,1.7794,,0.1176,0.0625,1.0,0.2436,0.0,0.0,0.0,0.0
 tabula_sapiens_stomach,42,all,mast cell,scBalance,ok,1.8181,,0.6216,0.7188,0.5476,0.3515,0.001991,34.0,19.0,0.001991
-immune_dc,42,0.01,ASDC,scRareRefine,ok,2.1126,,0.903,0.8231,1.0,0.873,0.0,107.0,0.0,0.0
-immune_dc,42,0.05,ASDC,scRareRefine,ok,2.1376,,0.9435,0.9,0.9915,0.8927,0.000167,24.0,1.0,0.000167
-immune_dc,42,0.10,ASDC,scRareRefine,ok,2.1041,,0.9274,0.8846,0.9746,0.8863,0.0005,14.0,2.0,0.000333
-immune_dc,42,all,ASDC,scRareRefine,ok,1.7622,,0.9528,0.9308,0.9758,0.8819,0.0005,5.0,1.0,0.000167
-pancreas_baron,42,0.01,gamma,scRareRefine,ok,1.5213,,0.6567,0.5116,0.9167,0.6588,0.002442,37.0,4.0,0.002442
-pancreas_baron,42,0.05,gamma,scRareRefine,ok,1.5213,,0.6567,0.5116,0.9167,0.6588,0.002442,37.0,4.0,0.002442
-pancreas_baron,42,0.10,gamma,scRareRefine,ok,1.4422,,0.8158,0.7209,0.9394,0.6707,0.002442,8.0,3.0,0.001832
-pancreas_baron,42,all,gamma,scRareRefine,ok,1.1597,,0.9143,0.9302,0.8989,0.7063,0.005495,0.0,0.0,0.0
-tabula_lung_endo,42,0.01,endothelial cell of lymphatic vessel,scRareRefine,ok,2.3468,,0.9848,1.0,0.9701,0.8238,0.001166,67.0,2.0,0.001166
-tabula_lung_endo,42,0.05,endothelial cell of lymphatic vessel,scRareRefine,ok,1.879,,0.963,1.0,0.9286,0.8028,0.002914,36.0,4.0,0.002331
-tabula_lung_endo,42,0.10,endothelial cell of lymphatic vessel,scRareRefine,ok,1.6589,,0.9774,1.0,0.9559,0.8226,0.001748,2.0,1.0,0.000583
-tabula_lung_endo,42,all,endothelial cell of lymphatic vessel,scRareRefine,ok,1.671,,0.963,1.0,0.9286,0.8106,0.002914,2.0,2.0,0.001166
-tabula_small_intestine,42,0.01,intestinal tuft cell,scRareRefine,ok,3.165,,0.9701,1.0,0.942,0.6398,0.000636,1.0,1.0,0.000159
-tabula_small_intestine,42,0.05,intestinal tuft cell,scRareRefine,ok,2.6237,,0.9701,1.0,0.942,0.6374,0.000636,1.0,1.0,0.000159
-tabula_small_intestine,42,0.10,intestinal tuft cell,scRareRefine,ok,2.301,,0.9701,1.0,0.942,0.6532,0.000636,2.0,2.0,0.000318
-tabula_small_intestine,42,all,intestinal tuft cell,scRareRefine,ok,2.4477,,0.9701,1.0,0.942,0.6411,0.000636,0.0,0.0,0.0
-tabula_sapiens_stomach,42,0.01,mast cell,scRareRefine,ok,1.7794,,0.6383,0.4688,1.0,0.3185,0.0,3.0,0.0,0.0
-tabula_sapiens_stomach,42,0.05,mast cell,scRareRefine,ok,1.7794,,0.6383,0.4688,1.0,0.3185,0.0,3.0,0.0,0.0
-tabula_sapiens_stomach,42,0.10,mast cell,scRareRefine,ok,1.7794,,0.6383,0.4688,1.0,0.3185,0.0,3.0,0.0,0.0
-tabula_sapiens_stomach,42,all,mast cell,scRareRefine,ok,1.8181,,0.6087,0.4375,1.0,0.3411,0.0,6.0,0.0,0.0
 immune_dc,42,0.01,ASDC,scCAD,ok,,,0.0,0.0,0.0,0.7157,0.012825,77.0,77.0,0.012825
 immune_dc,42,0.05,ASDC,scCAD,ok,,,0.6246,0.7231,0.5497,0.8356,0.012825,77.0,77.0,0.012825
 immune_dc,42,0.10,ASDC,scCAD,ok,,,0.6624,0.7923,0.5691,0.8386,0.012991,77.0,77.0,0.012825
@@ -179,3 +159,59 @@ tabula_sapiens_stomach,42,0.01,mast cell,TOSICA,ok,,,0.0204,0.0312,0.0152,0.1899
 tabula_sapiens_stomach,42,0.05,mast cell,TOSICA,ok,,,0.0204,0.0312,0.0152,0.1899,0.006811,65.0,65.0,0.006811
 tabula_sapiens_stomach,42,0.10,mast cell,TOSICA,ok,,,0.0204,0.0312,0.0152,0.1899,0.006811,65.0,65.0,0.006811
 tabula_sapiens_stomach,42,all,mast cell,TOSICA,ok,,,0.1552,0.2812,0.1071,0.1998,0.007859,80.0,75.0,0.007859
+immune_dc,42,0.01,ASDC,scRareRefine,ok,2.1126,,0.903,0.8231,1.0,0.873,0.0,107.0,0.0,0.0
+immune_dc,42,0.05,ASDC,scRareRefine,ok,2.1376,,0.9435,0.9,0.9915,0.8927,0.000167,24.0,1.0,0.000167
+immune_dc,42,0.10,ASDC,scRareRefine,ok,2.1041,,0.9274,0.8846,0.9746,0.8863,0.0005,14.0,2.0,0.000333
+immune_dc,42,all,ASDC,scRareRefine,ok,1.7622,,0.9528,0.9308,0.9758,0.8819,0.0005,5.0,1.0,0.000167
+pancreas_baron,42,0.01,gamma,scRareRefine,ok,1.5213,,0.7784,0.7558,0.8025,0.6728,0.009768,70.0,16.0,0.009768
+pancreas_baron,42,0.05,gamma,scRareRefine,ok,1.5213,,0.7784,0.7558,0.8025,0.6728,0.009768,70.0,16.0,0.009768
+pancreas_baron,42,0.10,gamma,scRareRefine,ok,1.4422,,0.8402,0.8256,0.8554,0.667,0.007326,25.0,11.0,0.006716
+pancreas_baron,42,all,gamma,scRareRefine,ok,1.1597,,0.9143,0.9302,0.8989,0.7063,0.005495,0.0,0.0,0.0
+tabula_lung_endo,42,0.01,endothelial cell of lymphatic vessel,scRareRefine,ok,2.3468,,0.9848,1.0,0.9701,0.8238,0.001166,67.0,2.0,0.001166
+tabula_lung_endo,42,0.05,endothelial cell of lymphatic vessel,scRareRefine,ok,1.879,,0.963,1.0,0.9286,0.8028,0.002914,36.0,4.0,0.002331
+tabula_lung_endo,42,0.10,endothelial cell of lymphatic vessel,scRareRefine,ok,1.6589,,0.9774,1.0,0.9559,0.8226,0.001748,2.0,1.0,0.000583
+tabula_lung_endo,42,all,endothelial cell of lymphatic vessel,scRareRefine,ok,1.671,,0.9774,1.0,0.9559,0.8142,0.001748,0.0,0.0,0.0
+tabula_small_intestine,42,0.01,intestinal tuft cell,scRareRefine,ok,3.165,,0.9774,1.0,0.9559,0.6401,0.000477,0.0,0.0,0.0
+tabula_small_intestine,42,0.05,intestinal tuft cell,scRareRefine,ok,2.6237,,0.9774,1.0,0.9559,0.6377,0.000477,0.0,0.0,0.0
+tabula_small_intestine,42,0.10,intestinal tuft cell,scRareRefine,ok,2.301,,0.9848,1.0,0.9701,0.6542,0.000318,0.0,0.0,0.0
+tabula_small_intestine,42,all,intestinal tuft cell,scRareRefine,ok,2.4477,,0.9701,1.0,0.942,0.6411,0.000636,0.0,0.0,0.0
+tabula_sapiens_stomach,42,0.01,mast cell,scRareRefine,ok,1.7794,,0.7451,0.5938,1.0,0.3251,0.0,7.0,0.0,0.0
+tabula_sapiens_stomach,42,0.05,mast cell,scRareRefine,ok,1.7794,,0.7451,0.5938,1.0,0.3251,0.0,7.0,0.0,0.0
+tabula_sapiens_stomach,42,0.10,mast cell,scRareRefine,ok,1.7794,,0.7451,0.5938,1.0,0.3251,0.0,7.0,0.0,0.0
+tabula_sapiens_stomach,42,all,mast cell,scRareRefine,ok,1.8181,,0.6939,0.5312,1.0,0.3466,0.0,9.0,0.0,0.0
+pancreas_integrated,42,0.01,endothelial,scANVI,ok,1.4516,,1.0,1.0,1.0,0.7577,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.05,endothelial,scANVI,ok,1.5432,,1.0,1.0,1.0,0.7539,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.10,endothelial,scANVI,ok,1.341,,0.9787,1.0,0.9583,0.7691,0.000588,0.0,0.0,0.0
+pancreas_integrated,42,all,endothelial,scANVI,ok,1.4442,,0.9583,1.0,0.92,0.702,0.001176,0.0,0.0,0.0
+pancreas_integrated,42,0.01,endothelial,kNN,ok,1.4516,3.0,0.9778,0.9565,1.0,0.6718,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.05,endothelial,kNN,ok,1.5432,3.0,0.9787,1.0,0.9583,0.7501,0.000588,1.0,1.0,0.000588
+pancreas_integrated,42,0.10,endothelial,kNN,ok,1.341,3.0,1.0,1.0,1.0,0.7576,0.0,0.0,0.0,0.0
+pancreas_integrated,42,all,endothelial,kNN,ok,1.4442,3.0,0.9388,1.0,0.8846,0.6693,0.001764,1.0,1.0,0.000588
+pancreas_integrated,42,0.01,endothelial,CellTypist,ok,1.4516,,0.9778,0.9565,1.0,0.8025,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.05,endothelial,CellTypist,ok,1.5432,,0.9583,1.0,0.92,0.7861,0.001176,2.0,2.0,0.001176
+pancreas_integrated,42,0.10,endothelial,CellTypist,ok,1.341,,0.9583,1.0,0.92,0.7875,0.001176,2.0,2.0,0.001176
+pancreas_integrated,42,all,endothelial,CellTypist,ok,1.4442,,1.0,1.0,1.0,0.8014,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.01,endothelial,scBalance,ok,1.4516,,0.9778,0.9565,1.0,0.7879,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.05,endothelial,scBalance,ok,1.5432,,1.0,1.0,1.0,0.8476,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.10,endothelial,scBalance,ok,1.341,,0.9778,0.9565,1.0,0.797,0.0,0.0,0.0,0.0
+pancreas_integrated,42,all,endothelial,scBalance,ok,1.4442,,1.0,1.0,1.0,0.7684,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.01,endothelial,scRareRefine,ok,1.4516,,0.9388,1.0,0.8846,0.7498,0.001764,3.0,3.0,0.001764
+pancreas_integrated,42,0.05,endothelial,scRareRefine,ok,1.5432,,0.9787,1.0,0.9583,0.7519,0.000588,1.0,1.0,0.000588
+pancreas_integrated,42,0.10,endothelial,scRareRefine,ok,1.341,,0.9787,1.0,0.9583,0.7691,0.000588,0.0,0.0,0.0
+pancreas_integrated,42,all,endothelial,scRareRefine,ok,1.4442,,0.9583,1.0,0.92,0.702,0.001176,0.0,0.0,0.0
+pancreas_integrated,42,0.01,endothelial,scCAD,ok,,,0.7302,1.0,0.575,0.6692,0.009994,17.0,17.0,0.009994
+pancreas_integrated,42,0.05,endothelial,scCAD,ok,,,0.7302,1.0,0.575,0.6653,0.009994,17.0,17.0,0.009994
+pancreas_integrated,42,0.10,endothelial,scCAD,ok,,,0.7188,1.0,0.561,0.6811,0.010582,17.0,17.0,0.009994
+pancreas_integrated,42,all,endothelial,scCAD,ok,,,0.7077,1.0,0.5476,0.6147,0.01117,17.0,17.0,0.009994
+pancreas_integrated,42,0.01,endothelial,ProtoCloud,ok,,,0.9048,0.8261,1.0,0.7319,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.05,endothelial,ProtoCloud,ok,,,0.9778,0.9565,1.0,0.7203,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.10,endothelial,ProtoCloud,ok,,,0.9362,0.9565,0.9167,0.7641,0.001176,2.0,2.0,0.001176
+pancreas_integrated,42,all,endothelial,ProtoCloud,ok,,,1.0,1.0,1.0,0.7249,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.01,endothelial,HiCat,ok,,,0.0,0.0,0.0,0.3964,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.05,endothelial,HiCat,ok,,,0.7222,0.5652,1.0,0.3444,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.10,endothelial,HiCat,ok,,,1.0,1.0,1.0,0.4375,0.0,0.0,0.0,0.0
+pancreas_integrated,42,all,endothelial,HiCat,ok,,,1.0,1.0,1.0,0.3594,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.01,endothelial,TOSICA,ok,,,0.0,0.0,0.0,0.586,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.05,endothelial,TOSICA,ok,,,0.8936,0.913,0.875,0.6789,0.001764,3.0,3.0,0.001764
+pancreas_integrated,42,0.10,endothelial,TOSICA,ok,,,0.9333,0.913,0.9545,0.6835,0.000588,1.0,1.0,0.000588
+pancreas_integrated,42,all,endothelial,TOSICA,ok,,,0.9787,1.0,0.9583,0.6611,0.000588,1.0,1.0,0.000588

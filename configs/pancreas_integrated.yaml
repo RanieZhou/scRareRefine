@@ -1,0 +1,50 @@
+# ==============================================================================
+# scRareRefine 实验配置: pancreas_integrated (多研究整合人胰腺，scIB complexBatch 版)
+# 干净文件: data/raw/human_pancreas/pancreas_integrated_clean.h5ad
+#   由 tools/extract/extract_pancreas_integrated.py 从 human_pancreas_norm_complexBatch.h5ad 提取。
+# 【为何要提取】原整合文件 X 层是 lognorm（不能喂 scVI），layers['counts'] 跨平台不一致：
+#   inDrop1-4 与 smartseq2 是整数 counts；celseq/celseq2/smarter/fluidigmc1 非整数（已被处理）。
+#   故只保留 counts 为真整数的 5 个平台，并把 counts 提为 X（原始 counts，供 scANVI）。
+# 10963 细胞 × 19093 基因 | 5 个测序平台批次 (tech)：inDrop1-4 / smartseq2
+# 细胞类型(14): alpha/beta/ductal/acinar/delta/gamma/activated_stellate/endothelial/...
+# 稀有类: endothelial（273 个, 跨 5 平台分布）
+#   seed=42 batch_heldout 划分各 split 均 >0；各比例实际标注区分开（无触底重合）
+# 备注: epsilon(32)/mast(42)/schwann(25) 绝对数太少（test<10，F1 不可靠），不选作主稀有类
+# ==============================================================================
+
+dataset:
+  name: pancreas_integrated
+  path: data/raw/human_pancreas/pancreas_integrated_clean.h5ad
+  use_raw: false                        # X 已是整数 counts，预处理体检会自动 normalize+log1p
+  label_key: celltype                   # 14 类细胞类型
+  batch_key: tech                       # 5 个测序平台批次 (inDrop1-4 / smartseq2)
+
+experiment:
+  rare_class: endothelial               # 313 个 (1.9%)，跨 8 tech 分布，test=23 统计可靠
+  split_mode: batch_heldout             # 9 个 tech，按平台划分 train/val/test（跨平台泛化）
+  rare_train_sizes:                     # 批量对比实验中稀有细胞已标注样本规模列表
+    - 0.01                              # 标注训练池稀有细胞的 1%
+    - 0.05                              # 5%
+    - 0.10                              # 10%
+    - all                              # 全部
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+
+model:
+  n_top_hvg: 2000                       # 1.6 万细胞规模，2000 HVG（与 pancreas_baron 一致）
+  n_latent: 20
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 128
+
+analysis:
+  rare_threshold: 0.05
+  rare_max_cells: 200
+  review_fractions:
+    - 0.01
+    - 0.05
+    - 0.10
+    - 0.20

@@ -51,9 +51,9 @@ DATASETS = [
     ("immune_dc",              "immune_dc\n(ASDC)"),
     ("pancreas_baron",         "pancreas_baron\n(gamma)"),
     ("tabula_lung_endo",       "tabula_lung_endo\n(lymph EC)"),
-    ("tabula_lung_stroma",     "tabula_lung_stroma\n(bronchial SMC)"),
     ("tabula_small_intestine", "tabula_small_intestine\n(tuft cell)"),
     ("tabula_sapiens_stomach", "tabula_sapiens_stomach\n(mast cell)"),
+    ("pancreas_integrated",    "pancreas_integrated\n(endothelial)"),
 ]
 
 
@@ -159,9 +159,8 @@ def main():
     fig.legend(handles=legend_handles, loc="upper center", ncol=len(active_methods),
                frameon=True, bbox_to_anchor=(0.5, 1.02), fontsize=10)
     fig.suptitle(
-        "Comparison of rare-cell identification methods across 3 datasets (3-seed average)\n"
-        "scRareRefine achieves top F1 on tabula_lung_endo; TOSICA leads on immune_dc and pancreas_baron",
-        fontsize=11.5, y=1.10)
+        f"Comparison of rare-cell identification methods across {len(DATASETS)} datasets (seed=42, rts={SHOW_PROPORTION})",
+        fontsize=12, y=1.06)
 
     fig.tight_layout(rect=[0, 0, 1, 0.99])
     OUT_PNG.parent.mkdir(parents=True, exist_ok=True)

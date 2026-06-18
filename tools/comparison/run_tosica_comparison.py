@@ -56,7 +56,19 @@ RUNS = [
     ("configs/tabula_sapiens_stomach.yaml",   42, "0.05"),
     ("configs/tabula_sapiens_stomach.yaml",   42, "0.10"),
     ("configs/tabula_sapiens_stomach.yaml",   42, "all"),
+    # pancreas_integrated（整合人胰腺, endothelial, 5 平台）
+    ("configs/pancreas_integrated.yaml",      42, "0.01"),
+    ("configs/pancreas_integrated.yaml",      42, "0.05"),
+    ("configs/pancreas_integrated.yaml",      42, "0.10"),
+    ("configs/pancreas_integrated.yaml",      42, "all"),
 ]
+
+# 可选 CLI 过滤：传入 config 子串则只跑匹配的 run（如 `... pancreas_integrated`
+# 只跑新数据集、不重复已有数据集）；不传则跑全部 RUNS。
+import sys as _sys
+_flt = [a for a in _sys.argv[1:] if not a.startswith("-")]
+if _flt:
+    RUNS = [r for r in RUNS if any(s in r[0] for s in _flt)]
 
 GMT_MAP = {
     "immune_dc":               "human_gobp",
@@ -65,6 +77,7 @@ GMT_MAP = {
     "tabula_lung_stroma":      "human_gobp",
     "tabula_small_intestine":  "human_gobp",
     "tabula_sapiens_stomach":  "human_gobp",
+    "pancreas_integrated":     "human_gobp",
 }
 
 ALL_METHODS = ["scANVI", "kNN", "CellTypist", "scBalance",

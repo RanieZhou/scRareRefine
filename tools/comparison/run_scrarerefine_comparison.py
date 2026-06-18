@@ -19,7 +19,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from src.utils import load_config, make_run_dir, parse_rare_train_size, classification_tables
-from src.rescue import PrototypeRescuer, ConformalRescuer, DEFAULT_CONFORMAL_ALPHA, CONFORMAL_LOW_SEP
+from src.rescue import PrototypeRescuer, conformal_rescue, DEFAULT_CONFORMAL_ALPHA, CONFORMAL_LOW_SEP
 from tools.comparison._conda_python import conda_python
 
 # ── run 列表（5 个数据集 × seed=42 × 全部 4 个比例，不含 tabula_lung_stroma）──────
@@ -49,7 +49,19 @@ RUNS = [
     ("configs/tabula_sapiens_stomach.yaml",   42, "0.05"),
     ("configs/tabula_sapiens_stomach.yaml",   42, "0.10"),
     ("configs/tabula_sapiens_stomach.yaml",   42, "all"),
+    # pancreas_integrated（整合人胰腺, endothelial, 5 平台）
+    ("configs/pancreas_integrated.yaml",      42, "0.01"),
+    ("configs/pancreas_integrated.yaml",      42, "0.05"),
+    ("configs/pancreas_integrated.yaml",      42, "0.10"),
+    ("configs/pancreas_integrated.yaml",      42, "all"),
 ]
+
+# 可选 CLI 过滤：传入 config 子串则只跑匹配的 run（如 `... pancreas_integrated`
+# 只跑新数据集、不重复已有数据集）；不传则跑全部 RUNS。
+import sys as _sys
+_flt = [a for a in _sys.argv[1:] if not a.startswith("-")]
+if _flt:
+    RUNS = [r for r in RUNS if any(s in r[0] for s in _flt)]
 
 METHOD_NAME       = "scRareRefine"
 # alpha / LOW_SEP 从 src.rescue 导入（单一来源），与 run_pipeline.py 生成的主方法 metrics
@@ -68,15 +80,12 @@ def _lat(df: pd.DataFrame) -> np.ndarray:
     return df[[c for c in df.columns if c.startswith("latent_")]].to_numpy()
 
 
-def _conformal_rescue(proto, base_pred, val_lat, val_true, test_lat):
-    if proto.separability_ratio < CONFORMAL_LOW_SEP:
-        return base_pred.copy()
-    test_cand  = proto.isotropic_rank1(test_lat, base_pred)
-    test_score = proto.rare_membership_score(test_lat)
-    val_score  = proto.rare_membership_score(val_lat)
-    conf = ConformalRescuer(proto.rare_class, alpha=CONFORMAL_ALPHA)
-    conf.calibrate(val_score, val_true)
-    return conf.relabel(base_pred, test_cand, test_score)
+def _conformal_rescue(proto, base_pred, val_pred_labels, val_lat, val_true, test_lat):
+    # 单一来源：necessity 守门 + val-自适应候选 rank + conformal tau（见 src.rescue.conformal_rescue）
+    final, _ = conformal_rescue(
+        proto, base_pred, val_pred_labels, val_true, val_lat, test_lat, alpha=CONFORMAL_ALPHA,
+    )
+    return final
 
 
 def _metrics(y_true, pred, base_pred, rare_class) -> dict:
@@ -181,7 +190,8 @@ def main():
         print(f"\n[{dataset} seed={seed} rts={rts_str}] sep={proto.separability_ratio:.3f}  "
               f"lab_rare={int((lab_labels==rare_class).sum())}  test_rare={int((y_true==rare_class).sum())}")
 
-        srr_pred = _conformal_rescue(proto, base_pred, val_lat, val_true, test_lat)
+        val_base = val_pred["predicted_label"].astype(str)
+        srr_pred = _conformal_rescue(proto, base_pred, val_base, val_lat, val_true, test_lat)
 
         mres = _metrics(y_true, srr_pred.to_numpy(), base_pred.to_numpy(), rare_class)
         print(f"  {METHOD_NAME:15s}: F1={mres['rare_f1']:.4f}  rec={mres['rare_recall']:.4f}  "
