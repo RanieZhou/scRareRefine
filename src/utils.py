@@ -307,9 +307,11 @@ def log1p_cpm(x: Any) -> np.ndarray:
 # ==========================================
 def seed_everything(seed: int) -> None:
     """ 保证实验与 scvi 初始化结果可复现 """
+    import random
     import torch
     import scvi
     scvi.settings.seed = seed
+    random.seed(seed)          # 部分依赖（如 umap / 第三方采样）会用 Python 内置 random
     np.random.seed(seed)
     torch.manual_seed(seed)
 

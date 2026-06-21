@@ -1,8 +1,14 @@
-"""绘制对比实验柱状图（scRareRefine vs 4 baselines，3 数据集）。
+"""绘制对比实验柱状图（scRareRefine vs 8 baselines，6 数据集）。
 
-读取 results/comparison/comparison_summary.csv，绘制 2×3 子图：
-  上排：rare-cell F1（mean ± SD，3 seeds）
-  下排：rare-cell Recall（mean ± SD，3 seeds）
+读取 results/comparison/comparison_summary.csv，绘制 2×N 子图：
+  上排：rare-cell F1（当前仅 seed=42；若补 seed 43/44 会自动按 mean±SD 聚合）
+  下排：rare-cell Recall（同上）
+
+注：
+  - HiCat 为 transductive 方法（PCA/UMAP/DBSCAN 在 train+test 合并特征上 fit，
+    阈值取自 test 簇统计），图中以 † 标记，仅作 transductive 上界参照，非公平 inductive 基线。
+  - 仅 scRareRefine 在 FFR≤α=0.01 约束下运行；其余方法 FFR 不受控（详见 comparison_summary.csv
+    的 rare_fp_rate 列，scCAD 尤高）。比较 F1 时须记得这一操作点差异。
 
 输出：results/comparison/comparison_bars.png / .pdf
 """
@@ -61,9 +67,14 @@ def main():
     raw = pd.read_csv(DETAIL, dtype={"rare_train_size": str})
     raw = raw[raw["status"] == "ok"]
 
-    # 过滤至指定比例，保证聚合语义正确（均值 = 3 seeds 均值，非混合比例）
+    # 过滤至指定比例，保证聚合语义正确（同一比例下按 seed 取均值，非混合比例）
     if SHOW_PROPORTION is not None:
         raw = raw[raw["rare_train_size"].astype(str) == SHOW_PROPORTION]
+
+    # 动态 seed 标签：避免硬编码「3 seeds」与实际数据不符（当前仅 seed=42）
+    seeds_present = sorted(raw["seed"].dropna().astype(int).unique().tolist())
+    n_seeds = len(seeds_present)
+    seed_label = f"seed {seeds_present[0]}" if n_seeds == 1 else f"mean ± SD, {n_seeds} seeds"
 
     # 按 dataset × method 聚合（同一比例下 3 seeds 的均值）
     agg = (raw.groupby(["dataset", "method"])
@@ -122,7 +133,7 @@ def main():
         ax.tick_params(length=4, width=0.8)
         if col == 0:
             prop_label = SHOW_PROPORTION if SHOW_PROPORTION else "all proportions"
-            ax.set_ylabel(f"Rare-cell F1\n(mean ± SD, 3 seeds, rts={prop_label})")
+            ax.set_ylabel(f"Rare-cell F1\n({seed_label}, rts={prop_label})")
 
         # ── 下排：Recall ──────────────────────────────────────────────
         ax = axes[1, col]
@@ -150,7 +161,7 @@ def main():
         ax.set_xticks(x)
         ax.set_xticklabels(xlabels, fontsize=9, rotation=15, ha="right")
         if col == 0:
-            ax.set_ylabel(f"Rare-cell Recall\n(mean ± SD, 3 seeds, rts={prop_label})")
+            ax.set_ylabel(f"Rare-cell Recall\n({seed_label}, rts={prop_label})")
 
     # 图例
     legend_handles = [Patch(facecolor=c, edgecolor="k",
@@ -159,8 +170,17 @@ def main():
     fig.legend(handles=legend_handles, loc="upper center", ncol=len(active_methods),
                frameon=True, bbox_to_anchor=(0.5, 1.02), fontsize=10)
     fig.suptitle(
-        f"Comparison of rare-cell identification methods across {len(DATASETS)} datasets (seed=42, rts={SHOW_PROPORTION})",
+        f"Comparison of rare-cell identification methods across {len(DATASETS)} datasets ({seed_label}, rts={SHOW_PROPORTION})",
         fontsize=12, y=1.06)
+
+    # 脚注：解释 † 标记 + FFR 操作点差异（reviewer 必问的两点）
+    fig.text(
+        0.5, -0.02,
+        "† HiCat is transductive (PCA/UMAP/DBSCAN fit on combined train+test; threshold from test clusters) "
+        "— shown as a transductive upper-bound reference, not an inductive baseline.\n"
+        "Only scRareRefine constrains false-rescue rate ≤ α=0.01; other methods' FFR is uncontrolled "
+        "(see rare_fp_rate in comparison_summary.csv).",
+        ha="center", va="top", fontsize=8, color="#444444")
 
     fig.tight_layout(rect=[0, 0, 1, 0.99])
     OUT_PNG.parent.mkdir(parents=True, exist_ok=True)

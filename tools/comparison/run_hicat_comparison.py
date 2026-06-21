@@ -68,12 +68,10 @@ RUNS = [
     ("configs/pancreas_integrated.yaml",      42, "all"),
 ]
 
-# 可选 CLI 过滤：传入 config 子串则只跑匹配的 run（如 `... pancreas_integrated`
-# 只跑新数据集、不重复已有数据集）；不传则跑全部 RUNS。
+# 可选 CLI：config 子串过滤 + --seeds 多 seed 覆盖（单一来源 tools/comparison/_runs.py）
 import sys as _sys
-_flt = [a for a in _sys.argv[1:] if not a.startswith("-")]
-if _flt:
-    RUNS = [r for r in RUNS if any(s in r[0] for s in _flt)]
+from _runs import resolve_runs
+RUNS = resolve_runs(RUNS, _sys.argv[1:])
 
 HICAT_N_PCS       = 50
 HICAT_CB_ITER     = 500   # CatBoost iterations

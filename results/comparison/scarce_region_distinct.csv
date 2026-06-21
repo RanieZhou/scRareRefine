@@ -1,0 +1,16 @@
+dataset,seed,n_labeled_rare,rts_collapsed,n_rts_collapsed,our_f1,n_others,n_beat,n_tie,win_most,is_best
+immune_dc,42,5,0.01,1,0.903,7,7,0,True,True
+immune_dc,42,13,0.05,1,0.9435,7,7,0,True,True
+immune_dc,42,27,0.10,1,0.9274,7,7,0,True,True
+pancreas_baron,42,5,0.01|0.05,2,0.7784,8,8,0,True,True
+pancreas_baron,42,10,0.10,1,0.8158,8,8,0,True,True
+pancreas_integrated,42,5,0.01,1,1.0,8,7,1,True,True
+pancreas_integrated,42,12,0.05,1,1.0,8,6,2,True,True
+pancreas_integrated,42,24,0.10,1,0.9787,8,5,1,True,False
+tabula_lung_endo,42,5,0.01,1,0.9848,8,8,0,True,True
+tabula_lung_endo,42,10,0.05,1,0.963,8,8,0,True,True
+tabula_lung_endo,42,20,0.10,1,0.9771,8,6,2,True,True
+tabula_sapiens_stomach,42,5,0.01|0.05|0.10,3,0.7451,8,8,0,True,True
+tabula_small_intestine,42,5,0.01,1,0.9774,8,6,1,True,False
+tabula_small_intestine,42,15,0.05,1,0.9774,8,4,2,False,False
+tabula_small_intestine,42,31,0.10,1,0.9848,8,5,3,True,True

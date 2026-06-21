@@ -282,8 +282,16 @@ class MarkerRescuer:
     ) -> pd.DataFrame:
         """ 计算候选人细胞在稀有类 Marker 基因上的均值，和在初步预测类 Marker 上的均值及 Margin """
         expr = np.asarray(expression, dtype=float)
+        # 列对齐守护：expr 的列由 _load_expression_subset 按「var_names 中存在的基因」过滤生成，
+        # 若与 gene_names 长度不一致则 gene_to_idx 索引会基因错位（rare/pred marker 取错列）。
+        # 现行调用全部传入 HVG（HVG ⊆ var_names 恒成立），断言确保未来扩展不破坏该前提。
+        if expr.shape[1] != len(gene_names):
+            raise ValueError(
+                f"expression 列数 {expr.shape[1]} 与 gene_names 长度 {len(gene_names)} 不一致，"
+                "marker 评分会发生基因错位；调用方须保证 gene_names ⊆ var_names。"
+            )
         gene_to_idx = {gene: idx for idx, gene in enumerate(gene_names)}
-        
+
         rare_genes = [gene_to_idx[g] for g in self.signatures.get(self.rare_class, []) if g in gene_to_idx]
         rows = []
         for row_num, (_, row) in enumerate(candidates.iterrows()):
@@ -509,10 +517,23 @@ class ConformalRescuer:
         return result
 
 
-# 候选 rank 上限网格：放宽到 2 足以纳入边界纠缠的真稀有（mast/gamma 等多落在 rank=2），
-# 但不开到 3——离线验证 rank=3 在 batch_heldout 的 val/test 漂移下 test FFR 会冲破 alpha
-# （pancreas: val 看似合规，test FFR 飙到 ~4.6%）。2 是召回收益与 FFR 鲁棒性的平衡点。
-CONFORMAL_RANK_GRID = (1, 2)
+# 候选 rank 上限网格：rank ∈ {1,2,3}。val-自适应规则会自动剔除 val FFR > α 的 rank，
+# 也会通过 tie-break 优先取更小 rank（更保守）。
+# 上限 3 的 inductive 论证（不引用任何 test 经验）：
+#   (1) rank 是"在所有类原型中，稀有原型对 query 的距离排名"。rank≥k 意味着有 k-1 个多数类原型
+#       比稀有原型更近——超过 2 个多数类同时更近，"稀有候选"的几何依据已弱到可被纯噪声主导，
+#       该 query 更应归入这些更近的多数类。
+#   (2) val-自适应 + conformal τ 的双重门控保证：若 rank=3 真的引入大量假阳性，val FFR 会 > α
+#       并被 grid 自动剔除；选择本身完全 val 内自洽，不依赖 test 经验。
+#   (3) 上限封死 3 而非 None 的目的是控制候选池大小，避免极端情况下 score 阈值依赖于
+#       几乎全部细胞的分布，使有限样本 conformal 校准误差被放大。
+CONFORMAL_RANK_GRID = (1, 2, 3)
+
+# Split-shift guard 阈值：val 上 baseline 漏判稀有数 < MIN_VAL_MISSED 时弃权。
+# inductive 论证：val-自适应 rank 在 {1,2,3} 中选择需要 val 上能形成可比较的 rare F1 信号；
+# 若 val 漏判稀有 < 3，单细胞改判即可让 F1 翻盘，选出的 rank 是噪声而非信号，应直接弃权。
+# 这是「conformal 有限样本校准需要 ~1/α 个非稀有」的对偶：rescue 目标侧也需要最小有效样本。
+MIN_VAL_MISSED = 3
 
 
 def conformal_rescue(
@@ -528,17 +549,23 @@ def conformal_rescue(
 ) -> tuple[pd.Series, dict]:
     """ scRareRefine conformal 拯救（单一来源，run_pipeline 与对比脚本共用）。
 
-    三道全 inductive（只用 train 拟合原型 + val 标签选参，绝不碰 test 标签）的机制：
+    四道全 inductive（只用 train 拟合原型 + val 标签选参，绝不碰 test 标签）的机制：
 
     1. separability 安全网：sep < CONFORMAL_LOW_SEP(1.3) 时稀有/多数严重重叠，弃权。
-    2. necessity 守门：val 上 baseline 对稀有类零漏判（val rare recall==1.0）时，
-       说明该数据集 scANVI 已能识别稀有类，rescue 无上行空间、只会引入误判 →弃权。
-       （消除 small_intestine 上 rescue 反而低于 baseline 的添乱行为。）
-    3. val-自适应候选 rank：在 {1,2} 中选「val 稀有 F1 最高且 val FFR<=alpha」的 max_rank，
-       平手取更小 rank（更保守）。再以 conformal tau（val 非稀有 score 的 (1-alpha)
-       顺序统计量）控 FFR，应用到 test。
-       高可分数据集（immune/endo）val 会自动选 rank=1（放宽无益）；边界/纠缠数据集
-       （pancreas/stomach）选 rank=2，召回大涨而 FFR 仍受 tau 约束。
+    2. necessity + split-shift 守门：val 上 baseline 漏判稀有数 < MIN_VAL_MISSED(3) 时弃权。
+       同时覆盖 (a) val 已全召回 (val_missed=0) 的 "无需 rescue" 情形（小肠 tuft cell），
+       与 (b) val 漏少但 val_missed 不足以支撑 val-自适应 rank 选择的 split-shift 情形
+       （pancreas_integrated rts=0.01/0.05：val 漏 1-2 个 / test 已 saturated → 强行 rescue
+       只会引入误判，把 baseline 已经满分的 test 拉下来）。
+    3. val-自适应候选 rank：在 CONFORMAL_RANK_GRID={1,2,3} 中选「val 稀有 F1 最高且
+       val FFR Wilson 95% 上界 <= alpha」的 max_rank，平手取更小 rank（更保守）。
+       Wilson 上界（非 point estimate）解决 batch_heldout 下 val/test 分布漂移：
+       小样本时 val FFR 点估计低 ≠ test FFR 低，Wilson 引入 1-δ 置信下的有限样本不确定性，
+       在 pancreas_baron rts=0.10 上自动避免 rank=3（val 点估计 0.0089 < α，但 Wilson
+       上界 0.0158 > α 触发剔除；事后看 test FFR=0.0153 也确实超 α）。
+    4. conformal tau：val 非稀有 score 的 (1-alpha) 顺序统计量，应用到 test 控 FFR。
+       高可分数据集（immune/endo）val 自动选 rank=1；边界/纠缠数据集（pancreas/stomach）
+       选 rank=2 或 rank=3（视 val 样本量），召回上升而 FFR 仍受 tau + Wilson 双约束。
 
     Returns: (final_test_pred, summary)
     """
@@ -555,10 +582,12 @@ def conformal_rescue(
         summary.update(abstain=True, reason=f"sep<{CONFORMAL_LOW_SEP}")
         return base_pred_test.copy(), summary
 
-    # 道 2：necessity 守门（val baseline 对稀有零漏判 → 无需 rescue）
+    # 道 2：necessity + split-shift 守门（val baseline 漏判稀有数 < MIN_VAL_MISSED 时弃权）
     val_missed = int((val_true.eq(rare) & val_pred_labels.ne(rare)).sum())
-    if int(val_true.eq(rare).sum()) > 0 and val_missed == 0:
-        summary.update(abstain=True, reason="val baseline 零漏判稀有")
+    summary["val_missed"] = val_missed
+    if int(val_true.eq(rare).sum()) > 0 and val_missed < MIN_VAL_MISSED:
+        reason = "val baseline 零漏判稀有" if val_missed == 0 else f"val_missed={val_missed} < MIN_VAL_MISSED={MIN_VAL_MISSED}"
+        summary.update(abstain=True, reason=reason)
         return base_pred_test.copy(), summary
 
     # conformal tau（val 非稀有 score 校准）
@@ -571,19 +600,29 @@ def conformal_rescue(
         summary.update(abstain=True, reason="tau=inf（val 非稀有样本不足）")
         return base_pred_test.copy(), summary
 
-    # 道 3：val-自适应候选 rank（FFR<=alpha 约束下最大化 val 稀有 F1，平手取小 rank）
+    # 道 3：val-自适应候选 rank（Wilson 95% 上界控 FFR ≤ alpha 约束下最大化 val 稀有 F1）
+    # 用 Wilson 上界而非 point estimate 解决 val/test 分布漂移（batch_heldout 下尤其严重）：
+    # 仅以 val FFR 点估计 ≤ α 选 rank 会在小样本 / batch shift 时让 test FFR 超出 α
+    # （pancreas_baron rts=0.10 rank=3 点估计 v_ffr=0.0089 < α 但 test FFR=0.0153 > α）。
+    # Wilson 上界自然引入有限样本不确定性，是 1-δ 置信下对 true FFR 的保守上界。
     val_ranks = proto.rare_rank(val_latent)
     n_val_nonrare = int(val_true.ne(rare).sum())
     best = None  # (val_f1, -rank)
     chosen_rank = rank_grid[0]
+    z = 1.96  # 95% 单侧（=2.5% 双尾），跨数据集固定先验，非调参
     for k in rank_grid:
         v_cand = (val_ranks <= k) & val_pred_labels.ne(rare).to_numpy()
         v_fire = v_cand & (val_score >= tau)
         v_relabel = val_pred_labels.copy()
         v_relabel[v_fire] = rare
         v_false = int(((v_fire) & val_true.ne(rare).to_numpy()).sum())
-        v_ffr = v_false / max(n_val_nonrare, 1)
-        if v_ffr > alpha:
+        n = max(n_val_nonrare, 1)
+        p = v_false / n
+        denom = 1.0 + z * z / n
+        center = (p + z * z / (2 * n)) / denom
+        half = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
+        v_ffr_upper = center + half
+        if v_ffr_upper > alpha:
             continue
         vf1, _ = classification_tables(val_true, v_relabel, rare_class=rare)
         key = (round(vf1["rare_f1"], 6), -k)

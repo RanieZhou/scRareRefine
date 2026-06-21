@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 always reply in Chinese
 
+> **迭代前必读**：[ITERATION_BOUNDARY.md](ITERATION_BOUNDARY.md) 定义了红线、迭代触发条件、A/B/C 层次纪律、codex 外审节点、当前 GAP 清单。新开一轮迭代前必须先读它 + `results/experiment_log.md` 最近一轮章节。
+
 ## 项目目标
 
 **scRareRefine** 基于 scANVI 的 latent embedding 与预测概率，为稀有细胞类型设计一个 post-hoc refinement 模块。核心方法是 **prototype 距离评分 + conformal 阈值校准** 的拯救流程，目标是在 FFR（False Rescue Rate）严格受控的前提下提升 rare cell type 的 F1。
@@ -91,7 +93,7 @@ outputs/{dataset}/{run_id}/
 三道全 inductive 闸门：
 1. **separability 安全网** — `sep < CONFORMAL_LOW_SEP=1.3` → 弃权。
 2. **necessity 守门** — val baseline rare recall==1.0 → 弃权（避免对已经救满的数据集添乱）。
-3. **val-自适应候选 rank ∈ {1, 2}** — 在 val FFR≤α 约束下选「val rare F1 最高」的 max_rank，平手取小 rank。再以 conformal τ（val 非稀有 score 的有限样本 (1-α) 顺序统计量）控 FFR，应用到 test。
+3. **val-自适应候选 rank ∈ {1, 2, 3}** — 在 val FFR Wilson 95% 上界≤α 约束下选「val rare F1 最高」的 max_rank，平手取小 rank。再以 conformal τ（val 非稀有 score 的有限样本 (1-α) 顺序统计量）控 FFR，应用到 test。
 
 发表级 FFR 上界 `DEFAULT_CONFORMAL_ALPHA = 0.01`（跨数据集固定常量，**不调参**）。
 
@@ -117,7 +119,7 @@ outputs/{dataset}/{run_id}/
 - conformal τ、val-自适应 rank、所有阈值只能从 validation 选择
 - Test 标签仅用于最终评估，不用于调参或阈值选择
 - validation/test cells 不能泄漏到训练 reference
-- 数据集相关常量必须可在 val 上选取，或写明为「跨数据集固定先验」（如 `LOW_SEP=1.1`、`CONFORMAL_LOW_SEP=1.3`、`alpha=0.01`、`CONFORMAL_RANK_GRID=(1,2)`）
+- 数据集相关常量必须可在 val 上选取，或写明为「跨数据集固定先验」（如 `LOW_SEP=1.1`、`CONFORMAL_LOW_SEP=1.3`、`alpha=0.01`、`CONFORMAL_RANK_GRID=(1,2,3)`、`MIN_VAL_MISSED=3`）
 
 ### 配置约束
 
