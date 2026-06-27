@@ -1,0 +1,51 @@
+% scRareRefine — draft (bioinformatics journal target; generic article class)
+% Compile: latexmk -pdf main.tex   (MiKTeX available locally)
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalize]{cleveref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{caption}
+
+\graphicspath{{figures/}}
+\input{math_commands}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\title{\bfseries Risk-controlled post-hoc rescue of rare cell types in single-cell RNA-seq under label scarcity}
+
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/0_abstract}
+\end{abstract}
+
+\input{sections/1_introduction}
+\input{sections/2_methods}
+\input{sections/3_results}
+\input{sections/4_discussion}
+\input{sections/5_conclusion}
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\appendix
+\input{sections/A_appendix}
+
+\end{document}

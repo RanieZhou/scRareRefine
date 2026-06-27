@@ -250,8 +250,8 @@ IMPORTANT: 你有上一轮留下的记忆。请核查你之前的怀疑究竟是
 - **G61-A-conformal-empirical-CI**  *(from codex round 1)* — 当前文档把 conformal τ 写成 "FFR ≤ α 保证"，但 pancreas_baron V6 FFR=0.0098 贴边 α=0.01。改写为 "empirical FFR control under val calibration"，所有 FFR 数字补 Wilson / binomial CI；说明 α 是固定先验、非调参。
 - **G62-A-rank-grid-leakage**  *(from codex round 1)* — [src/rescue.py:512-515](src/rescue.py:512) 的注释含 "离线验证 rank=3 在 batch_heldout 的 val/test 漂移下 test FFR 会冲破 alpha" → **潜在 R1 违规**（test 信息回流到 design）。改：(a) 移除注释中对 test FFR 的引用，仅以 val 数据论证；或 (b) 把 rank=3 加入 grid，由 val 自适应自动选择；并跑 rank=3 sensitivity 表明它在 val 上就被淘汰。
 - ~~**G63-A-cache-provenance**~~ *(closed Round 12)* — legacy 行透明标记为 `legacy_pre_git_sha_recording`，新行有 current sha。
-- ~~**G64-A-wilson-diagnostic**~~ *(closed Round 12)* — [wilson_diagnostics.csv](results/ablation/wilson_diagnostics.csv) 落盘。
-- ~~**G65-A-min-val-missed-sensitivity**~~ *(closed Round 12)* — [min_val_missed_sensitivity_agg.csv](results/ablation/min_val_missed_sensitivity_agg.csv)：k=3 是最小消除 pancreas_integrated 回归的阈值。
+- ~~**G64-A-wilson-diagnostic**~~ *(closed Round 12)* — [wilson_diagnostics.csv](results/ablation/diagnostics_round12/wilson_diagnostics.csv) 落盘。
+- ~~**G65-A-min-val-missed-sensitivity**~~ *(closed Round 12)* — [min_val_missed_sensitivity_agg.csv](results/ablation/diagnostics_round12/min_val_missed_sensitivity_agg.csv)：k=3 是最小消除 pancreas_integrated 回归的阈值。
 
 ---
 

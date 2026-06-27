@@ -35,7 +35,6 @@ plt.rcParams.update({
 
 DETAIL  = Path("results/comparison/comparison_summary.csv")
 OUT_PNG = Path("results/comparison/comparison_bars.png")
-OUT_PDF = Path("results/comparison/comparison_bars.pdf")
 
 # 图表只展示单一比例，避免把不同标注规模混入均值
 # 可选值：None（使用全部数据）、"0.01"、"0.05"、"0.10"、"all"
@@ -185,9 +184,7 @@ def main():
     fig.tight_layout(rect=[0, 0, 1, 0.99])
     OUT_PNG.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_PNG, bbox_inches="tight")
-    fig.savefig(OUT_PDF, bbox_inches="tight")
     print(f"[saved] {OUT_PNG}")
-    print(f"[saved] {OUT_PDF}")
 
 
 if __name__ == "__main__":

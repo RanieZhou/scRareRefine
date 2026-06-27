@@ -1,0 +1,11 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We introduced scRareRefine, a fully inductive post-hoc module that refines a frozen scANVI classifier to recover
+rare cell types under label scarcity while keeping the false-rescue rate below a fixed budget. By scoring cells with
+training-only prototype distances and gating relabelling with validation-only conformal calibration, the method
+raises rare-cell F1 in the label-scarce regime --- the only method in our benchmark to do so with a controlled
+worst-case false-rescue rate --- and abstains when rescue is not warranted. We further provided an honest analysis of
+its conservative separability gate and its failure modes. Risk-controlled refinement is a practical way to recover
+rare populations without paying an uncontrolled false-positive cost, and we hope it encourages reporting the
+operating point, not only the accuracy, of rare-cell annotation methods.

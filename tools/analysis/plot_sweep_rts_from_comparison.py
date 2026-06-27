@@ -29,7 +29,6 @@ plt.rcParams.update({
 
 AGG     = Path("results/comparison/comparison_summary_agg.csv")
 OUT_PNG = Path("results/sweep_rts/sweep_rts_curves.png")
-OUT_PDF = Path("results/sweep_rts/sweep_rts_curves.pdf")
 
 RTS_ORDER = ["0.01", "0.05", "0.10", "all"]
 DATASETS = [
@@ -106,9 +105,7 @@ def main():
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     OUT_PNG.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_PNG, bbox_inches="tight")
-    fig.savefig(OUT_PDF, bbox_inches="tight")
     print(f"[saved] {OUT_PNG}")
-    print(f"[saved] {OUT_PDF}")
 
 
 if __name__ == "__main__":

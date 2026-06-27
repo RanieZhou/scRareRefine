@@ -1,8 +1,8 @@
 """对比柱状图（网格版）：5 数据集(行) × 4 比例(列) = 20 子图。
 
-每个子图为某 (数据集, rare_train_size) 下各方法的 rare-cell F1 柱状图，
+每个子图为某 (数据集, rare_train_size) 下各方法的 rare-cell F1 柱状图（均值 ± SD），
 scRareRefine 绿色加粗高亮。数据源：results/comparison/comparison_summary_agg.csv
-（seed=42 单种子）。
+（3 seeds: 42/43/44 全格齐备，误差棒=跨 seed SD）。
 
 输出：results/comparison/comparison_bars_grid.png / .pdf
 """
@@ -29,7 +29,6 @@ plt.rcParams.update({
 
 AGG     = Path("results/comparison/comparison_summary_agg.csv")
 OUT_PNG = Path("results/comparison/comparison_bars_grid.png")
-OUT_PDF = Path("results/comparison/comparison_bars_grid.pdf")
 
 RTS_ORDER = ["0.01", "0.05", "0.10", "all"]
 METHODS = [
@@ -70,21 +69,23 @@ def main():
             sub = df[(df["dataset"] == ds) & (df["rare_train_size"] == rts)].set_index("method")
             sub = sub.reindex([m for m, _ in METHODS])
             f1s = sub["f1_mean"].tolist()
+            f1_sds = [v if pd.notna(v) else 0.0 for v in sub["f1_std"].tolist()]
 
             f1s_plot = [v if pd.notna(v) else 0.0 for v in f1s]
-            bars = ax.bar(x, f1s_plot, color=colors, edgecolor="k", linewidth=0.6)
+            bars = ax.bar(x, f1s_plot, yerr=f1_sds, color=colors, edgecolor="k", linewidth=0.6,
+                          capsize=2.5, error_kw={"elinewidth": 0.8})
             for i, v in enumerate(f1s):
                 if pd.isna(v):
                     bars[i].set_hatch("//"); bars[i].set_facecolor("#eeeeee")
             bars[ours_idx].set_linewidth(2.0); bars[ours_idx].set_edgecolor("#1a6e1a")
 
             # 每个方法柱子都标数值（横排，scRareRefine 加粗绿色；相邻交错上下高度防重叠）
-            for xi, v in zip(x, f1s):
+            for xi, v, sd in zip(x, f1s, f1_sds):
                 if pd.isna(v):
                     continue
                 is_ours = (xi == ours_idx)
                 offset = 0.02 if xi % 2 == 0 else 0.085   # 奇偶柱交错抬高
-                ax.text(xi, v + offset, f"{v:.2f}", ha="center", va="bottom",
+                ax.text(xi, v + sd + offset, f"{v:.2f}", ha="center", va="bottom",
                         fontsize=6.5,
                         fontweight="bold" if is_ours else "normal",
                         color="#1a6e1a" if is_ours else "black")
@@ -108,15 +109,17 @@ def main():
                       for m, c in METHODS]
     fig.legend(handles=legend_handles, loc="upper center", ncol=len(METHODS),
                frameon=True, bbox_to_anchor=(0.5, 1.015))
-    fig.suptitle("Rare-cell F1 by dataset (rows) × rare_train_size (cols)  —  scRareRefine vs. 8 baselines (seed=42)",
+    fig.suptitle("Rare-cell F1 by dataset (rows) × rare_train_size (cols)  —  scRareRefine vs. 8 baselines (mean ± SD over 3 seeds: 42/43/44)",
                  fontsize=13, y=1.035)
+    fig.text(0.5, -0.008,
+             "† HiCat transductive (test-aware dimensionality reduction) — upper-bound reference, not an inductive baseline.   "
+             "Error bars = SD across seeds 42/43/44 (all 9 methods × 6 datasets × 4 rts complete for 3 seeds).",
+             ha="center", va="top", fontsize=8, color="#444")
 
     fig.tight_layout(rect=[0, 0, 1, 0.985])
     OUT_PNG.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_PNG, bbox_inches="tight")
-    fig.savefig(OUT_PDF, bbox_inches="tight")
     print(f"[saved] {OUT_PNG}")
-    print(f"[saved] {OUT_PDF}")
 
 
 if __name__ == "__main__":

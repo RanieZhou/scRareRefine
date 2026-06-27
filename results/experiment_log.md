@@ -736,7 +736,7 @@ H5：**数据集 adequacy**：tabula_small_intestine 全部 4 个 rts 都属 bas
 
 7 变体 × 6 数据集 × 4 rts × seed=42 = 168 行（[results/ablation/ablation_summary.csv](ablation/ablation_summary.csv)）。
 
-**dataset adequacy regime 分布**（[results/ablation/dataset_adequacy.csv](ablation/dataset_adequacy.csv)）
+**dataset adequacy regime 分布**（[results/ablation/diagnostics_round12/dataset_adequacy.csv](ablation/diagnostics_round12/dataset_adequacy.csv)）
 
 | regime | 数量 | (数据集, rts) |
 |--------|------|--------------|
@@ -798,7 +798,7 @@ H5：**数据集 adequacy**：tabula_small_intestine 全部 4 个 rts 都属 bas
 ### 输出文件
 
 - `results/ablation/ablation_summary.csv` / `_agg.csv` / `_log.md`
-- `results/ablation/dataset_adequacy.csv`
+- `results/ablation/diagnostics_round12/dataset_adequacy.csv`
 - `results/ablation/ablation_bars.png` / `.pdf`
 - `results/codex_reviews/round01_review.md` + `REVIEWER_MEMORY.md`
 - `tmp/round10_dataset_adequacy.py`
@@ -936,7 +936,7 @@ H3：manifest 补全（用当前 git_sha 写入缺失行）不影响任何指标
 
 ### 实验结果
 
-**G64 — Wilson 诊断表**（[results/ablation/wilson_diagnostics.csv](ablation/wilson_diagnostics.csv)，72 行 = 24 配置 × 3 rank）
+**G64 — Wilson 诊断表**（[results/ablation/diagnostics_round12/wilson_diagnostics.csv](ablation/diagnostics_round12/wilson_diagnostics.csv)，72 行 = 24 配置 × 3 rank）
 
 | 状态 | 数量 |
 |------|------|
@@ -951,7 +951,7 @@ H3：manifest 补全（用当前 git_sha 写入缺失行）不影响任何指标
 - **pancreas_baron 0.10** rank=2 wilson_upper=0.01268 > α → 剔除，退到 rank=1（代价 F1 -0.024）
 - **stomach 任何 rts** rank=3 wilson_upper=0.0040 远 < α → feasible 但 val rare F1 规则平手让位给 rank=2
 
-**G65 — MIN_VAL_MISSED sensitivity**（[results/ablation/min_val_missed_sensitivity_agg.csv](ablation/min_val_missed_sensitivity_agg.csv)）
+**G65 — MIN_VAL_MISSED sensitivity**（[results/ablation/diagnostics_round12/min_val_missed_sensitivity_agg.csv](ablation/diagnostics_round12/min_val_missed_sensitivity_agg.csv)）
 
 | k | pancreas_integrated F1 | gain vs baseline | 是否回归 |
 |---|---|---|---|
@@ -1005,8 +1005,8 @@ H2 验证：k=3 是消除 pancreas_integrated 回归的最小阈值；k=5 无附
 - `tools/analysis/wilson_diagnostics.py`（新）
 - `tools/analysis/min_val_missed_sensitivity.py`（新）
 - `tools/analysis/ablation.py`：legacy_pre_git_sha_recording 标记
-- `results/ablation/wilson_diagnostics.csv`（新，72 行）
-- `results/ablation/min_val_missed_sensitivity{,_agg}.csv`（新）
+- `results/ablation/diagnostics_round12/wilson_diagnostics.csv`（新，72 行）
+- `results/ablation/diagnostics_round12/min_val_missed_sensitivity{,_agg}.csv`（新）
 - `results/ablation/ablation_summary.csv` 重生成（git_sha 列已全部明确）
 
 ---
@@ -1167,4 +1167,206 @@ scRareRefine 的稀缺区增益来自 prototype 几何 + conformal 校准的**�
 9 个对比脚本已统一支持 `--seeds`（单一来源 [tools/comparison/_runs.py](../tools/comparison/_runs.py)，已单元测试 +
 导入验证 48 runs 解析正确）。全 9 方法多 seed 命令例：`python tools/comparison/run_scanvi_comparison.py --seeds 43 44`。
 sandbox310 重型方法（TOSICA/ProtoCloud/HiCat/scCAD）算力较大，跑前再定。
+
+### Phase 3 完成（全 9 方法 3-seed，2026-06-21）
+
+**完整性**：9 方法 × 6 数据集 × 4 rts × 3 seed = **648/648 全 ok，0 失败**。两个缺口已补：
+- **scCAD / immune_dc / seed43,44**：根因是**环境用错**——`run_scCAD` 头部标明跑 scanvi311，但先前误用 sandbox310（读不了 immune 旧格式 h5ad）。改用 scanvi311 即补齐，**无需代码补丁**。
+- **TOSICA / immune_dc / seed42**：经 scanvi311 子进程回退重跑补齐（降配 epochs=10/max_gs=100，与 43/44 一致）。
+
+**配对显著性检验**（[tools/analysis/significance_test.py](../tools/analysis/significance_test.py) →
+[significance_test.csv](../results/comparison/significance_test.csv)；paired Wilcoxon 单侧 + bootstrap 95% CI，
+配对单元 (dataset,rts,seed)）：
+
+| 区间 | vs baseline | n | win/tie/los | meanΔF1 | boot 95% CI | Wilcoxon p |
+|---|---|---|---|---|---|---|
+| ALL | scANVI | 72 | 34/37/1 | +0.127 | [+0.069,+0.192] | 1.6e-7 |
+| ALL | kNN | 72 | 55/9/8 | +0.123 | [+0.085,+0.165] | 2.1e-10 |
+| ALL | CellTypist | 72 | 54/2/16 | +0.177 | [+0.125,+0.235] | 3.1e-8 |
+| ALL | scBalance | 72 | 53/7/12 | +0.173 | [+0.119,+0.231] | 1.0e-8 |
+| ALL | ProtoCloud | 72 | 52/5/15 | +0.162 | [+0.110,+0.217] | 4.0e-8 |
+| ALL | HiCat† | 72 | 61/2/9 | +0.522 | [+0.430,+0.611] | 6.5e-12 |
+| ALL | scCAD | 72 | 68/2/2 | +0.330 | [+0.283,+0.377] | 2.0e-13 |
+| ALL | TOSICA | 72 | 68/1/3 | +0.325 | [+0.262,+0.391] | 1.9e-13 |
+| **SCARCE** | scANVI | 54 | **29/25/0** | +0.160 | [+0.085,+0.244] | 1.3e-6 |
+| SCARCE | kNN | 54 | 46/6/2 | +0.153 | [+0.106,+0.204] | 1.9e-9 |
+| SCARCE | CellTypist | 54 | 51/1/2 | +0.249 | [+0.188,+0.316] | 1.8e-10 |
+| SCARCE | scBalance | 54 | 47/5/2 | +0.235 | [+0.170,+0.304] | 9.7e-10 |
+| SCARCE | ProtoCloud | 54 | 48/4/2 | +0.226 | [+0.166,+0.289] | 5.1e-10 |
+| SCARCE | HiCat† | 54 | 52/1/1 | +0.692 | [+0.607,+0.771] | 1.3e-10 |
+| SCARCE | scCAD | 54 | 52/1/1 | +0.350 | [+0.294,+0.408] | 1.3e-10 |
+| SCARCE | TOSICA | 54 | 54/0/0 | +0.395 | [+0.324,+0.467] | 8.1e-11 |
+
+要点（诚实）：
+- vs scANVI：**稀缺区 0 负**（29 胜 / 25 平，平=必要性弃权），ΔF1 CI 排除 0 → 显著且从不伤害。全集仅 1 负。
+- 对所有 8 baseline 的 ΔF1 CI 均严格 >0，p 全 < 1e-5。**HiCat†=transductive 上界**单列；scRareRefine 反超它（HiCat 多格 F1=0，transductive 优势未兑现）。
+- **p 偏乐观**：72/54 cell 非完全独立（同 (ds,rts) 的 3 seed 相关 + 小数据集 rts 标注塌缩近似重复）——论文里作"方向性证据"，不当严格独立检验。
+
+**稀缺区 win-most（3-seed 均值，去重）**（[scarce_region_distinct.csv](../results/comparison/scarce_region_distinct.csv)）：
+名义 18 格 → distinct 15（塌缩：pancreas_baron 0.01∣0.05、stomach 0.01∣0.05∣0.10，三 seed 标注数均一致 5/5/5）。
+**win-most 15/15、best 14/15**（唯一非 best：small_intestine rts=0.10，baseline 已 saturated）。标注数在 3 seed 上完全一致
+（batch_heldout 在这些数据集上 donor 分配不随 seed tie-break 改变）。
+
+**跨 seed 稳定性 flips**：核心结论无翻转——scRareRefine 在每个 testbed 逐 rts 均 ≥ baseline；唯一 seed 敏感点是
+pancreas_baron ≤5 标注（gain +0.18 但 std 0.23，G71，已记 limitation）。
+
+### Phase 3 决策 / closes
+
+- **closes G01-A-multiseed**（全 9 方法 3 seed 齐备）、**closes G02-A-statest**（显著性 + bootstrap CI 落盘）。
+- 主表口径：用 [comparison_summary_agg.csv](../results/comparison/comparison_summary_agg.csv)（3-seed mean±std）；
+  稀缺区胜负用 distinct 15 格、配 significance_test.csv。
+- 图：[comparison_bars_grid.png](../results/comparison/comparison_bars_grid.png) / comparison_bars.png 已更新为 3-seed 误差棒。
+- 未动 seed=42 既有数值（核对 core_summary seed42 行与 comparison 一致）。
+- 仍待：消融多 seed（G03，**消融设计待与用户讨论后再跑**）、Failure modes 写作节（G51）、论文初稿（G50）。
+
+### 消融重构 + 多 seed（closes G03，2026-06-21）
+
+**动机**：旧 V0–V7 消融用户反馈"乱、看似 7 组件、编号跳号（V7 后补）"。诊断：把**两类不同实验混在一张表**——
+留一法组件消融（去 sep/necessity/τ）与 rank 敏感性扫描（固定 rank 1/2/3）混编，且 V7 第十一轮才补、断了连号。
+真正可拆组件只有 **4 个**（2 弃权闸门 sep/necessity + 2 拯救机制 自适应rank/τ）。
+
+**重构**（[tools/analysis/ablation.py](../tools/analysis/ablation.py)，**仅重组实验编排 + 补 seed，不改算法/常量**）：拆成两张表。
+
+**表 1 · 组件留一法**（A0..A5，每行只去 1 组件；Δ=Full−变体，正=去掉 F1 掉这么多）——OVERALL（6ds×4rts×3seed）：
+
+| 变体 | F1 mean±std | Δ=Full−变体 | FFR_max | abstain |
+|---|---|---|---|---|
+| A0_baseline | 0.761±0.301 | +0.127 | 0 | 0/72 |
+| A1_−sep | 0.905±0.103 | −0.018 | **0.0153 (>α)** | 31/72 |
+| A2_−necessity | 0.885±0.150 | +0.002 | 0.0098 | 8/72 |
+| A3_−自适应rank(→k=1) | 0.877±0.164 | +0.010 | 0.0049 | 37/72 |
+| A4_−τ | 0.885±0.153 | +0.002 | **0.0165 (>α)** | 37/72 |
+| A5_full | 0.887±0.151 | 0 | 0.0098 | 37/72 |
+
+解读（组件角色第一次被讲清）：**自适应 rank 是唯一明显拉 F1 的组件（+0.010）；τ 的价值是控 FFR**（去掉 F1 几乎不变但 FFR 破 0.0165）；
+**sep/necessity 是安全网**——sep 去掉反而 +0.018 F1 但 FFR 破 α（价值=安全，只在少数配置触发，对应 G21）；necessity OVERALL 只 +0.002，
+但 per-dataset 是**防回归**：pancreas_integrated 去掉它 Δ=+0.0121（0.99→0.977 且冒出 FFR）、small_intestine Δ=+0.0031。
+→ 叙事：自适应 rank 拉 F1，τ 控 FFR，两闸门保安全。方法是"保守换可证"，故多数组件不增 F1 而是控风险。
+
+**表 2 · rank 敏感性**（R1/R2/R3 固定 vs R_adaptive）——OVERALL：
+
+| 变体 | F1 | recall | FFR_max |
+|---|---|---|---|
+| R1_rank1 | 0.877 | 0.838 | 0.0049 |
+| R2_rank2 | 0.865 | 0.868 | 0.0100 |
+| R3_rank3 | 0.853 | 0.875 | **0.0464 (>>α)** |
+| **R_adaptive** | **0.887** | 0.853 | 0.0098 |
+
+教科书级干净：**自适应 F1 最高且 FFR≤α；固定 rank=3 召回最高但 FFR 炸 0.046**。per-dataset：immune 固定 k=2/3 把 F1 砸到 0.82/0.81（高可分 over-fire），
+自适应正确选 k=1→0.939；lung_endo 固定 k=3 FFR 破 α，自适应选 k=1→0.977；pancreas_baron 自适应避开 k=3 的 FFR 0.046。
+→ 自适应 = "逐数据集挑到最优固定值且守住 FFR≤α"，机制被干净证明。
+
+**一致性自检**（全 PASS）：A3_minus_adaptive_rank==R1_rank1、A5_full==R_adaptive、A5_full 的 Δvs_full==0。
+
+**产物**：`ablation_summary.csv`(720 行)、`ablation_table1_components.csv`、`ablation_table2_rank.csv`、`ablation_log.md`；
+图 [ablation_table1_components.png](../results/ablation/ablation_table1_components.png)、[ablation_table2_rank.png](../results/ablation/ablation_table2_rank.png)（[tools/analysis/plot_ablation.py](../tools/analysis/plot_ablation.py) 重写，3-seed 误差棒 + α 线）。
+
+**closes G03-A-ablation**（系统化 + 多 seed + 两表结构）。修了一处标签 bug（Δvs_full 旧版符号与注释相反，已统一为 Full−变体）。
+诚实保留：sep 闸门 F1 贡献为负、只在少数配置触发（G21 未充分闭合）；pancreas_baron seed 方差大（表2误差棒可见，G71）。
+
+---
+
+## 第十四轮（2026-06-21）：层次 B — 可控 separability 扫描，验证 CONFORMAL_LOW_SEP=1.3（G21）
+
+> **目标 closes G21**：用半合成可控扫描，把 sep 阈值 1.3 从"经验值"变成"有 sep 轴成排证据支撑"。**层次 B**（机制验证），跑完调 codex 外审。
+
+### §2 三问
+
+| 必答项 | 回答 |
+|--------|------|
+| **依据从哪来** | 第十三轮消融：sep/necessity 安全机制在 6 数据集几乎不触发（sep 仅 1/24 配置）；sep_vs_gain 低可分区仅 1 个点（pancreas_baron sep=1.16）。 |
+| **现有缺陷** | `CONFORMAL_LOW_SEP=1.3` 是硬编码常量，无 sep 轴成排证据证明它落在"可救→不可救"分界，审稿人会质疑 cherry-pick（G21）。 |
+| **最低验收线（falsifiable，预设）** | sep ∈ [~1.0,~2.3] 连续扫描 ≥6 点（≥3 落在 [1.1,1.5]），明确回答"sep≥1.3 是否稳定正增益+FFR≤α；sep<1.3 是否增益坍塌/关 sep 闸门则 FFR 破 α"。**可证伪 1.3**：若 sep=1.1 仍能安全大幅 rescue（FFR≤α、gain>+0.1）则 1.3 过保守、阈值未证成。 |
+
+### Hypothesis（可证伪）
+
+存在 sep≈1.3 附近分界：之上 prototype rescue 安全有效；之下纠缠到 rescue 不再安全（gain→0 或 FFR>α），sep 闸门弃权是对的。**报告整条曲线，推翻 1.3 也照实写、不 retro-fit（R2：调整只能用 val-可选或固定先验规则）。**
+
+### 设计（预先定死，跑前不改）
+
+- 基数据集 **lung_endo**（rare=lymphatic EC，sep≈2.0）；固定 seed=42、rts=0.05、batch_heldout。
+- 纠缠算子：每个稀有细胞朝**最近多数类**（归一化表达质心最近）的随机配对细胞混 counts
+  `x'=round((1−t)·x_rare + t·x_majpair)`，固定 seed 配对，**对全体稀有细胞（train+val+test）在划分前统一施加** → "更难的数据集"，模型仍 inductive（不碰 test 标签做决策）。
+- t 网格（定死）：{0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8}，report 全部。
+- 对比：仅 scANVI + scRareRefine（**受控诊断，非 benchmark 战绩**）。
+- 每点记录：t、实际 sep、baseline/rescued F1、gain、FFR、abstain（哪道闸门）、chosen_rank、n_labeled_rare。
+- 产物：`results/sep_sweep/sep_sweep_summary.csv` + 图。provenance：记录基 h5ad 的 sha + 纠缠参数。
+
+### 结果（2026-06-21）
+
+**provenance**：base=lung_endo（sha 见 sep_sweep_summary.csv 的 base_sha 列），rare=lymphatic EC，seed=42，rts=0.05（标注稀有=10）。
+脚本 [tools/analysis/sep_sweep.py](../tools/analysis/sep_sweep.py)，图 [sep_sweep.png](sep_sweep/sep_sweep.png)（[plot_sep_sweep.py](../tools/analysis/plot_sep_sweep.py)）。
+
+**R4 记录**：t 网格由预定 9 点扩为 11 点（补 t=0.9, 0.95）。原因：首轮 sub-1.3 仅 1 点(sep=1.15)且 rescue 仍安全，
+按第十四轮预案"补 1–2 个 t 探崩塌边界"补点；report 全部点，非 cherry-pick。
+
+**自检**：t=0 精确复现真实 lung_endo rts=0.05（sep=1.879, baseline F1=0.6667, full F1=0.963，与 comparison 一致）。
+
+**完整曲线**（按实际 sep 排序；full=带 sep 闸门，nogate=关 sep 闸门 low_sep=0）：
+
+| sep | baseline_f1 | full_f1 | full_abstain | nogate_gain | nogate_ffr |
+|---|---|---|---|---|---|
+| 0.686 | 0.030 | 0.030 | 弃权 | +0.083 | **0.0105 (>α)** |
+| 0.761 | 0.029 | 0.029 | 弃权 | +0.157 | 0.0006 |
+| 1.152 | 0.086 | 0.086 | 弃权 | +0.235 | 0.0006 |
+| 1.370 | 0.030 | 0.447 | 否 | +0.417 | 0.0047 |
+| 1.451–2.227 | … | 0.53–0.96 | 否 | +0.22~+0.58 | ≤0.0047 |
+
+### Hypothesis 裁定：**1.3 被证伪（过保守），但方法主体不受影响**
+
+- **预设证伪条件命中**：sep=1.15 时 nogate gain=+0.235 (>+0.1)、FFR=0.0006 (≤α) → 按第十四轮预案，**1.3 未被证成为危险边界**。
+- **不是单调风险轴**（codex Round 3 修正）：在最低 sep(0.686) 观察到 **1 次 marginal FFR 越界**（nogate FFR=0.0105，仅略过 α；raw count 待补 G81），但 sep=0.761 又安全(0.0006) → **风险不由 sep 单变量决定，不能称"定位了崩塌边界 ~0.7"**。能说的只是：1.3 远在唯一那个越界点之上。
+- **在 sep∈[0.76, 1.3]**：rescue 本安全（FFR≤0.0006）且有益（gain +0.16~+0.24），却被 1.3 闸门弃权 →
+  **闸门牺牲了可恢复的 F1**（该区间 FFR 本就 ≤α，无需保护）。
+- **方法主体不受影响**：rescue 在 sep≥1.37 全程安全有益、conformal 控 FFR 全程有效；弃权=返回 baseline=不伤害。
+
+### 决策（R2 合规：不 retro-fit）
+
+- **不**把 1.3 改成 0.7。理由：单一基数据集（lung_endo）+ 单一纠缠方向（朝 vein EC）的合成扫描，不足以把跨数据集常量改成 per-experiment 调出来的值（R2）。
+- **保留 1.3，诚实重定性**为「**pre-specified conservative guard（保守先验）**」而非「精确危险边界」：压力测试只在最低 sep 观察到 1 次 marginal 越界，并暴露 gate 在低 sep 但安全的情形牺牲了可恢复 F1（如 sep=1.15 放弃 +0.235）。论文据此写（codex Round 3 收紧版）：
+  > "1.3 is a pre-fixed conservative abstention threshold; a controlled stress test (lung_endo, semi-synthetic entanglement, single direction/seed) found one marginal no-gate FFR violation only at the lowest observed separability, while revealing that the gate sacrifices recoverable F1 in some low-separability but empirically FFR-safe cases. Separability alone does not monotonically determine risk."
+- 这把 G21 从"1.3 是否 cherry-pick"转成"1.3 是 pre-specified 保守 guard，且公开了它牺牲 F1 的代价"——**claim 更窄、更可信（codex 明确：不是"更强证据"，是更诚实 + 更窄）**。
+
+### 诚实保留的局限
+
+- **单数据集 + 单纠缠方向**：~0.7 崩塌点是本受控设置下的，不是普适常量。
+- **t→sep 非单调**：t=0.1–0.4 时 sep 反升到 ~2.2（朝 vein 混合在低 t 反而让稀有簇更紧致），t≥0.5 才降。故按实际 sep 而非 t 作图、报告全部点。
+- 仍是 1 个基数据集；理想应在第二个数据集（如 immune）重复以确认崩塌点稳健性。
+
+### 待办
+
+- **B 层 → codex 外审**：✅ 已做（Round 3，[round03_review.md](codex_reviews/round03_review.md)，**Score 7.7/10 ↑0.5, almost**）。codex 裁定：重定性"基本诚实非找台阶"，但我"定位崩塌点 ~0.7 / 更强证据"是**过度包装**，已据此收紧（见上）。
+- codex 新增/重申 GAP：
+  - **G80-B-sepsweep-replicate**：第二基数据集/纠缠方向，确认"1.3 保守"非 lung_endo 特例。
+  - **G81-A-sepsweep-rawcounts**（部分已答）：lung_endo rts=0.05 test 非稀有=1716。**越界点 sep=0.686 的 nogate_ffr=0.0105 = 18 false rescues / 1716**（Wilson95%上界=0.0165>α）→ **是真实越界、非 1-2 细胞离散噪声**；但 sep=0.761(1 个,安全) 在其上 → 非单调成立。其余点 raw counts：安全点多为 0-8 个。仍待：把 counts/CI/rank/τ/原始 t 顺序正式写进 sweep 输出。
+  - **G82-B-global-lowsep-sensitivity**：全 benchmark 跑 low_sep∈{0,0.7,1.0,1.3,1.6} sensitivity，证 1.3 的 F1/FFR tradeoff 非单点碰巧。
+- **G21 状态：未闭合（exploratory）**。当前是 1 个 stress setting 的探索性证据 + 诚实承认保守；若论文要写成 threshold validation，须补 G80+G81+G82。
+
+> G21 = exploratory 证据 + 1.3 诚实降格为 pre-specified conservative guard；**不主张"定位崩塌边界"**（codex Round 3）。
+
+### G82 全 benchmark low_sep 敏感性（codex Round 3 #2，2026-06-21）
+
+[tools/analysis/lowsep_sensitivity.py](../tools/analysis/lowsep_sensitivity.py) → [lowsep_sensitivity_agg.csv](sep_sweep/lowsep_sensitivity_agg.csv) + [图](sep_sweep/lowsep_sensitivity.png)。
+**cache-only**（复用 648 真实嵌入，只换 sep 闸门阈值重跑 conformal，无重训）。`low_sep∈{0,0.7,1.0,1.3,1.6}`，其余组件不变。
+
+| low_sep | f1_mean | ffr_max | FFR>α 的 cell 数 | n_abstain |
+|---|---|---|---|---|
+| 0 / 0.7 / 1.0 | 0.9055 | **0.0153 (>α)** | **2** | 31 |
+| **1.3（默认）** | 0.8875 | **0.0098 (≤α)** | **0** | 37 |
+| 1.6 | 0.8574 | 0.0023 | 0 | 42 |
+
+**真实 benchmark 上 1.3 是"worst-case FFR≤α 的最小阈值"**：
+- 降到 ≤1.0：mean F1 反升 +0.018，**但 pancreas_baron（sep≈1.22, seed44 rts=0.01/0.05）破 α=0.0153**（2 cell 越界）。
+- 抬到 1.6：白丢 F1（−0.030），FFR 无改善（1.3 已 0 越界）。
+- → **1.3 不是为 F1 调出来的（降它 F1 还更高），是被 FFR≤α 约束选中**。论文可写："on the real benchmark, 1.3 is the smallest gate keeping worst-case FFR ≤ α; lowering it raises mean F1 but admits 2 FFR violations (pancreas_baron, sep≈1.22)."
+
+**诚实的张力（必须写进论文，不藏）**：合成 sep 扫描（lung_endo 朝 vein）在 sep≈0.7 才破 FFR，而真实 pancreas_baron 在 sep≈1.22 就破 → **sep→FFR-风险是数据集相关的，不是普适物理边界**（印证 codex "sep 非单变量风险轴"）。**1.3 的正当性 = 跨这种异质性的保守 cross-dataset 选择**，恰位于真实 benchmark 最高破点(1.22)之上一点。
+
+### G21 状态更新
+
+- **从 exploratory 升为「有真实 benchmark 支撑的保守先验」**：G82 在真实 6 数据集上证明 1.3 是 FFR≤α 的最小安全阈值（非 F1 调参）；合成扫描补充了"低 sep 仍可能安全"的数据集相关性。
+- **closes（实质）G21**：1.3 不再是无证据经验值——real-benchmark sensitivity（1.3 是 FFR 安全下限）+ synthetic sweep（sep-风险数据集相关）双向支撑 + 诚实承认 sep 非单变量。
+- 仍待（转后续轮，非阻塞）：G80 第二 stress 数据集（确认合成结论非 lung_endo 特例）、G81 把 raw counts/CI/rank/τ 正式写进 sweep 输出。
+
+> **关键诚实点**：G82（真实）说 1.3 偏紧（1.22 就破），G14-sweep（合成）说 1.3 偏松（0.7 才破）——两者不矛盾，共同说明 **sep-风险数据集相关，1.3 是跨异质性的保守折中**。这比单看任一实验都更可信。
 

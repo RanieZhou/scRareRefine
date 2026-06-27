@@ -22,7 +22,7 @@ import umap
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-from src.rescue import PrototypeRescuer, ConformalRescuer
+from src.rescue import PrototypeRescuer, conformal_rescue
 from src.utils import load_config, make_run_dir, parse_rare_train_size
 
 ALPHA = 0.01
@@ -66,14 +66,12 @@ def main():
     y_true    = pr["test"]["true_label"].astype(str).to_numpy()
     base_pred = pr["test"]["predicted_label"].astype(str)
     val_true  = pr["validation"]["true_label"].astype(str)
+    val_base  = pr["validation"]["predicted_label"].astype(str)
 
-    # scRareRefine（conformal rescue）
-    test_cand  = proto.isotropic_rank1(test_lat, base_pred)
-    test_score = proto.rare_membership_score(test_lat)
-    val_score  = proto.rare_membership_score(val_lat)
-    conf = ConformalRescuer(RARE, alpha=ALPHA)
-    conf.calibrate(val_score, val_true)
-    srr_pred = conf.relabel(base_pred, test_cand, test_score).astype(str).to_numpy()
+    # scRareRefine：与主方法**完全一致**的 conformal_rescue（sep/necessity 闸门 + val-自适应 rank + τ），
+    # 不再用旧的 isotropic_rank1 简化版，确保 UMAP 的 recall/precision 与主结果对得上。
+    srr_series, conf_summary = conformal_rescue(proto, base_pred, val_base, val_true, val_lat, test_lat, alpha=ALPHA)
+    srr_pred = srr_series.astype(str).to_numpy()
     base_pred = base_pred.to_numpy()
 
     # ── UMAP on test latent ──────────────────────────────────────────────────

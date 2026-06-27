@@ -115,3 +115,47 @@
 - k=3 的 sensitivity 表可作为 "MIN_VAL_MISSED 不是 cherry-pick" 的直接证据
 - 还剩 5 个未解决：multi-seed / dataset replacement / paper Methods / pancreas_baron α 边界 / failure modes section
 
+
+---
+
+## Round 4（codex 第 3 次调用）— Score 7.7/10 (↑0.5) — Verdict: almost (2026-06-21)
+
+**Codex thread**: `019f04ab-5f4f-7fa3-b51d-c3b4d41074d6`（新 session，跨会话不可续，靠本 memory 承载上下文）
+**Submitted**: G01/G02 multi-seed 闭合 + G03 消融重构 + 第十四轮 G21 可控 sep 扫描 + 我把 1.3 证伪重定性为"保守裕度"
+**Full review**: [round03_review.md](round03_review.md)
+**注**: codex 本轮无法读 repo（shell sandbox 失败），是 evidence-based 外审非文件审计。
+
+### Memory update（codex 原文 verbatim）
+
+- 新增怀疑：G21 的"sep≈0.7 崩塌边界"可能是对单个 near-boundary FFR 点的过度解释。
+- 未解决疑点：`nogate_ffr=0.0105` 的 raw false-rescue count 和 CI；是否只是离散小幅越界。
+- 未解决疑点：sep sweep 是否导出了 full/nogate 的 rank、τ、rescued count、abstain reason。
+- 未解决疑点：multi-seed significance 是否以 dataset×rts×seed 为单位，而不是把相关 cell-level observations 当独立。
+- 跨轮 pattern：凡是 hard threshold 被"验证"，必须同时报告 safe-but-blocked cases 和 unsafe-passed cases，不能只报支持安全叙事的点。
+- 跨轮 pattern：把失败假设重定性可以接受，但必须让 claim 变窄，而不是说证据更强。
+
+### 关键裁定
+
+- **multi-seed（Round 1/2 的 #1 blocker）= 已解决**。codex 确认 blocker 从"n=1 证据"转为"claim calibration"。
+- **1.3 重定性 = 基本诚实、不是找台阶**；但我第 4 点"升级成定位崩塌点的更强先验"= **过度包装**。正确表述：1.3 是 pre-fixed conservative guard；压力测试只在最低 sep 观察到 1 次 marginal FFR 越界，同时暴露 gate 在低 sep 但安全的情形牺牲了可恢复 F1。
+- **"sep 是单调风险轴" = 不支持**（0.686 破 / 0.761 安全 + t→sep 非单调）。"崩塌边界 sep≈0.7" = 弱支持，不应主张。
+- 保留 1.3 不改 = 站得住（单数据集/方向/seed 不足以改全局阈值，改了像 test-time tuning）。
+
+### Unresolved（Round 4 提出，待后续轮）
+
+1. **G21 措辞收紧**（去掉"定位 sep≈0.7"，改"最低 sep 处 1 次 marginal 越界"）— 本轮即改
+2. **sep sweep raw counts + CI**（nogate_ffr=0.0105 是几个细胞？）— 新增 G81
+3. **sep sweep 补报 full/nogate 的 rank/τ/rescued/abstain + 原始 t 顺序** — G81
+4. **全 benchmark global low_sep sensitivity**（low_sep∈{0,0.7,1.0,1.3,1.6}）— 新增 G82，证 1.3 tradeoff 非单点碰巧
+5. **第二 stress dataset/direction** — G80（确认 1.3 保守非 lung_endo 特例）
+6. **rank 选择 row-level 诊断表** — 旧 pattern 重申
+7. **necessity per-dataset counterfactual 表** — 证防回归，不说普遍涨 F1
+8. **multi-seed p 值降温**为 robust paired improvement，effect size 优先
+
+### Patterns to track（codex 累积）
+
+- hard threshold 被"验证"时必须同时报 safe-but-blocked + unsafe-passed 两侧
+- 失败假设重定性 OK，但 claim 必须变窄不能说更强
+- selection rule 必须导出 row-level 诊断表（rank/Wilson/τ）
+- near-boundary FFR 必须报 raw counts + CI，不写 strict guarantee
+
