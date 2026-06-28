@@ -40,16 +40,17 @@ DATASETS = [
     ("pancreas_integrated",    "pancreas_integrated (endothelial)\nintegrated 5-platform"),
 ]
 # (name, color, marker, linewidth, markersize) — scRareRefine 最后画、置顶突出
+# Colors match comparison plots (low-saturation muted palette)
 METHOD_STYLE = [
-    ("scANVI",       "#7f7f7f", "o", 1.5, 5),
-    ("kNN",          "#1f77b4", "s", 1.5, 5),
-    ("CellTypist",   "#2ca02c", "^", 1.5, 5),
-    ("scBalance",    "#ff7f0e", "D", 1.5, 5),
-    ("ProtoCloud",   "#9467bd", "v", 1.5, 5),
-    ("HiCat",        "#8c564b", "P", 1.5, 5),
-    ("scCAD",        "#17becf", "X", 1.5, 5),
-    ("TOSICA",       "#bcbd22", "*", 1.5, 6),
-    ("scRareRefine", "#d62728", "o", 3.0, 8.5),
+    ("scANVI",       "#888888", "o",  1.5, 5),    # neutral gray
+    ("kNN",          "#5B7FA6", "s",  1.5, 5),    # muted slate blue
+    ("CellTypist",   "#C97A50", "^",  1.5, 5),    # muted terracotta
+    ("scBalance",    "#7D6A9E", "D",  1.5, 5),    # muted indigo
+    ("ProtoCloud",   "#C47BAB", "v",  1.5, 5),    # muted dusty mauve
+    ("HiCat",        "#6BADB5", "P",  1.5, 5),    # muted steel teal
+    ("scCAD",        "#B55D5A", "X",  1.5, 5),    # muted brick rose
+    ("TOSICA",       "#906B5A", "*",  1.5, 6),    # warm sand brown
+    ("scRareRefine", "#1A7A4A", "o",  3.0, 8.5),  # deep emerald (ours)
 ]
 
 

@@ -25,11 +25,19 @@ DETAIL = Path("results/comparison/comparison_summary.csv")
 OUT = Path("results/comparison/main_summary.png")
 SCARCE = ["0.01", "0.05", "0.10"]
 ALPHA = 0.01
+# Low-saturation science palette (colorblind-aware, muted/Morandi style)
 METHODS = [
-    ("scANVI", "#7f7f7f"), ("kNN", "#1f77b4"), ("CellTypist", "#ff7f0e"),
-    ("scBalance", "#9467bd"), ("ProtoCloud", "#e377c2"), ("HiCat", "#17becf"),
-    ("scCAD", "#d62728"), ("TOSICA", "#8c564b"), ("scRareRefine", "#2ca02c"),
+    ("scANVI",       "#888888"),  # neutral gray (backbone reference)
+    ("kNN",          "#5B7FA6"),  # muted slate blue
+    ("CellTypist",   "#C97A50"),  # muted terracotta/amber
+    ("scBalance",    "#7D6A9E"),  # muted indigo
+    ("ProtoCloud",   "#C47BAB"),  # muted dusty mauve
+    ("HiCat",        "#6BADB5"),  # muted steel teal (transductive)
+    ("scCAD",        "#B55D5A"),  # muted brick rose
+    ("TOSICA",       "#906B5A"),  # warm sand brown
+    ("scRareRefine", "#1A7A4A"),  # deep emerald (our method)
 ]
+WARN_COLOR = "#B04040"  # warning red for FFR threshold / violations
 
 
 def main():
@@ -53,27 +61,27 @@ def main():
 
     b1 = ax1.bar(x, f1_mean, yerr=f1_sd, color=colors, edgecolor="k", linewidth=0.6,
                  capsize=3, error_kw={"elinewidth": 0.8})
-    b1[ours_i].set_edgecolor("#1b5e20"); b1[ours_i].set_linewidth(2.2)
+    b1[ours_i].set_edgecolor("#0D4A2A"); b1[ours_i].set_linewidth(2.2)
     for xi, v in zip(x, f1_mean):
         ax1.text(xi, v + 0.02, f"{v:.2f}", ha="center", va="bottom",
                  fontsize=8, fontweight="bold" if xi == ours_i else "normal",
-                 color="#1a6e1a" if xi == ours_i else "black")
+                 color="#1A7A4A" if xi == ours_i else "black")
     ax1.set_xticks(x); ax1.set_xticklabels(xlabels, rotation=30, ha="right")
     ax1.set_ylim(0, 1.12); ax1.set_ylabel("rare-cell F1")
     ax1.set_title("(a) Label-scarce regime (rts ≤ 0.10)\nmean ± SD over 6 datasets × 3 fractions × 3 seeds")
     ax1.grid(axis="y", ls="--", alpha=0.35); ax1.set_axisbelow(True)
 
     b2 = ax2.bar(x, ffr_max, color=colors, edgecolor="k", linewidth=0.6)
-    b2[ours_i].set_edgecolor("#1b5e20"); b2[ours_i].set_linewidth(2.2)
+    b2[ours_i].set_edgecolor("#0D4A2A"); b2[ours_i].set_linewidth(2.2)
     for i, v in enumerate(ffr_max):
         if v > ALPHA:
-            b2[i].set_edgecolor("#C0392B"); b2[i].set_linewidth(1.8)
-    ax2.axhline(ALPHA, color="#C0392B", ls="--", lw=1.2)
-    ax2.text(len(names) - 0.4, ALPHA + 0.0008, "α = 0.01", color="#C0392B", fontsize=9, ha="right", va="bottom")
+            b2[i].set_edgecolor(WARN_COLOR); b2[i].set_linewidth(1.8)
+    ax2.axhline(ALPHA, color=WARN_COLOR, ls="--", lw=1.2)
+    ax2.text(len(names) - 0.4, ALPHA + 0.0008, "α = 0.01", color=WARN_COLOR, fontsize=9, ha="right", va="bottom")
     for xi, v in zip(x, ffr_max):
         ax2.text(xi, v + max(ffr_max) * 0.02, f"{v:.3f}", ha="center", va="bottom", fontsize=7.5,
                  fontweight="bold" if (xi == ours_i or v > ALPHA) else "normal",
-                 color="#C0392B" if v > ALPHA else ("#1a6e1a" if xi == ours_i else "black"))
+                 color=WARN_COLOR if v > ALPHA else ("#1A7A4A" if xi == ours_i else "black"))
     ax2.set_xticks(x); ax2.set_xticklabels(xlabels, rotation=30, ha="right")
     ax2.set_ylabel("worst-case false-rescue rate (FFR)")
     ax2.set_title("(b) Worst-case FFR over the whole benchmark\n(max false-positive rare rate across all configs)")

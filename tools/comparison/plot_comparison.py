@@ -40,16 +40,17 @@ OUT_PNG = Path("results/comparison/comparison_bars.png")
 # 可选值：None（使用全部数据）、"0.01"、"0.05"、"0.10"、"all"
 SHOW_PROPORTION: str | None = "all"
 
+# Low-saturation science palette (colorblind-aware, muted/Morandi style)
 METHODS = [
-    ("scANVI",       "#7f7f7f"),
-    ("kNN",          "#1f77b4"),
-    ("CellTypist",   "#ff7f0e"),
-    ("scBalance",    "#9467bd"),
-    ("ProtoCloud",   "#e377c2"),   # 粉色，Cell Genomics 2026
-    ("HiCat",        "#17becf"),   # 青色，Briefings in Bioinformatics 2025（transductive†）
-    ("scCAD",        "#d62728"),   # 红色，Nature Commun 2024
-    ("TOSICA",       "#8c564b"),   # 棕色，Nature Commun 2023
-    ("scRareRefine", "#2ca02c"),
+    ("scANVI",       "#888888"),  # neutral gray (backbone reference)
+    ("kNN",          "#5B7FA6"),  # muted slate blue
+    ("CellTypist",   "#C97A50"),  # muted terracotta/amber
+    ("scBalance",    "#7D6A9E"),  # muted indigo; scBalance 2023
+    ("ProtoCloud",   "#C47BAB"),  # muted dusty mauve; Cell Genomics 2026
+    ("HiCat",        "#6BADB5"),  # muted steel teal; Briefings Bioinf 2025 (transductive†)
+    ("scCAD",        "#B55D5A"),  # muted brick rose; Nature Commun 2024
+    ("TOSICA",       "#906B5A"),  # warm sand brown; Nature Commun 2023
+    ("scRareRefine", "#1A7A4A"),  # deep emerald (our method)
 ]
 
 DATASETS = [
@@ -124,7 +125,7 @@ def main():
             ax.text(xi, f1 + sd + 0.022, f"{f1:.3f}",
                     ha="center", va="bottom", fontsize=9,
                     fontweight="bold" if is_ours else "normal",
-                    color="#1a6e1a" if is_ours else "black")
+                    color="#1A7A4A" if is_ours else "black")
         ax.set_ylim(0, 1.12)
         ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
         ax.set_title(title, fontsize=11, pad=6)
@@ -152,7 +153,7 @@ def main():
             ax.text(xi, r + sd + 0.022, f"{r:.3f}",
                     ha="center", va="bottom", fontsize=9,
                     fontweight="bold" if is_ours else "normal",
-                    color="#1a6e1a" if is_ours else "black")
+                    color="#1A7A4A" if is_ours else "black")
         ax.set_ylim(0, 1.12)
         ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
         ax.grid(True, axis="y", ls="--", alpha=0.4, linewidth=0.6)

@@ -213,7 +213,7 @@ def _run_scbalance(train_X: np.ndarray, train_labels: np.ndarray,
 def _conformal_rescue(proto, base_pred, val_lat, val_true, test_lat):
     if proto.separability_ratio < CONFORMAL_LOW_SEP:
         return base_pred.copy()
-    test_cand  = proto.isotropic_rank1(test_lat, base_pred)
+    test_cand  = proto.rank_candidate(test_lat, base_pred, max_rank=1)
     test_score = proto.rare_membership_score(test_lat)
     val_score  = proto.rare_membership_score(val_lat)
     conf = ConformalRescuer(proto.rare_class, alpha=CONFORMAL_ALPHA)

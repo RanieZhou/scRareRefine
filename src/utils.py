@@ -295,11 +295,25 @@ def log1p_cpm(x: Any) -> np.ndarray:
         row_sum[row_sum == 0] = 1.0
         normalized = x.multiply(10000.0 / row_sum[:, None])
         return np.log1p(normalized.toarray()).astype(np.float32)
-        
+
     arr = np.asarray(x, dtype=np.float32)
     row_sum = arr.sum(axis=1)
     row_sum[row_sum == 0] = 1.0
     return np.log1p(arr * (10000.0 / row_sum[:, None])).astype(np.float32)
+
+
+def load_expression_subset(adata, cell_ids: list[str], genes: list[str]) -> np.ndarray:
+    """ 依指定细胞 ID 与基因列表，从 AnnData 提取子集并计算 log1p CPM 表达值（HVG 顺序对齐）。 """
+    idx = adata.obs_names.isin(cell_ids)
+    sub = adata[idx]
+    id_pos = {cid: i for i, cid in enumerate(sub.obs_names)}
+    ordered = [id_pos[c] for c in cell_ids if c in id_pos]
+    sub = sub[ordered]
+    var_idx = [sub.var_names.get_loc(g) for g in genes if g in sub.var_names]
+    X = sub.X
+    if sparse.issparse(X):
+        X = X.toarray()
+    return log1p_cpm(np.asarray(X, dtype=np.float32)[:, var_idx])
 
 
 # ==========================================

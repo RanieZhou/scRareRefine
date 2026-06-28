@@ -6,7 +6,7 @@ immune_dc,0.01,scBalance,3,0.16,0.0266,0.0872,0.0158,0.0
 immune_dc,0.01,ProtoCloud,3,0.1373,0.0459,0.0744,0.0261,0.0
 immune_dc,0.01,HiCat,3,0.0051,0.0072,0.0026,0.0036,0.0
 immune_dc,0.01,scCAD,3,0.0,0.0,0.0,0.0,0.012825
-immune_dc,0.01,TOSICA,3,0.4305,0.253,0.318,0.1982,0.001499
+immune_dc,0.01,TOSICA,3,0.5826,0.0335,0.459,0.0181,0.006995
 immune_dc,0.01,scRareRefine,3,0.927,0.0183,0.8667,0.0322,0.000167
 immune_dc,0.05,scANVI,3,0.8711,0.0231,0.7744,0.0368,0.000167
 immune_dc,0.05,kNN,3,0.8172,0.0329,0.6923,0.0474,0.0
@@ -15,7 +15,7 @@ immune_dc,0.05,scBalance,3,0.5083,0.0681,0.3436,0.0629,0.0
 immune_dc,0.05,ProtoCloud,3,0.4939,0.0216,0.3282,0.0192,0.0
 immune_dc,0.05,HiCat,3,0.1909,0.2021,0.1205,0.1342,0.0
 immune_dc,0.05,scCAD,3,0.6871,0.0623,0.7744,0.0368,0.012825
-immune_dc,0.05,TOSICA,3,0.6125,0.0519,0.4898,0.0476,0.003165
+immune_dc,0.05,TOSICA,3,0.4297,0.0189,0.3051,0.0297,0.003831
 immune_dc,0.05,scRareRefine,3,0.9403,0.0025,0.9077,0.0109,0.000999
 immune_dc,0.10,scANVI,3,0.9105,0.0217,0.8384,0.0332,0.000167
 immune_dc,0.10,kNN,3,0.8609,0.0207,0.7564,0.0322,0.0
@@ -24,7 +24,7 @@ immune_dc,0.10,scBalance,3,0.7517,0.0199,0.6026,0.0254,0.0
 immune_dc,0.10,ProtoCloud,3,0.7356,0.0153,0.582,0.0192,0.0
 immune_dc,0.10,HiCat,3,0.2689,0.3278,0.2051,0.263,0.0
 immune_dc,0.10,scCAD,3,0.7233,0.0613,0.8384,0.0332,0.012991
-immune_dc,0.10,TOSICA,3,0.6295,0.0294,0.4898,0.0379,0.001832
+immune_dc,0.10,TOSICA,3,0.6004,0.089,0.4436,0.0853,0.000833
 immune_dc,0.10,scRareRefine,3,0.9431,0.012,0.9154,0.0218,0.000833
 immune_dc,all,scANVI,3,0.9443,0.0036,0.9128,0.0096,0.0005
 immune_dc,all,kNN,3,0.9407,0.004,0.8949,0.0096,0.000333
@@ -33,7 +33,7 @@ immune_dc,all,scBalance,3,0.9411,0.0136,0.9026,0.0202,0.0005
 immune_dc,all,ProtoCloud,3,0.9331,0.0181,0.8821,0.0368,0.000333
 immune_dc,all,HiCat,3,0.8874,0.0315,0.8077,0.0575,0.0005
 immune_dc,all,scCAD,3,0.7569,0.0473,0.9128,0.0096,0.013158
-immune_dc,all,TOSICA,3,0.9091,0.0,0.9231,0.0,0.002332
+immune_dc,all,TOSICA,3,0.8784,0.0,0.8615,0.0,0.002165
 immune_dc,all,scRareRefine,3,0.9468,0.0084,0.9334,0.0036,0.001499
 pancreas_baron,0.01,scANVI,3,0.3829,0.208,0.2597,0.1782,0.0
 pancreas_baron,0.01,kNN,3,0.3784,0.1622,0.2481,0.133,0.000611
@@ -42,7 +42,7 @@ pancreas_baron,0.01,scBalance,3,0.1495,0.0424,0.0814,0.0251,0.0
 pancreas_baron,0.01,ProtoCloud,3,0.2034,0.038,0.1163,0.0251,0.001832
 pancreas_baron,0.01,HiCat,3,0.0077,0.0108,0.0039,0.0055,0.0
 pancreas_baron,0.01,scCAD,3,0.2577,0.1329,0.2597,0.1782,0.041514
-pancreas_baron,0.01,TOSICA,3,0.0287,0.0405,0.0155,0.0219,0.004274
+pancreas_baron,0.01,TOSICA,3,0.0,0.0,0.0,0.0,0.001221
 pancreas_baron,0.01,scRareRefine,3,0.5667,0.2313,0.469,0.2534,0.009768
 pancreas_baron,0.05,scANVI,3,0.3829,0.208,0.2597,0.1782,0.0
 pancreas_baron,0.05,kNN,3,0.3784,0.1622,0.2481,0.133,0.000611
@@ -51,7 +51,7 @@ pancreas_baron,0.05,scBalance,3,0.1075,0.068,0.0581,0.038,0.0
 pancreas_baron,0.05,ProtoCloud,3,0.2034,0.038,0.1163,0.0251,0.001832
 pancreas_baron,0.05,HiCat,3,0.0,0.0,0.0,0.0,0.0
 pancreas_baron,0.05,scCAD,3,0.2577,0.1329,0.2597,0.1782,0.041514
-pancreas_baron,0.05,TOSICA,3,0.0287,0.0405,0.0155,0.0219,0.004274
+pancreas_baron,0.05,TOSICA,3,0.0,0.0,0.0,0.0,0.001221
 pancreas_baron,0.05,scRareRefine,3,0.5667,0.2313,0.469,0.2534,0.009768
 pancreas_baron,0.10,scANVI,3,0.82,0.0479,0.7171,0.0767,0.001832
 pancreas_baron,0.10,kNN,3,0.6317,0.1623,0.4884,0.1712,0.001221
@@ -60,7 +60,7 @@ pancreas_baron,0.10,scBalance,3,0.7233,0.1281,0.5814,0.1483,0.0
 pancreas_baron,0.10,ProtoCloud,3,0.6613,0.166,0.5233,0.1833,0.001221
 pancreas_baron,0.10,HiCat,3,0.0953,0.0362,0.0504,0.0197,0.0
 pancreas_baron,0.10,scCAD,3,0.6135,0.0605,0.7171,0.0767,0.043346
-pancreas_baron,0.10,TOSICA,3,0.3323,0.249,0.2481,0.1997,0.006716
+pancreas_baron,0.10,TOSICA,3,0.2194,0.072,0.1473,0.07,0.016484
 pancreas_baron,0.10,scRareRefine,3,0.8425,0.032,0.7791,0.0435,0.006716
 pancreas_baron,all,scANVI,3,0.9112,0.0105,0.8953,0.0285,0.005495
 pancreas_baron,all,kNN,3,0.915,0.0008,0.9186,0.0342,0.006716
@@ -69,7 +69,7 @@ pancreas_baron,all,scBalance,3,0.9412,0.0544,0.9845,0.011,0.016484
 pancreas_baron,all,ProtoCloud,3,0.9642,0.0139,0.9496,0.0384,0.001832
 pancreas_baron,all,HiCat,3,0.9309,0.0354,0.8798,0.0667,0.000611
 pancreas_baron,all,scCAD,3,0.7005,0.0767,0.8953,0.0285,0.044567
-pancreas_baron,all,TOSICA,3,0.8994,0.0,0.8837,0.0,0.004274
+pancreas_baron,all,TOSICA,3,0.3311,0.0,0.2907,0.0,0.02442
 pancreas_baron,all,scRareRefine,3,0.9112,0.0105,0.8953,0.0285,0.005495
 tabula_lung_endo,0.01,scANVI,3,0.3188,0.3232,0.241,0.2683,0.0
 tabula_lung_endo,0.01,kNN,3,0.8919,0.0118,0.8051,0.0192,0.0
@@ -78,7 +78,7 @@ tabula_lung_endo,0.01,scBalance,3,0.664,0.0236,0.4974,0.0262,0.0
 tabula_lung_endo,0.01,ProtoCloud,3,0.6446,0.041,0.4769,0.0453,0.0
 tabula_lung_endo,0.01,HiCat,3,0.0,0.0,0.0,0.0,0.0
 tabula_lung_endo,0.01,scCAD,3,0.6673,0.1549,0.5436,0.2046,0.002331
-tabula_lung_endo,0.01,TOSICA,3,0.8949,0.0121,0.9385,0.0125,0.006993
+tabula_lung_endo,0.01,TOSICA,3,0.8834,0.0215,0.9487,0.0145,0.009907
 tabula_lung_endo,0.01,scRareRefine,3,0.982,0.0037,0.9795,0.0145,0.001166
 tabula_lung_endo,0.05,scANVI,3,0.8569,0.1347,0.7795,0.1923,0.000583
 tabula_lung_endo,0.05,kNN,3,0.9256,0.0197,0.8667,0.0384,0.000583
@@ -87,7 +87,7 @@ tabula_lung_endo,0.05,scBalance,3,0.8568,0.0403,0.759,0.058,0.000583
 tabula_lung_endo,0.05,ProtoCloud,3,0.8677,0.0327,0.7795,0.0508,0.000583
 tabula_lung_endo,0.05,HiCat,3,0.0,0.0,0.0,0.0,0.0
 tabula_lung_endo,0.05,scCAD,3,0.9195,0.0555,0.8923,0.1095,0.002331
-tabula_lung_endo,0.05,TOSICA,3,0.9128,0.025,0.9641,0.0192,0.007576
+tabula_lung_endo,0.05,TOSICA,3,0.9089,0.0194,0.9692,0.0126,0.007576
 tabula_lung_endo,0.05,scRareRefine,3,0.9776,0.012,1.0,0.0,0.002914
 tabula_lung_endo,0.10,scANVI,3,0.9694,0.0062,0.9743,0.0073,0.001748
 tabula_lung_endo,0.10,kNN,3,0.9519,0.0065,0.9128,0.0073,0.000583
@@ -96,7 +96,7 @@ tabula_lung_endo,0.10,scBalance,3,0.9321,0.0084,0.882,0.0192,0.000583
 tabula_lung_endo,0.10,ProtoCloud,3,0.9379,0.0107,0.8923,0.0218,0.000583
 tabula_lung_endo,0.10,HiCat,3,0.0811,0.1146,0.0462,0.0653,0.0
 tabula_lung_endo,0.10,scCAD,3,0.9677,0.0088,0.9949,0.0073,0.003497
-tabula_lung_endo,0.10,TOSICA,3,0.9157,0.0124,0.9743,0.0145,0.00641
+tabula_lung_endo,0.10,TOSICA,3,0.9108,0.0041,0.9692,0.0126,0.00641
 tabula_lung_endo,0.10,scRareRefine,3,0.9694,0.0062,0.9743,0.0073,0.001748
 tabula_lung_endo,all,scANVI,3,0.9771,0.0064,0.9897,0.0145,0.001748
 tabula_lung_endo,all,kNN,3,0.9794,0.0037,0.9743,0.0145,0.001166
@@ -105,7 +105,7 @@ tabula_lung_endo,all,scBalance,3,0.9798,0.0036,0.9949,0.0073,0.001748
 tabula_lung_endo,all,ProtoCloud,3,0.9848,0.0,1.0,0.0,0.001166
 tabula_lung_endo,all,HiCat,3,0.855,0.0382,0.7487,0.0594,0.0
 tabula_lung_endo,all,scCAD,3,0.9702,0.0059,1.0,0.0,0.002914
-tabula_lung_endo,all,TOSICA,3,0.9014,0.0,0.9846,0.0,0.007576
+tabula_lung_endo,all,TOSICA,3,0.9286,0.0,1.0,0.0,0.005828
 tabula_lung_endo,all,scRareRefine,3,0.9771,0.0064,0.9897,0.0145,0.001748
 tabula_small_intestine,0.01,scANVI,3,0.9774,0.0,1.0,0.0,0.000477
 tabula_small_intestine,0.01,kNN,3,0.9744,0.0074,0.9795,0.0145,0.000318
@@ -114,7 +114,7 @@ tabula_small_intestine,0.01,scBalance,3,0.6674,0.1704,0.5333,0.1947,0.000159
 tabula_small_intestine,0.01,ProtoCloud,3,0.95,0.0102,0.9282,0.0192,0.000318
 tabula_small_intestine,0.01,HiCat,3,0.0,0.0,0.0,0.0,0.0
 tabula_small_intestine,0.01,scCAD,3,0.5226,0.0252,1.0,0.0,0.021151
-tabula_small_intestine,0.01,TOSICA,3,0.2779,0.1823,0.1846,0.1427,0.000636
+tabula_small_intestine,0.01,TOSICA,3,0.1952,0.1517,0.1538,0.1028,0.011291
 tabula_small_intestine,0.01,scRareRefine,3,0.9774,0.0,1.0,0.0,0.000477
 tabula_small_intestine,0.05,scANVI,3,0.9799,0.0035,1.0,0.0,0.000477
 tabula_small_intestine,0.05,kNN,3,0.9772,0.0001,0.9897,0.0073,0.000477
@@ -123,7 +123,7 @@ tabula_small_intestine,0.05,scBalance,3,0.9769,0.0111,0.9846,0.0218,0.000318
 tabula_small_intestine,0.05,ProtoCloud,3,0.9797,0.0036,0.9897,0.0073,0.000318
 tabula_small_intestine,0.05,HiCat,3,0.104,0.0743,0.0564,0.0404,0.0
 tabula_small_intestine,0.05,scCAD,3,0.5234,0.0263,1.0,0.0,0.021151
-tabula_small_intestine,0.05,TOSICA,3,0.6793,0.0297,0.5333,0.0316,0.000636
+tabula_small_intestine,0.05,TOSICA,3,0.5315,0.1556,0.4051,0.1715,0.000795
 tabula_small_intestine,0.05,scRareRefine,3,0.9799,0.0035,1.0,0.0,0.000477
 tabula_small_intestine,0.10,scANVI,3,0.9823,0.0035,1.0,0.0,0.000477
 tabula_small_intestine,0.10,kNN,3,0.9798,0.0071,0.9949,0.0073,0.000477
@@ -132,7 +132,7 @@ tabula_small_intestine,0.10,scBalance,3,0.9724,0.0125,0.9897,0.0073,0.000795
 tabula_small_intestine,0.10,ProtoCloud,3,0.9848,0.0,1.0,0.0,0.000318
 tabula_small_intestine,0.10,HiCat,3,0.8776,0.0254,0.7949,0.0404,0.000159
 tabula_small_intestine,0.10,scCAD,3,0.524,0.0256,1.0,0.0,0.020992
-tabula_small_intestine,0.10,TOSICA,3,0.665,0.1107,0.5641,0.0836,0.003181
+tabula_small_intestine,0.10,TOSICA,3,0.4588,0.0812,0.4154,0.0754,0.005725
 tabula_small_intestine,0.10,scRareRefine,3,0.9823,0.0035,1.0,0.0,0.000477
 tabula_small_intestine,all,scANVI,3,0.975,0.0034,1.0,0.0,0.000636
 tabula_small_intestine,all,kNN,3,0.9774,0.0,1.0,0.0,0.000477
@@ -141,7 +141,7 @@ tabula_small_intestine,all,scBalance,3,0.9799,0.0069,1.0,0.0,0.000636
 tabula_small_intestine,all,ProtoCloud,3,0.9848,0.0,1.0,0.0,0.000318
 tabula_small_intestine,all,HiCat,3,0.9717,0.0098,0.9743,0.0192,0.000318
 tabula_small_intestine,all,scCAD,3,0.522,0.026,1.0,0.0,0.02131
-tabula_small_intestine,all,TOSICA,3,0.9559,0.0,1.0,0.0,0.000954
+tabula_small_intestine,all,TOSICA,3,0.3575,0.0,0.9846,0.0,0.036419
 tabula_small_intestine,all,scRareRefine,3,0.975,0.0034,1.0,0.0,0.000636
 tabula_sapiens_stomach,0.01,scANVI,3,0.607,0.0495,0.4479,0.0642,0.00021
 tabula_sapiens_stomach,0.01,kNN,3,0.2846,0.0441,0.1667,0.0295,0.0
@@ -150,7 +150,7 @@ tabula_sapiens_stomach,0.01,scBalance,3,0.4338,0.1599,0.3542,0.164,0.002096
 tabula_sapiens_stomach,0.01,ProtoCloud,3,0.3537,0.0944,0.2187,0.0675,0.0
 tabula_sapiens_stomach,0.01,HiCat,3,0.0202,0.0286,0.0104,0.0147,0.0
 tabula_sapiens_stomach,0.01,scCAD,3,0.2546,0.0557,0.8646,0.0147,0.020539
-tabula_sapiens_stomach,0.01,TOSICA,3,0.0639,0.0313,0.1562,0.092,0.013937
+tabula_sapiens_stomach,0.01,TOSICA,3,0.1929,0.144,0.2708,0.164,0.020853
 tabula_sapiens_stomach,0.01,scRareRefine,3,0.7191,0.0216,0.5729,0.0148,0.00021
 tabula_sapiens_stomach,0.05,scANVI,3,0.607,0.0495,0.4479,0.0642,0.00021
 tabula_sapiens_stomach,0.05,kNN,3,0.2846,0.0441,0.1667,0.0295,0.0
@@ -159,7 +159,7 @@ tabula_sapiens_stomach,0.05,scBalance,3,0.3758,0.248,0.2604,0.1915,0.0
 tabula_sapiens_stomach,0.05,ProtoCloud,3,0.3537,0.0944,0.2187,0.0675,0.0
 tabula_sapiens_stomach,0.05,HiCat,3,0.0,0.0,0.0,0.0,0.0
 tabula_sapiens_stomach,0.05,scCAD,3,0.2546,0.0557,0.8646,0.0147,0.020539
-tabula_sapiens_stomach,0.05,TOSICA,3,0.0639,0.0313,0.1562,0.092,0.013937
+tabula_sapiens_stomach,0.05,TOSICA,3,0.1929,0.144,0.2708,0.164,0.020853
 tabula_sapiens_stomach,0.05,scRareRefine,3,0.7191,0.0216,0.5729,0.0148,0.00021
 tabula_sapiens_stomach,0.10,scANVI,3,0.607,0.0495,0.4479,0.0642,0.00021
 tabula_sapiens_stomach,0.10,kNN,3,0.2846,0.0441,0.1667,0.0295,0.0
@@ -168,7 +168,7 @@ tabula_sapiens_stomach,0.10,scBalance,3,0.3544,0.1776,0.2292,0.1284,0.0
 tabula_sapiens_stomach,0.10,ProtoCloud,3,0.3537,0.0944,0.2187,0.0675,0.0
 tabula_sapiens_stomach,0.10,HiCat,3,0.0202,0.0286,0.0104,0.0147,0.0
 tabula_sapiens_stomach,0.10,scCAD,3,0.2546,0.0557,0.8646,0.0147,0.020539
-tabula_sapiens_stomach,0.10,TOSICA,3,0.0639,0.0313,0.1562,0.092,0.013937
+tabula_sapiens_stomach,0.10,TOSICA,3,0.1929,0.144,0.2708,0.164,0.020853
 tabula_sapiens_stomach,0.10,scRareRefine,3,0.7191,0.0216,0.5729,0.0148,0.00021
 tabula_sapiens_stomach,all,scANVI,3,0.5585,0.1145,0.3958,0.1062,0.0
 tabula_sapiens_stomach,all,kNN,3,0.5111,0.0283,0.3438,0.0255,0.0
@@ -177,7 +177,7 @@ tabula_sapiens_stomach,all,scBalance,3,0.7257,0.0796,0.6771,0.039,0.001991
 tabula_sapiens_stomach,all,ProtoCloud,3,0.8556,0.0061,0.7708,0.0147,0.00021
 tabula_sapiens_stomach,all,HiCat,3,0.7841,0.0291,0.6458,0.0389,0.0
 tabula_sapiens_stomach,all,scCAD,3,0.2583,0.0562,0.875,0.0255,0.020539
-tabula_sapiens_stomach,all,TOSICA,3,0.1552,0.0,0.2812,0.0,0.007859
+tabula_sapiens_stomach,all,TOSICA,3,0.066,0.0,0.3125,0.0,0.02735
 tabula_sapiens_stomach,all,scRareRefine,3,0.7197,0.0209,0.5625,0.0256,0.0
 pancreas_integrated,0.01,scANVI,3,0.6667,0.4714,0.6667,0.4714,0.0
 pancreas_integrated,0.01,kNN,3,0.9693,0.0291,0.942,0.0542,0.0
@@ -186,7 +186,7 @@ pancreas_integrated,0.01,scBalance,3,0.9619,0.0224,0.9275,0.041,0.0
 pancreas_integrated,0.01,ProtoCloud,3,0.9291,0.0344,0.8696,0.0615,0.0
 pancreas_integrated,0.01,HiCat,3,0.1757,0.1271,0.1014,0.0739,0.0
 pancreas_integrated,0.01,scCAD,3,0.694,0.0512,1.0,0.0,0.016461
-pancreas_integrated,0.01,TOSICA,3,0.4632,0.3365,0.3913,0.2818,0.002939
+pancreas_integrated,0.01,TOSICA,3,0.6611,0.1733,0.5217,0.216,0.0
 pancreas_integrated,0.01,scRareRefine,3,1.0,0.0,1.0,0.0,0.0
 pancreas_integrated,0.05,scANVI,3,1.0,0.0,1.0,0.0,0.0
 pancreas_integrated,0.05,kNN,3,0.9855,0.0103,0.9855,0.0205,0.000588
@@ -195,7 +195,7 @@ pancreas_integrated,0.05,scBalance,3,0.9929,0.01,1.0,0.0,0.000588
 pancreas_integrated,0.05,ProtoCloud,3,0.9781,0.0178,0.971,0.0205,0.000588
 pancreas_integrated,0.05,HiCat,3,0.5334,0.3825,0.4493,0.3298,0.0
 pancreas_integrated,0.05,scCAD,3,0.694,0.0512,1.0,0.0,0.016461
-pancreas_integrated,0.05,TOSICA,3,0.9197,0.0268,0.913,0.0355,0.001764
+pancreas_integrated,0.05,TOSICA,3,0.9276,0.0524,0.8696,0.0939,0.0
 pancreas_integrated,0.05,scRareRefine,3,1.0,0.0,1.0,0.0,0.0
 pancreas_integrated,0.10,scANVI,3,0.9929,0.01,1.0,0.0,0.000588
 pancreas_integrated,0.10,kNN,3,0.9926,0.0105,0.9855,0.0205,0.0
@@ -204,7 +204,7 @@ pancreas_integrated,0.10,scBalance,3,0.9926,0.0105,0.9855,0.0205,0.0
 pancreas_integrated,0.10,ProtoCloud,3,0.9713,0.0264,0.971,0.0205,0.001176
 pancreas_integrated,0.10,HiCat,3,0.9683,0.0449,0.942,0.082,0.0
 pancreas_integrated,0.10,scCAD,3,0.6902,0.0487,1.0,0.0,0.016461
-pancreas_integrated,0.10,TOSICA,3,0.7138,0.2503,0.6667,0.2891,0.002352
+pancreas_integrated,0.10,TOSICA,3,0.9509,0.0104,0.9855,0.0205,0.001176
 pancreas_integrated,0.10,scRareRefine,3,0.9929,0.01,1.0,0.0,0.000588
 pancreas_integrated,all,scANVI,3,0.9651,0.0096,1.0,0.0,0.001176
 pancreas_integrated,all,kNN,3,0.9654,0.0188,1.0,0.0,0.001764
@@ -213,5 +213,5 @@ pancreas_integrated,all,scBalance,3,1.0,0.0,1.0,0.0,0.0
 pancreas_integrated,all,ProtoCloud,3,0.9529,0.0342,1.0,0.0,0.002352
 pancreas_integrated,all,HiCat,3,1.0,0.0,1.0,0.0,0.0
 pancreas_integrated,all,scCAD,3,0.6773,0.0511,1.0,0.0,0.017637
-pancreas_integrated,all,TOSICA,3,0.9787,0.0,1.0,0.0,0.000588
+pancreas_integrated,all,TOSICA,3,0.902,0.0,1.0,0.0,0.002939
 pancreas_integrated,all,scRareRefine,3,0.9651,0.0096,1.0,0.0,0.001176

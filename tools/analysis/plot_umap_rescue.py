@@ -95,8 +95,8 @@ def main():
 
     # ── 绘图 ──────────────────────────────────────────────────────────────────
     fig, axes = plt.subplots(2, 2, figsize=(13, 12))
-    GRAY = "#d9d9d9"
-    RED  = "#d62728"
+    GRAY    = "#D4D4D4"   # background cells
+    RED     = "#B55D5A"   # rare cell marker (muted brick rose)
 
     def base_scatter(ax):
         ax.scatter(xy[~true_rare, 0], xy[~true_rare, 1], s=4, c=GRAY, alpha=0.45,
@@ -132,11 +132,11 @@ def main():
     ax = axes[1, 1]
     ax.scatter(xy[~true_rare & ~fp_rescue, 0], xy[~true_rare & ~fp_rescue, 1],
                s=4, c=GRAY, alpha=0.4, linewidths=0, rasterized=True)
-    ax.scatter(xy[already_ok, 0], xy[already_ok, 1], s=24, c="#1f77b4",
+    ax.scatter(xy[already_ok, 0], xy[already_ok, 1], s=24, c="#5B7FA6",
                edgecolors="k", linewidths=0.3, label=f"already correct (n={already_ok.sum()})")
-    ax.scatter(xy[tp_rescue, 0], xy[tp_rescue, 1], s=30, c="#2ca02c", marker="*",
+    ax.scatter(xy[tp_rescue, 0], xy[tp_rescue, 1], s=30, c="#1A7A4A", marker="*",
                edgecolors="k", linewidths=0.3, label=f"rescued ✓ (n={tp_rescue.sum()})")
-    ax.scatter(xy[missed, 0], xy[missed, 1], s=24, c="#ff7f0e", marker="v",
+    ax.scatter(xy[missed, 0], xy[missed, 1], s=24, c="#C97A50", marker="v",
                edgecolors="k", linewidths=0.3, label=f"still missed (n={missed.sum()})")
     ax.scatter(xy[fp_rescue, 0], xy[fp_rescue, 1], s=40, c=RED, marker="x",
                linewidths=1.4, label=f"false rescue (n={fp_rescue.sum()})")

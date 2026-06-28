@@ -34,19 +34,20 @@ DATASETS = [
 ]
 
 # (variant_key, xtick, legend, color, highlight)
+# Low-saturation muted palette consistent with comparison plots
 TABLE1 = [
-    ("A0_baseline",            "base",  "A0 baseline scANVI",          "#9e9e9e", False),
-    ("A1_minus_sep",           "-sep",  "A1 - sep gate",               "#6baed6", False),
-    ("A2_minus_necessity",     "-nec",  "A2 - necessity guard",        "#fd8d3c", False),
-    ("A3_minus_adaptive_rank", "-adpt", "A3 - adaptive rank (=> k=1)", "#74c476", False),
-    ("A4_minus_tau",           "-tau",  "A4 - conformal tau",          "#e7298a", False),
-    ("A5_full",                "full",  "A5 full (ours)",              "#2ca02c", True),
+    ("A0_baseline",            "base",  "A0 baseline scANVI",          "#AAAAAA", False),  # light gray
+    ("A1_minus_sep",           "-sep",  "A1 - sep gate",               "#6A9EC2", False),  # muted sky blue
+    ("A2_minus_necessity",     "-nec",  "A2 - necessity guard",        "#D4A55A", False),  # muted amber
+    ("A3_minus_adaptive_rank", "-adpt", "A3 - adaptive rank (=> k=1)", "#82B090", False),  # muted sage green
+    ("A4_minus_tau",           "-tau",  "A4 - conformal tau",          "#C47BAB", False),  # muted mauve
+    ("A5_full",                "full",  "A5 full (ours)",              "#1A7A4A", True),   # deep emerald
 ]
 TABLE2 = [
-    ("R1_rank1",    "k=1",     "fixed rank=1",     "#74c476", False),
-    ("R2_rank2",    "k=2",     "fixed rank=2",     "#9e9ac8", False),
-    ("R3_rank3",    "k=3",     "fixed rank=3",     "#bcbddc", False),
-    ("R_adaptive",  "adaptive","adaptive (ours)",  "#2ca02c", True),
+    ("R1_rank1",    "k=1",     "fixed rank=1",     "#8FA8C0", False),  # light muted blue
+    ("R2_rank2",    "k=2",     "fixed rank=2",     "#9E8FC0", False),  # muted lavender
+    ("R3_rank3",    "k=3",     "fixed rank=3",     "#B8B8CC", False),  # blue-gray
+    ("R_adaptive",  "adaptive","adaptive (ours)",  "#1A7A4A", True),   # deep emerald
 ]
 
 
@@ -81,10 +82,17 @@ def plot_facets(df, variants, out_name, title, has_std=True):
                       width=0.78, capsize=2.5, error_kw={"elinewidth": 0.8})
         for i, h in enumerate(hi):
             if h:
-                bars[i].set_edgecolor("#1b5e20"); bars[i].set_linewidth(1.6)
+                bars[i].set_edgecolor("#0D4A2A"); bars[i].set_linewidth(1.6)
+        # 数据标签：柱顶显示 F1 值
+        for i, (v, s) in enumerate(zip(f1, sd if has_std else [0]*n_v)):
+            if not np.isnan(v):
+                y_top = v + (s or 0) + 0.015
+                ax.text(x[i], y_top, f"{v:.2f}", ha="center", va="bottom", fontsize=7,
+                        fontweight="bold" if hi[i] else "normal",
+                        color="#0D4A2A" if hi[i] else "#444444")
         ax.set_title(label, fontsize=10)
         ax.set_xticks(x); ax.set_xticklabels(tags, fontsize=8, rotation=20, ha="right")
-        ax.set_ylim(0, 1.12); ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        ax.set_ylim(0, 1.18); ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
         ax.grid(axis="y", alpha=0.3, linewidth=0.5); ax.set_axisbelow(True)
         ax.set_ylabel("rare F1\n(mean±SD, 3 seed×4 rts)" if col == 0 else "", fontsize=9)
         if col: ax.set_yticklabels([])
@@ -93,16 +101,28 @@ def plot_facets(df, variants, out_name, title, has_std=True):
         bars = ax.bar(x, ffr, color=colors, edgecolor="black", linewidth=0.5, width=0.78)
         for i, h in enumerate(hi):
             if h:
-                bars[i].set_edgecolor("#1b5e20"); bars[i].set_linewidth(1.6)
+                bars[i].set_edgecolor("#0D4A2A"); bars[i].set_linewidth(1.6)
         # 标红越界 FFR
         for i, v in enumerate(ffr):
             if not np.isnan(v) and v > FFR_LIMIT:
-                bars[i].set_edgecolor("#C0392B"); bars[i].set_linewidth(1.6)
-        ax.axhline(FFR_LIMIT, color="#C0392B", ls="--", lw=1.0, zorder=0)
-        ax.text(n_v - 0.3, FFR_LIMIT + ffr_ymax * 0.02, f"α={FFR_LIMIT}", color="#C0392B",
+                bars[i].set_edgecolor("#B04040"); bars[i].set_linewidth(1.6)
+        ax.axhline(FFR_LIMIT, color="#B04040", ls="--", lw=1.0, zorder=0)
+        ax.text(n_v - 0.3, FFR_LIMIT + ffr_ymax * 0.02, f"α={FFR_LIMIT}", color="#B04040",
                 fontsize=8, ha="right", va="bottom")
+        # 数据标签：FFR 柱顶显示值
+        def _fmt_ffr(v):
+            if v == 0 or v < 5e-5: return "0"
+            elif v < 0.001: return f"{v:.4f}"
+            elif v < 0.01:  return f"{v:.4f}"
+            else:           return f"{v:.3f}"
+        for i, v in enumerate(ffr):
+            if not np.isnan(v):
+                y_top = v + ffr_ymax * 0.03
+                ax.text(x[i], y_top, _fmt_ffr(v), ha="center", va="bottom", fontsize=6.5,
+                        fontweight="bold" if (hi[i] or v > FFR_LIMIT) else "normal",
+                        color="#B04040" if v > FFR_LIMIT else ("#0D4A2A" if hi[i] else "#444444"))
         ax.set_xticks(x); ax.set_xticklabels(tags, fontsize=8, rotation=20, ha="right")
-        ax.set_ylim(0, ffr_ymax); ax.grid(axis="y", alpha=0.3, linewidth=0.5); ax.set_axisbelow(True)
+        ax.set_ylim(0, ffr_ymax * 1.18); ax.grid(axis="y", alpha=0.3, linewidth=0.5); ax.set_axisbelow(True)
         ax.set_ylabel("FFR (max over rts)" if col == 0 else "", fontsize=9)
         if col: ax.set_yticklabels([])
 

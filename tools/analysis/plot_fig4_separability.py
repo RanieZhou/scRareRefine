@@ -19,7 +19,7 @@ plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10, "axes.titles
                      "axes.labelsize": 10, "legend.fontsize": 8, "savefig.dpi": 300})
 OUT = Path("results/sep_sweep")
 LOW_SEP, ALPHA = 1.3, 0.01
-GREEN, ORANGE, GREY, RED = "#2ca02c", "#ff7f0e", "#7f7f7f", "#C0392B"
+GREEN, ORANGE, GREY, RED = "#1A7A4A", "#C97A50", "#888888", "#B04040"
 
 sw = pd.read_csv(OUT / "sep_sweep_summary.csv").sort_values("sep")
 ls = pd.read_csv(OUT / "lowsep_sensitivity_agg.csv")

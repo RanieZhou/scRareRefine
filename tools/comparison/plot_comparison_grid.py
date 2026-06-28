@@ -31,16 +31,17 @@ AGG     = Path("results/comparison/comparison_summary_agg.csv")
 OUT_PNG = Path("results/comparison/comparison_bars_grid.png")
 
 RTS_ORDER = ["0.01", "0.05", "0.10", "all"]
+# Low-saturation science palette (colorblind-aware, muted/Morandi style)
 METHODS = [
-    ("scANVI",       "#7f7f7f"),
-    ("kNN",          "#1f77b4"),
-    ("CellTypist",   "#ff7f0e"),
-    ("scBalance",    "#9467bd"),
-    ("ProtoCloud",   "#e377c2"),
-    ("HiCat",        "#17becf"),
-    ("scCAD",        "#d62728"),
-    ("TOSICA",       "#8c564b"),
-    ("scRareRefine", "#2ca02c"),
+    ("scANVI",       "#888888"),  # neutral gray (backbone reference)
+    ("kNN",          "#5B7FA6"),  # muted slate blue
+    ("CellTypist",   "#C97A50"),  # muted terracotta/amber
+    ("scBalance",    "#7D6A9E"),  # muted indigo
+    ("ProtoCloud",   "#C47BAB"),  # muted dusty mauve
+    ("HiCat",        "#6BADB5"),  # muted steel teal (transductive)
+    ("scCAD",        "#B55D5A"),  # muted brick rose
+    ("TOSICA",       "#906B5A"),  # warm sand brown
+    ("scRareRefine", "#1A7A4A"),  # deep emerald (our method)
 ]
 DATASETS = [
     ("immune_dc",              "immune_dc\n(ASDC)"),
@@ -77,7 +78,7 @@ def main():
             for i, v in enumerate(f1s):
                 if pd.isna(v):
                     bars[i].set_hatch("//"); bars[i].set_facecolor("#eeeeee")
-            bars[ours_idx].set_linewidth(2.0); bars[ours_idx].set_edgecolor("#1a6e1a")
+            bars[ours_idx].set_linewidth(2.0); bars[ours_idx].set_edgecolor("#1A7A4A")
 
             # 每个方法柱子都标数值（横排，scRareRefine 加粗绿色；相邻交错上下高度防重叠）
             for xi, v, sd in zip(x, f1s, f1_sds):
@@ -88,7 +89,7 @@ def main():
                 ax.text(xi, v + sd + offset, f"{v:.2f}", ha="center", va="bottom",
                         fontsize=6.5,
                         fontweight="bold" if is_ours else "normal",
-                        color="#1a6e1a" if is_ours else "black")
+                        color="#1A7A4A" if is_ours else "black")
             ax.set_ylim(0, 1.22)
             ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
             ax.grid(True, axis="y", ls="--", alpha=0.4, linewidth=0.6)

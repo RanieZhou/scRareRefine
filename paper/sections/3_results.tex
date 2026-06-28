@@ -12,7 +12,7 @@ configuration over three random seeds ($42,43,44$). We compare scRareRefine agai
 same split and the same labelled subset: the scANVI backbone, a $k$-NN classifier on the scANVI latent, CellTypist,
 scBalance, ProtoCloud, scCAD, TOSICA, and HiCat. HiCat is transductive (its dimensionality reduction is fit on
 combined train and test cells) and is therefore reported as an upper-bound reference rather than a fair inductive
-competitor; TOSICA is run at a reduced configuration for tractability. We report rare-cell F1 and the false-rescue
+competitor; TOSICA is run with its default pathway configuration. We report rare-cell F1 and the false-rescue
 rate (FFR), aggregated as mean $\pm$ standard deviation over seeds. Because the labelled budget is
 $\max(5,\lfloor p\,\Ntrain^{\rare}\rfloor)$, several nominal fractions collapse to the same labelled set on
 small-rare datasets; we therefore report the label-scarce comparison over the $15$ \emph{distinct} labelled
@@ -61,7 +61,7 @@ is weakest (immune dendritic cells, $0.59\!\to\!0.94$; stomach mast cells, $0.61
 
 This F1 advantage is not bought with an uncontrolled false-positive cost. scRareRefine is the only method whose
 worst-case FFR over the whole benchmark stays within budget ($0.0098\le\alpha$, \cref{fig:main}b); by contrast scCAD
-($0.045$), scBalance ($0.016$) and TOSICA ($0.014$) exceed it. A paired analysis over the $54$ scarce
+($0.045$), scBalance ($0.016$) and TOSICA ($0.036$) exceed it. A paired analysis over the $54$ scarce
 configurations (six datasets $\times$ three distinct fractions $\times$ three seeds) shows that scRareRefine never
 underperforms the backbone: $29$ wins, $25$ ties --- the ties are abstentions --- and $0$ losses, with a mean F1
 improvement of $+0.16$ (bootstrap $95\%$ CI $[+0.09,+0.24]$). Against every one of the eight baselines the

@@ -36,31 +36,79 @@ RUNS = [
     ("configs/immune_dc.yaml",                42, "0.05"),
     ("configs/immune_dc.yaml",                42, "0.10"),
     ("configs/immune_dc.yaml",                42, "all"),
+    ("configs/immune_dc.yaml",                43, "0.01"),
+    ("configs/immune_dc.yaml",                43, "0.05"),
+    ("configs/immune_dc.yaml",                43, "0.10"),
+    ("configs/immune_dc.yaml",                43, "all"),
+    ("configs/immune_dc.yaml",                44, "0.01"),
+    ("configs/immune_dc.yaml",                44, "0.05"),
+    ("configs/immune_dc.yaml",                44, "0.10"),
+    ("configs/immune_dc.yaml",                44, "all"),
     # pancreas_baron
     ("configs/pancreas_baron.yaml",           42, "0.01"),
     ("configs/pancreas_baron.yaml",           42, "0.05"),
     ("configs/pancreas_baron.yaml",           42, "0.10"),
     ("configs/pancreas_baron.yaml",           42, "all"),
+    ("configs/pancreas_baron.yaml",           43, "0.01"),
+    ("configs/pancreas_baron.yaml",           43, "0.05"),
+    ("configs/pancreas_baron.yaml",           43, "0.10"),
+    ("configs/pancreas_baron.yaml",           43, "all"),
+    ("configs/pancreas_baron.yaml",           44, "0.01"),
+    ("configs/pancreas_baron.yaml",           44, "0.05"),
+    ("configs/pancreas_baron.yaml",           44, "0.10"),
+    ("configs/pancreas_baron.yaml",           44, "all"),
     # tabula_lung_endo
     ("configs/tabula_lung_endo.yaml",         42, "0.01"),
     ("configs/tabula_lung_endo.yaml",         42, "0.05"),
     ("configs/tabula_lung_endo.yaml",         42, "0.10"),
     ("configs/tabula_lung_endo.yaml",         42, "all"),
+    ("configs/tabula_lung_endo.yaml",         43, "0.01"),
+    ("configs/tabula_lung_endo.yaml",         43, "0.05"),
+    ("configs/tabula_lung_endo.yaml",         43, "0.10"),
+    ("configs/tabula_lung_endo.yaml",         43, "all"),
+    ("configs/tabula_lung_endo.yaml",         44, "0.01"),
+    ("configs/tabula_lung_endo.yaml",         44, "0.05"),
+    ("configs/tabula_lung_endo.yaml",         44, "0.10"),
+    ("configs/tabula_lung_endo.yaml",         44, "all"),
     # tabula_small_intestine
     ("configs/tabula_small_intestine.yaml",   42, "0.01"),
     ("configs/tabula_small_intestine.yaml",   42, "0.05"),
     ("configs/tabula_small_intestine.yaml",   42, "0.10"),
     ("configs/tabula_small_intestine.yaml",   42, "all"),
+    ("configs/tabula_small_intestine.yaml",   43, "0.01"),
+    ("configs/tabula_small_intestine.yaml",   43, "0.05"),
+    ("configs/tabula_small_intestine.yaml",   43, "0.10"),
+    ("configs/tabula_small_intestine.yaml",   43, "all"),
+    ("configs/tabula_small_intestine.yaml",   44, "0.01"),
+    ("configs/tabula_small_intestine.yaml",   44, "0.05"),
+    ("configs/tabula_small_intestine.yaml",   44, "0.10"),
+    ("configs/tabula_small_intestine.yaml",   44, "all"),
     # tabula_sapiens_stomach
     ("configs/tabula_sapiens_stomach.yaml",   42, "0.01"),
     ("configs/tabula_sapiens_stomach.yaml",   42, "0.05"),
     ("configs/tabula_sapiens_stomach.yaml",   42, "0.10"),
     ("configs/tabula_sapiens_stomach.yaml",   42, "all"),
+    ("configs/tabula_sapiens_stomach.yaml",   43, "0.01"),
+    ("configs/tabula_sapiens_stomach.yaml",   43, "0.05"),
+    ("configs/tabula_sapiens_stomach.yaml",   43, "0.10"),
+    ("configs/tabula_sapiens_stomach.yaml",   43, "all"),
+    ("configs/tabula_sapiens_stomach.yaml",   44, "0.01"),
+    ("configs/tabula_sapiens_stomach.yaml",   44, "0.05"),
+    ("configs/tabula_sapiens_stomach.yaml",   44, "0.10"),
+    ("configs/tabula_sapiens_stomach.yaml",   44, "all"),
     # pancreas_integrated（整合人胰腺, endothelial, 5 平台）
     ("configs/pancreas_integrated.yaml",      42, "0.01"),
     ("configs/pancreas_integrated.yaml",      42, "0.05"),
     ("configs/pancreas_integrated.yaml",      42, "0.10"),
     ("configs/pancreas_integrated.yaml",      42, "all"),
+    ("configs/pancreas_integrated.yaml",      43, "0.01"),
+    ("configs/pancreas_integrated.yaml",      43, "0.05"),
+    ("configs/pancreas_integrated.yaml",      43, "0.10"),
+    ("configs/pancreas_integrated.yaml",      43, "all"),
+    ("configs/pancreas_integrated.yaml",      44, "0.01"),
+    ("configs/pancreas_integrated.yaml",      44, "0.05"),
+    ("configs/pancreas_integrated.yaml",      44, "0.10"),
+    ("configs/pancreas_integrated.yaml",      44, "all"),
 ]
 
 # 可选 CLI：config 子串过滤 + --seeds 多 seed 覆盖（单一来源 tools/comparison/_runs.py）
@@ -82,7 +130,7 @@ ALL_METHODS = ["scANVI", "kNN", "CellTypist", "scBalance",
                "ProtoCloud", "HiCat", "scCAD", "TOSICA", "scRareRefine"]
 
 TOSICA_EPOCHS    = 10
-TOSICA_MAX_GS    = 100   # 限制 pathway 数量：模型从 ~172 MB 缩小到 ~57 MB/epoch
+TOSICA_MAX_GS    = 300   # TOSICA 原版默认值（GO_bp.gmt 共 7481 条，取前 300）
 OUT_DIR          = Path("results/comparison")
 SUMMARY_CSV      = OUT_DIR / "comparison_summary.csv"
 AGG_CSV          = OUT_DIR / "comparison_summary_agg.csv"
@@ -371,7 +419,7 @@ def run_tosica(cfg_path: str, config: dict, run_dir: Path, seed: int, rts_str: s
                      label_name="celltype",
                      epochs=TOSICA_EPOCHS,
                      max_gs=TOSICA_MAX_GS,
-                     batch_size=16)
+                     batch_size=8)
         existing_weights = sorted(project_path.glob("model-*.pth"))
         if not existing_weights:
             raise RuntimeError("TOSICA 训练未生成权重文件")

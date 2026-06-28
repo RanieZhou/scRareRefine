@@ -139,22 +139,6 @@ tabula_sapiens_stomach,42,0.01,mast cell,HiCat,ok,,,0.0,0.0,0.0,0.2756,0.0,0.0,0
 tabula_sapiens_stomach,42,0.05,mast cell,HiCat,ok,,,0.0,0.0,0.0,0.2577,0.0,0.0,0.0,0.0
 tabula_sapiens_stomach,42,0.10,mast cell,HiCat,ok,,,0.0,0.0,0.0,0.2088,0.0,0.0,0.0,0.0
 tabula_sapiens_stomach,42,all,mast cell,HiCat,ok,,,0.7925,0.6562,1.0,0.2696,0.0,13.0,0.0,0.0
-pancreas_baron,42,0.01,gamma,TOSICA,ok,,,0.086,0.0465,0.5714,0.529,0.001832,7.0,3.0,0.001832
-pancreas_baron,42,0.05,gamma,TOSICA,ok,,,0.086,0.0465,0.5714,0.529,0.001832,7.0,3.0,0.001832
-pancreas_baron,42,0.10,gamma,TOSICA,ok,,,0.0227,0.0116,0.5,0.5515,0.000611,1.0,1.0,0.000611
-pancreas_baron,42,all,gamma,TOSICA,ok,,,0.8994,0.8837,0.9157,0.5325,0.004274,11.0,5.0,0.003053
-tabula_lung_endo,42,0.01,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.8841,0.9385,0.8356,0.7964,0.006993,73.0,12.0,0.006993
-tabula_lung_endo,42,0.05,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9343,0.9846,0.8889,0.8192,0.004662,38.0,7.0,0.004079
-tabula_lung_endo,42,0.10,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9209,0.9846,0.8649,0.811,0.005828,8.0,8.0,0.004662
-tabula_lung_endo,42,all,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9014,0.9846,0.8312,0.8088,0.007576,11.0,11.0,0.00641
-tabula_small_intestine,42,0.01,intestinal tuft cell,TOSICA,ok,,,0.1127,0.0615,0.6667,0.2939,0.000318,2.0,2.0,0.000318
-tabula_small_intestine,42,0.05,intestinal tuft cell,TOSICA,ok,,,0.6465,0.4923,0.9412,0.4119,0.000318,1.0,1.0,0.000159
-tabula_small_intestine,42,0.10,intestinal tuft cell,TOSICA,ok,,,0.7523,0.6308,0.9318,0.4229,0.000477,2.0,2.0,0.000318
-tabula_small_intestine,42,all,intestinal tuft cell,TOSICA,ok,,,0.9559,1.0,0.9155,0.4279,0.000954,4.0,4.0,0.000636
-tabula_sapiens_stomach,42,0.01,mast cell,TOSICA,ok,,,0.0204,0.0312,0.0152,0.1899,0.006811,65.0,65.0,0.006811
-tabula_sapiens_stomach,42,0.05,mast cell,TOSICA,ok,,,0.0204,0.0312,0.0152,0.1899,0.006811,65.0,65.0,0.006811
-tabula_sapiens_stomach,42,0.10,mast cell,TOSICA,ok,,,0.0204,0.0312,0.0152,0.1899,0.006811,65.0,65.0,0.006811
-tabula_sapiens_stomach,42,all,mast cell,TOSICA,ok,,,0.1552,0.2812,0.1071,0.1998,0.007859,80.0,75.0,0.007859
 pancreas_integrated,42,0.01,endothelial,scANVI,ok,1.4516,,1.0,1.0,1.0,0.7577,0.0,0.0,0.0,0.0
 pancreas_integrated,42,0.05,endothelial,scANVI,ok,1.5432,,1.0,1.0,1.0,0.7539,0.0,0.0,0.0,0.0
 pancreas_integrated,42,0.10,endothelial,scANVI,ok,1.341,,0.9787,1.0,0.9583,0.7691,0.000588,0.0,0.0,0.0
@@ -183,10 +167,6 @@ pancreas_integrated,42,0.01,endothelial,HiCat,ok,,,0.0,0.0,0.0,0.3964,0.0,0.0,0.
 pancreas_integrated,42,0.05,endothelial,HiCat,ok,,,0.7222,0.5652,1.0,0.3444,0.0,0.0,0.0,0.0
 pancreas_integrated,42,0.10,endothelial,HiCat,ok,,,1.0,1.0,1.0,0.4375,0.0,0.0,0.0,0.0
 pancreas_integrated,42,all,endothelial,HiCat,ok,,,1.0,1.0,1.0,0.3594,0.0,0.0,0.0,0.0
-pancreas_integrated,42,0.01,endothelial,TOSICA,ok,,,0.0,0.0,0.0,0.586,0.0,0.0,0.0,0.0
-pancreas_integrated,42,0.05,endothelial,TOSICA,ok,,,0.8936,0.913,0.875,0.6789,0.001764,3.0,3.0,0.001764
-pancreas_integrated,42,0.10,endothelial,TOSICA,ok,,,0.9333,0.913,0.9545,0.6835,0.000588,1.0,1.0,0.000588
-pancreas_integrated,42,all,endothelial,TOSICA,ok,,,0.9787,1.0,0.9583,0.6611,0.000588,1.0,1.0,0.000588
 immune_dc,42,0.01,ASDC,scRareRefine,ok,2.1126,,0.903,0.8231,1.0,0.873,0.0,107.0,0.0,0.0
 immune_dc,42,0.05,ASDC,scRareRefine,ok,2.1376,,0.9435,0.9,0.9915,0.8927,0.000167,24.0,1.0,0.000167
 immune_dc,42,0.10,ASDC,scRareRefine,ok,2.1041,,0.9274,0.8846,0.9746,0.8863,0.0005,14.0,2.0,0.000333
@@ -451,54 +431,6 @@ pancreas_integrated,44,0.01,endothelial,scBalance,ok,1.4167,,0.9302,0.8696,1.0,0
 pancreas_integrated,44,0.05,endothelial,scBalance,ok,1.5341,,0.9787,1.0,0.9583,0.8418,0.000588,1.0,1.0,0.000588
 pancreas_integrated,44,0.10,endothelial,scBalance,ok,1.5686,,1.0,1.0,1.0,0.7777,0.0,0.0,0.0,0.0
 pancreas_integrated,44,all,endothelial,scBalance,ok,1.3665,,1.0,1.0,1.0,0.7708,0.0,0.0,0.0,0.0
-immune_dc,43,0.01,ASDC,TOSICA,ok,,,0.5816,0.4385,0.8636,0.7818,0.001499,66.0,9.0,0.001499
-immune_dc,43,0.05,ASDC,TOSICA,ok,,,0.6505,0.5154,0.8816,0.8109,0.001499,9.0,9.0,0.001499
-immune_dc,43,0.10,ASDC,TOSICA,ok,,,0.601,0.4462,0.9206,0.7692,0.000833,6.0,5.0,0.000833
-immune_dc,43,all,ASDC,TOSICA,ok,,,0.9091,0.9231,0.8955,0.7907,0.002332,21.0,13.0,0.002165
-pancreas_baron,43,0.01,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.4566,0.004274,7.0,7.0,0.004274
-pancreas_baron,43,0.05,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.4566,0.004274,7.0,7.0,0.004274
-pancreas_baron,43,0.10,gamma,TOSICA,ok,,,0.6324,0.5,0.86,0.5708,0.004274,20.0,6.0,0.003663
-pancreas_baron,43,all,gamma,TOSICA,ok,,,0.8994,0.8837,0.9157,0.5325,0.004274,13.0,5.0,0.003053
-tabula_lung_endo,43,0.01,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9118,0.9538,0.8732,0.81,0.005245,64.0,9.0,0.005245
-tabula_lung_endo,43,0.05,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9265,0.9692,0.8873,0.8187,0.004662,12.0,8.0,0.004662
-tabula_lung_endo,43,0.10,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9275,0.9846,0.8767,0.8155,0.005245,9.0,7.0,0.004079
-tabula_lung_endo,43,all,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9014,0.9846,0.8312,0.8088,0.007576,11.0,11.0,0.00641
-tabula_small_intestine,43,0.01,intestinal tuft cell,TOSICA,ok,,,0.5319,0.3846,0.8621,0.3693,0.000636,3.0,3.0,0.000477
-tabula_small_intestine,43,0.05,intestinal tuft cell,TOSICA,ok,,,0.6731,0.5385,0.8974,0.401,0.000636,3.0,3.0,0.000477
-tabula_small_intestine,43,0.10,intestinal tuft cell,TOSICA,ok,,,0.5088,0.4462,0.5918,0.3338,0.003181,19.0,19.0,0.003022
-tabula_small_intestine,43,all,intestinal tuft cell,TOSICA,ok,,,0.9559,1.0,0.9155,0.4279,0.000954,4.0,4.0,0.000636
-tabula_sapiens_stomach,43,0.01,mast cell,TOSICA,ok,,,0.0925,0.25,0.0567,0.1972,0.013937,136.0,133.0,0.013937
-tabula_sapiens_stomach,43,0.05,mast cell,TOSICA,ok,,,0.0925,0.25,0.0567,0.1972,0.013937,136.0,133.0,0.013937
-tabula_sapiens_stomach,43,0.10,mast cell,TOSICA,ok,,,0.0925,0.25,0.0567,0.1972,0.013937,136.0,133.0,0.013937
-tabula_sapiens_stomach,43,all,mast cell,TOSICA,ok,,,0.1552,0.2812,0.1071,0.1998,0.007859,78.0,75.0,0.007859
-pancreas_integrated,43,0.01,endothelial,TOSICA,ok,,,0.6,0.5217,0.7059,0.6473,0.002939,5.0,5.0,0.002939
-pancreas_integrated,43,0.05,endothelial,TOSICA,ok,,,0.9565,0.9565,0.9565,0.6731,0.000588,1.0,1.0,0.000588
-pancreas_integrated,43,0.10,endothelial,TOSICA,ok,,,0.3636,0.2609,0.6,0.6551,0.002352,4.0,4.0,0.002352
-pancreas_integrated,43,all,endothelial,TOSICA,ok,,,0.9787,1.0,0.9583,0.6611,0.000588,1.0,1.0,0.000588
-immune_dc,44,0.01,ASDC,TOSICA,ok,,,0.6359,0.4769,0.9538,0.7969,0.0005,65.0,3.0,0.0005
-immune_dc,44,0.05,ASDC,TOSICA,ok,,,0.6479,0.5308,0.8313,0.8174,0.002332,15.0,14.0,0.002332
-immune_dc,44,0.10,ASDC,TOSICA,ok,,,0.6699,0.5385,0.8861,0.7916,0.001499,11.0,9.0,0.001499
-immune_dc,44,all,ASDC,TOSICA,ok,,,0.9091,0.9231,0.8955,0.7907,0.002332,22.0,14.0,0.002332
-pancreas_baron,44,0.01,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.527,0.0,0.0,0.0,0.0
-pancreas_baron,44,0.05,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.527,0.0,0.0,0.0,0.0
-pancreas_baron,44,0.10,gamma,TOSICA,ok,,,0.3419,0.2326,0.6452,0.5271,0.006716,14.0,11.0,0.006716
-pancreas_baron,44,all,gamma,TOSICA,ok,,,0.8994,0.8837,0.9157,0.5325,0.004274,14.0,4.0,0.002442
-tabula_lung_endo,44,0.01,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.8889,0.9231,0.8571,0.7999,0.005828,30.0,10.0,0.005828
-tabula_lung_endo,44,0.05,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.8777,0.9385,0.8243,0.7969,0.007576,16.0,12.0,0.006993
-tabula_lung_endo,44,0.10,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.8986,0.9538,0.8493,0.8153,0.00641,10.0,9.0,0.005245
-tabula_lung_endo,44,all,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9014,0.9846,0.8312,0.8088,0.007576,13.0,11.0,0.00641
-tabula_small_intestine,44,0.01,intestinal tuft cell,TOSICA,ok,,,0.1892,0.1077,0.7778,0.3713,0.000318,1.0,1.0,0.000159
-tabula_small_intestine,44,0.05,intestinal tuft cell,TOSICA,ok,,,0.7184,0.5692,0.9737,0.4088,0.000159,0.0,0.0,0.0
-tabula_small_intestine,44,0.10,intestinal tuft cell,TOSICA,ok,,,0.7339,0.6154,0.9091,0.3231,0.000636,3.0,3.0,0.000477
-tabula_small_intestine,44,all,intestinal tuft cell,TOSICA,ok,,,0.9559,1.0,0.9155,0.4279,0.000954,4.0,4.0,0.000636
-tabula_sapiens_stomach,44,0.01,mast cell,TOSICA,ok,,,0.0789,0.1875,0.05,0.1969,0.011946,118.0,114.0,0.011946
-tabula_sapiens_stomach,44,0.05,mast cell,TOSICA,ok,,,0.0789,0.1875,0.05,0.1969,0.011946,118.0,114.0,0.011946
-tabula_sapiens_stomach,44,0.10,mast cell,TOSICA,ok,,,0.0789,0.1875,0.05,0.1969,0.011946,118.0,114.0,0.011946
-tabula_sapiens_stomach,44,all,mast cell,TOSICA,ok,,,0.1552,0.2812,0.1071,0.1998,0.007859,79.0,75.0,0.007859
-pancreas_integrated,44,0.01,endothelial,TOSICA,ok,,,0.7895,0.6522,1.0,0.6994,0.0,15.0,0.0,0.0
-pancreas_integrated,44,0.05,endothelial,TOSICA,ok,,,0.9091,0.8696,0.9524,0.6821,0.000588,1.0,1.0,0.000588
-pancreas_integrated,44,0.10,endothelial,TOSICA,ok,,,0.8444,0.8261,0.8636,0.7086,0.001764,3.0,3.0,0.001764
-pancreas_integrated,44,all,endothelial,TOSICA,ok,,,0.9787,1.0,0.9583,0.6611,0.000588,1.0,1.0,0.000588
 immune_dc,43,0.01,ASDC,ProtoCloud,ok,,,0.156,0.0846,1.0,0.7524,0.0,11.0,0.0,0.0
 immune_dc,43,0.05,ASDC,ProtoCloud,ok,,,0.4706,0.3077,1.0,0.7928,0.0,0.0,0.0,0.0
 immune_dc,43,0.10,ASDC,ProtoCloud,ok,,,0.7192,0.5615,1.0,0.8273,0.0,1.0,0.0,0.0
@@ -643,7 +575,75 @@ immune_dc,44,0.01,ASDC,scCAD,ok,,,0.0,0.0,0.0,0.7283,0.012658,76.0,76.0,0.012658
 immune_dc,44,0.05,ASDC,scCAD,ok,,,0.6645,0.7923,0.5722,0.8368,0.012825,76.0,76.0,0.012658
 immune_dc,44,0.10,ASDC,scCAD,ok,,,0.7003,0.8538,0.5936,0.8394,0.012658,76.0,76.0,0.012658
 immune_dc,44,all,ASDC,scCAD,ok,,,0.7295,0.9231,0.603,0.8524,0.013158,76.0,76.0,0.012658
-immune_dc,42,0.01,ASDC,TOSICA,ok,,,0.0741,0.0385,1.0,0.7092,0.0,5.0,0.0,0.0
-immune_dc,42,0.05,ASDC,TOSICA,ok,,,0.5392,0.4231,0.7432,0.7603,0.003165,25.0,19.0,0.003165
-immune_dc,42,0.10,ASDC,TOSICA,ok,,,0.6176,0.4846,0.8514,0.7674,0.001832,15.0,11.0,0.001832
-immune_dc,42,all,ASDC,TOSICA,ok,,,0.9091,0.9231,0.8955,0.7907,0.002332,23.0,13.0,0.002165
+immune_dc,42,0.01,ASDC,TOSICA,ok,,,0.5362,0.4846,0.6,0.7448,0.006995,105.0,42.0,0.006995
+immune_dc,42,0.05,ASDC,TOSICA,ok,,,0.426,0.2769,0.9231,0.7156,0.0005,4.0,3.0,0.0005
+immune_dc,42,0.10,ASDC,TOSICA,ok,,,0.6667,0.5077,0.9706,0.7625,0.000333,3.0,2.0,0.000333
+immune_dc,42,all,ASDC,TOSICA,ok,,,0.8784,0.8615,0.896,0.8073,0.002165,20.0,13.0,0.002165
+immune_dc,43,0.01,ASDC,TOSICA,ok,,,0.5979,0.4462,0.9062,0.7041,0.000999,64.0,6.0,0.000999
+immune_dc,43,0.05,ASDC,TOSICA,ok,,,0.4086,0.2923,0.6786,0.6962,0.002998,18.0,18.0,0.002998
+immune_dc,43,0.10,ASDC,TOSICA,ok,,,0.4746,0.3231,0.8936,0.7246,0.000833,6.0,5.0,0.000833
+immune_dc,43,all,ASDC,TOSICA,ok,,,0.8784,0.8615,0.896,0.8073,0.002165,18.0,13.0,0.002165
+immune_dc,44,0.01,ASDC,TOSICA,ok,,,0.6138,0.4462,0.9831,0.7452,0.000167,59.0,1.0,0.000167
+immune_dc,44,0.05,ASDC,TOSICA,ok,,,0.4545,0.3462,0.6618,0.7006,0.003831,23.0,23.0,0.003831
+immune_dc,44,0.10,ASDC,TOSICA,ok,,,0.6599,0.5,0.9701,0.7625,0.000333,4.0,2.0,0.000333
+immune_dc,44,all,ASDC,TOSICA,ok,,,0.8784,0.8615,0.896,0.8073,0.002165,18.0,13.0,0.002165
+pancreas_baron,42,0.01,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.3717,0.0,0.0,0.0,0.0
+pancreas_baron,42,0.05,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.3717,0.0,0.0,0.0,0.0
+pancreas_baron,42,0.10,gamma,TOSICA,ok,,,0.2062,0.1163,0.9091,0.3157,0.000611,1.0,1.0,0.000611
+pancreas_baron,42,all,gamma,TOSICA,ok,,,0.3311,0.2907,0.3846,0.3723,0.02442,38.0,38.0,0.023199
+pancreas_baron,43,0.01,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.334,0.0,0.0,0.0,0.0
+pancreas_baron,43,0.05,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.334,0.0,0.0,0.0,0.0
+pancreas_baron,43,0.10,gamma,TOSICA,ok,,,0.1386,0.0814,0.4667,0.3069,0.004884,10.0,8.0,0.004884
+pancreas_baron,43,all,gamma,TOSICA,ok,,,0.3311,0.2907,0.3846,0.3723,0.02442,41.0,40.0,0.02442
+pancreas_baron,44,0.01,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.3629,0.001221,2.0,2.0,0.001221
+pancreas_baron,44,0.05,gamma,TOSICA,ok,,,0.0,0.0,0.0,0.3629,0.001221,2.0,2.0,0.001221
+pancreas_baron,44,0.10,gamma,TOSICA,ok,,,0.3134,0.2442,0.4375,0.3367,0.016484,27.0,27.0,0.016484
+pancreas_baron,44,all,gamma,TOSICA,ok,,,0.3311,0.2907,0.3846,0.3723,0.02442,41.0,40.0,0.02442
+tabula_lung_endo,42,0.01,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.8531,0.9385,0.7821,0.797,0.009907,78.0,17.0,0.009907
+tabula_lung_endo,42,0.05,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9078,0.9846,0.8421,0.8124,0.006993,42.0,11.0,0.00641
+tabula_lung_endo,42,0.10,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.913,0.9692,0.863,0.8133,0.005828,8.0,8.0,0.004662
+tabula_lung_endo,42,all,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9286,1.0,0.8667,0.8221,0.005828,8.0,8.0,0.004662
+tabula_lung_endo,43,0.01,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9,0.9692,0.84,0.8095,0.006993,68.0,12.0,0.006993
+tabula_lung_endo,43,0.05,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9333,0.9692,0.9,0.8271,0.004079,11.0,7.0,0.004079
+tabula_lung_endo,43,0.10,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9143,0.9846,0.8533,0.8105,0.00641,11.0,9.0,0.005245
+tabula_lung_endo,43,all,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9286,1.0,0.8667,0.8221,0.005828,8.0,8.0,0.004662
+tabula_lung_endo,44,0.01,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.8971,0.9385,0.8592,0.8137,0.005828,31.0,10.0,0.005828
+tabula_lung_endo,44,0.05,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.8857,0.9538,0.8267,0.8123,0.007576,16.0,12.0,0.006993
+tabula_lung_endo,44,0.10,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9051,0.9538,0.8611,0.8173,0.005828,9.0,8.0,0.004662
+tabula_lung_endo,44,all,endothelial cell of lymphatic vessel,TOSICA,ok,,,0.9286,1.0,0.8667,0.8221,0.005828,10.0,8.0,0.004662
+tabula_small_intestine,42,0.01,intestinal tuft cell,TOSICA,ok,,,0.1622,0.1846,0.1446,0.3261,0.011291,71.0,71.0,0.011291
+tabula_small_intestine,42,0.05,intestinal tuft cell,TOSICA,ok,,,0.4,0.2615,0.85,0.4339,0.000477,2.0,2.0,0.000318
+tabula_small_intestine,42,0.10,intestinal tuft cell,TOSICA,ok,,,0.3443,0.3231,0.3684,0.4018,0.005725,35.0,35.0,0.005566
+tabula_small_intestine,42,all,intestinal tuft cell,TOSICA,ok,,,0.3575,0.9846,0.2184,0.3846,0.036419,227.0,227.0,0.036101
+tabula_small_intestine,43,0.01,intestinal tuft cell,TOSICA,ok,,,0.3953,0.2615,0.8095,0.3494,0.000636,3.0,3.0,0.000477
+tabula_small_intestine,43,0.05,intestinal tuft cell,TOSICA,ok,,,0.75,0.6462,0.8936,0.4028,0.000795,5.0,5.0,0.000795
+tabula_small_intestine,43,0.10,intestinal tuft cell,TOSICA,ok,,,0.5243,0.4154,0.7105,0.3932,0.001749,10.0,10.0,0.00159
+tabula_small_intestine,43,all,intestinal tuft cell,TOSICA,ok,,,0.3575,0.9846,0.2184,0.3846,0.036419,227.0,227.0,0.036101
+tabula_small_intestine,44,0.01,intestinal tuft cell,TOSICA,ok,,,0.0282,0.0154,0.1667,0.3287,0.000795,5.0,5.0,0.000795
+tabula_small_intestine,44,0.05,intestinal tuft cell,TOSICA,ok,,,0.4444,0.3077,0.8,0.3576,0.000795,5.0,5.0,0.000795
+tabula_small_intestine,44,0.10,intestinal tuft cell,TOSICA,ok,,,0.5077,0.5077,0.5077,0.3794,0.005089,30.0,30.0,0.004771
+tabula_small_intestine,44,all,intestinal tuft cell,TOSICA,ok,,,0.3575,0.9846,0.2184,0.3846,0.036419,227.0,227.0,0.036101
+tabula_sapiens_stomach,42,0.01,mast cell,TOSICA,ok,,,0.1379,0.125,0.1538,0.2338,0.002305,23.0,22.0,0.002305
+tabula_sapiens_stomach,42,0.05,mast cell,TOSICA,ok,,,0.1379,0.125,0.1538,0.2338,0.002305,23.0,22.0,0.002305
+tabula_sapiens_stomach,42,0.10,mast cell,TOSICA,ok,,,0.1379,0.125,0.1538,0.2338,0.002305,23.0,22.0,0.002305
+tabula_sapiens_stomach,42,all,mast cell,TOSICA,ok,,,0.066,0.3125,0.0369,0.2389,0.02735,266.0,261.0,0.02735
+tabula_sapiens_stomach,43,0.01,mast cell,TOSICA,ok,,,0.0506,0.1875,0.0293,0.2651,0.020853,200.0,199.0,0.020853
+tabula_sapiens_stomach,43,0.05,mast cell,TOSICA,ok,,,0.0506,0.1875,0.0293,0.2651,0.020853,200.0,199.0,0.020853
+tabula_sapiens_stomach,43,0.10,mast cell,TOSICA,ok,,,0.0506,0.1875,0.0293,0.2651,0.020853,200.0,199.0,0.020853
+tabula_sapiens_stomach,43,all,mast cell,TOSICA,ok,,,0.066,0.3125,0.0369,0.2389,0.02735,262.0,261.0,0.02735
+tabula_sapiens_stomach,44,0.01,mast cell,TOSICA,ok,,,0.3902,0.5,0.32,0.2846,0.003563,41.0,34.0,0.003563
+tabula_sapiens_stomach,44,0.05,mast cell,TOSICA,ok,,,0.3902,0.5,0.32,0.2846,0.003563,41.0,34.0,0.003563
+tabula_sapiens_stomach,44,0.10,mast cell,TOSICA,ok,,,0.3902,0.5,0.32,0.2846,0.003563,41.0,34.0,0.003563
+tabula_sapiens_stomach,44,all,mast cell,TOSICA,ok,,,0.066,0.3125,0.0369,0.2389,0.02735,262.0,261.0,0.02735
+pancreas_integrated,42,0.01,endothelial,TOSICA,ok,,,0.5161,0.3478,1.0,0.6404,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.05,endothelial,TOSICA,ok,,,1.0,1.0,1.0,0.6974,0.0,0.0,0.0,0.0
+pancreas_integrated,42,0.10,endothelial,TOSICA,ok,,,0.9583,1.0,0.92,0.7672,0.001176,2.0,2.0,0.001176
+pancreas_integrated,42,all,endothelial,TOSICA,ok,,,0.902,1.0,0.8214,0.7635,0.002939,4.0,4.0,0.002352
+pancreas_integrated,43,0.01,endothelial,TOSICA,ok,,,0.9048,0.8261,1.0,0.6011,0.0,0.0,0.0,0.0
+pancreas_integrated,43,0.05,endothelial,TOSICA,ok,,,0.9048,0.8261,1.0,0.6855,0.0,0.0,0.0,0.0
+pancreas_integrated,43,0.10,endothelial,TOSICA,ok,,,0.9362,0.9565,0.9167,0.7411,0.001176,2.0,2.0,0.001176
+pancreas_integrated,43,all,endothelial,TOSICA,ok,,,0.902,1.0,0.8214,0.7635,0.002939,5.0,5.0,0.002939
+pancreas_integrated,44,0.01,endothelial,TOSICA,ok,,,0.5625,0.3913,1.0,0.5964,0.0,9.0,0.0,0.0
+pancreas_integrated,44,0.05,endothelial,TOSICA,ok,,,0.878,0.7826,1.0,0.6829,0.0,0.0,0.0,0.0
+pancreas_integrated,44,0.10,endothelial,TOSICA,ok,,,0.9583,1.0,0.92,0.7005,0.001176,2.0,2.0,0.001176
+pancreas_integrated,44,all,endothelial,TOSICA,ok,,,0.902,1.0,0.8214,0.7635,0.002939,5.0,5.0,0.002939

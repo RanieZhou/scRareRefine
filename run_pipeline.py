@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from src.preprocess import run_preprocessing
 from src.model import run_model_training
-from src.rescue import run_post_hoc_rescue, MarkerRescuer, _load_expression_subset, DEFAULT_CONFORMAL_ALPHA
+from src.rescue import PrototypeRescuer, conformal_rescue, DEFAULT_CONFORMAL_ALPHA
 from src.utils import (
     load_config,
     load_adata,
@@ -30,7 +30,8 @@ from src.utils import (
     plot_rescue_effect,
     build_manifest,
     check_manifest,
-    ResourceMonitor
+    ResourceMonitor,
+    load_expression_subset,
 )
 
 
@@ -238,19 +239,52 @@ def main() -> None:
             "major_to_rare_false_rescue_rate": 0.0
         }]
         
-        # 执行 scRareRefine 自适应融合拯救
-        # 主路径为 conformal：conformal 分支只读 conformal_alpha，不读 max_false_rescue_rate
-        # （二者在 run_post_hoc_rescue 内语义独立，详见 src/rescue.py 的函数 docstring），
-        # 因此把 CLI 暴露的唯一阈值参数映射到当前实际生效的 conformal_alpha 上。
-        final_test_pred, summary = run_post_hoc_rescue(
-            adata,
-            predictions_dict,
-            latents_dict,
-            selected_genes,
-            rare_class=rare_class,
-            strategy="conformal",
-            conformal_alpha=max_false_rescue_rate
+        # 执行 scRareRefine conformal 拯救
+        def _latent_matrix(df):
+            return df[[c for c in df.columns if c.startswith("latent_")]].to_numpy()
+
+        train_pred_df = predictions_dict["train"]
+        val_pred_df   = predictions_dict["validation"]
+        test_pred_df  = predictions_dict["test"]
+
+        proto = PrototypeRescuer(rare_class)
+        proto.fit(_latent_matrix(latents_dict["train"]),
+                  train_pred_df["true_label"],
+                  train_pred_df["is_labeled_for_scanvi"].astype(bool).to_numpy())
+
+        print(f"\n====== [scRareRefine 拯救中心] 激活后处理校正算法 (策略: conformal) ======")
+        final_test_pred, conf_summary = conformal_rescue(
+            proto,
+            test_pred_df["predicted_label"],
+            val_pred_df["predicted_label"],
+            val_pred_df["true_label"],
+            _latent_matrix(latents_dict["validation"]),
+            _latent_matrix(latents_dict["test"]),
+            alpha=max_false_rescue_rate,
         )
+        final_test_pred.index = test_pred_df.index
+
+        if conf_summary["abstain"]:
+            print(f"-> [Conformal] sep={proto.separability_ratio:.3f} | 弃权（{conf_summary['reason']}），不拯救。")
+        else:
+            print(f"-> [Conformal] sep={proto.separability_ratio:.3f} | alpha={max_false_rescue_rate} | "
+                  f"tau={conf_summary['tau']:.4f} | 选定rank={conf_summary['chosen_rank']} | "
+                  f"候选={conf_summary['n_candidate']} | 实际拯救={conf_summary['n_rescued']}")
+
+        n_rescued = int((final_test_pred.ne(base_pred_test) & final_test_pred.eq(rare_class)).sum())
+        n_false_rescues = int((final_test_pred.ne(base_pred_test) & final_test_pred.eq(rare_class)
+                               & y_true_test.ne(rare_class)).sum())
+        bl_metrics_r, _ = classification_tables(y_true_test, base_pred_test, rare_class=rare_class)
+        final_metrics_r, _ = classification_tables(y_true_test, final_test_pred, rare_class=rare_class)
+        summary = {
+            "n_rescued": n_rescued, "n_false_rescues": n_false_rescues,
+            "baseline_f1": bl_metrics_r["rare_f1"], "rescued_f1": final_metrics_r["rare_f1"],
+            "f1_gain": final_metrics_r["rare_f1"] - bl_metrics_r["rare_f1"],
+            "overall_accuracy": final_metrics_r["overall_accuracy"],
+        }
+        print(f"   [拯救完成] 拯救={n_rescued} | 误拯救={n_false_rescues} | "
+              f"F1: {summary['baseline_f1']:.4f} -> {summary['rescued_f1']:.4f} (提升 {summary['f1_gain']:.4f})")
+        print(f"====== [scRareRefine 拯救中心] 后处理精细校正计算运行完毕 ======\n")
 
         overall_metrics, _ = classification_tables(y_true_test, final_test_pred, rare_class=rare_class)
         metrics_rows.append({
@@ -274,16 +308,20 @@ def main() -> None:
         # ==========================================
         print(">>> [步骤 4/4] 启动绘图工具，生成生信动态分析图表...")
         
-        # (1) 自动提取特异 Marker 基因绘制表达量小提琴图
+        # (1) 提取稀有类 top marker 基因绘制表达量小提琴图（仅可视化，不影响预测结果）
         train_cell_ids = predictions_dict["train"]["cell_id"].astype(str).tolist()
-        train_expr = _load_expression_subset(adata, train_cell_ids, selected_genes)
-        ref_labels = predictions_dict["train"]["true_label"]
-        ref_is_labeled = predictions_dict["train"]["is_labeled_for_scanvi"].astype(bool).to_numpy()
-        
-        marker_rescuer = MarkerRescuer(rare_class)
-        marker_rescuer.compute_marker_signatures(train_expr, selected_genes, ref_labels, ref_is_labeled, top_n=5)
-        
-        rare_markers = marker_rescuer.signatures.get(rare_class, [])
+        train_expr = load_expression_subset(adata, train_cell_ids, selected_genes)
+        ref_labels_vis = predictions_dict["train"]["true_label"]
+        ref_is_labeled_vis = predictions_dict["train"]["is_labeled_for_scanvi"].astype(bool).to_numpy()
+
+        in_cls  = ref_is_labeled_vis & ref_labels_vis.eq(rare_class).to_numpy()
+        out_cls = ref_is_labeled_vis & ~ref_labels_vis.eq(rare_class).to_numpy()
+        rare_markers: list[str] = []
+        if in_cls.sum() >= 3 and out_cls.sum() > 0:
+            diff = train_expr[in_cls].mean(axis=0) - train_expr[out_cls].mean(axis=0)
+            top_idx = np.argsort(-diff)[:5]
+            rare_markers = [selected_genes[i] for i in top_idx if diff[i] > 0]
+
         if rare_markers:
             plot_marker_violin(adata, label_column, rare_markers[:3], out_dir / "marker_violin.png", rare_class=rare_class)
             
