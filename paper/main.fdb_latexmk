@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1782495572.46224 "main.aux" "main.bbl" "main" 1782612545.23174 0
+["bibtex main"] 1782649809.7845 "main.aux" "main.bbl" "main" 1782650682.22261 0
   "./references.bib" 1782494967.83174 1993 e54926f6a23149eaab883e68004940ce ""
   "C:/Users/Z3183/AppData/Local/Programs/MiKTeX/bibtex/bst/natbib/unsrtnat.bst" 1284455456 24550 a41a6405f4de768c43e871d9fbce2bc8 ""
-  "main.aux" 1782612543.77746 13220 738548c00f322959076ece3ed37be9c1 "pdflatex"
+  "main.aux" 1782650680.78794 15699 18ac848bad770a317cd40a8cdb6d58d4 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1782612534.1651 "main.tex" "main.pdf" "main" 1782612545.23375 0
+["pdflatex"] 1782650670.75781 "main.tex" "main.pdf" "main" 1782650682.22439 0
   "C:/Users/Z3183/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1780991586.93549 123019 4e6d54fe28a67ad1b512b0cc9d03c2e8 ""
   "C:/Users/Z3183/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1778315338.19892 13333527 750b85b4b3523bd8b518b4788878fa68 ""
   "C:/Users/Z3183/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 1194fb36dfcb11d9ae9802f2b00b60a3 ""
@@ -128,20 +128,22 @@
   "C:/Users/Z3183/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/Z3183/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "figures/fig1_overview.png" 1782494998.25108 4891638 f4f72736471580c9bbea202e365bd934 ""
-  "figures/fig2_main_summary.png" 1782494998.28408 271139 84f630ecc859cb9586b82c0fec40762b ""
-  "figures/fig3a_ablation_components.png" 1782494998.31808 248511 a790f8df37caa89c104f2573ea3c3637 ""
-  "figures/fig3b_ablation_rank.png" 1782494998.35198 226304 373b2d1336e09e8745cc051d503aa740 ""
-  "figures/fig4_separability.png" 1782494998.38598 435402 12e99879e8c239fb53794e6d63b14de9 ""
-  "figures/fig5_umap_immune.png" 1782494998.42063 385363 4dd22b50894944c609de72d95394517b ""
-  "main.aux" 1782612543.77746 13220 738548c00f322959076ece3ed37be9c1 "pdflatex"
-  "main.bbl" 1782495572.75005 2140 b2bebd3d004385e0b4888ab93603e41c "bibtex main"
-  "main.out" 1782612543.77947 2837 ba6f51a2778cffcb08ba3dbb73f21f46 "pdflatex"
+  "figures/fig2_main_summary.png" 1782613431.83343 310091 e30172642476725bb2018ffd474cacb0 ""
+  "figures/fig3a_ablation_components.png" 1782613752.28674 356412 f99fe5027717156f282b6f502a8bbd2e ""
+  "figures/fig3b_ablation_rank.png" 1782613752.32415 325139 849bade063746b9dc3b504ea8c2d79ec ""
+  "figures/fig4_separability.png" 1782613431.95008 479272 823cbc5b0213a78d1c5f08980db5adf3 ""
+  "figures/fig5_umap_immune.png" 1782613431.98683 383463 8aea171d77dfa1012425d778568a5b1b ""
+  "figures/fig6_comparison_heatmap.png" 1782650636.76939 335402 a675421d97c2c6499b74ee31d680d19b ""
+  "figures/fig7_comparison_boxplot.png" 1782649754.8295 333320 499da2fc45e08caa8cf5375e365b94c5 ""
+  "main.aux" 1782650680.78794 15699 18ac848bad770a317cd40a8cdb6d58d4 "pdflatex"
+  "main.bbl" 1782649810.46892 2140 b2bebd3d004385e0b4888ab93603e41c "bibtex main"
+  "main.out" 1782650680.78985 2837 ba6f51a2778cffcb08ba3dbb73f21f46 "pdflatex"
   "main.tex" 1782494573.54695 1192 9bb63726ecf35f99fa9287b3c3cf435d ""
   "math_commands.tex" 1782494604.54581 902 597e69c8f8f3d1f22302fea3f7f5f4cd ""
   "sections/0_abstract.tex" 1782494639.74165 1533 aa96eaa81f7323537e4205d1a2caa35c ""
   "sections/1_introduction.tex" 1782494693.01274 6094 26ab94783c22aaf398d3bb87134fd518 ""
   "sections/2_methods.tex" 1782494764.0761 6915 1b3c0e141bd7db1426f488610f859026 ""
-  "sections/3_results.tex" 1782612523.08941 10164 84721d4c3024d8a0b785695af626f387 ""
+  "sections/3_results.tex" 1782649773.84525 11931 c8361a9c4cf8360fbfbfb364f6005b35 ""
   "sections/4_discussion.tex" 1782494867.47029 3558 083846f5e4eb0d6f1a4d5fe8b788c422 ""
   "sections/5_conclusion.tex" 1782494896.66821 913 c8fdee535a3fb01afee9aa96fa4a76cc ""
   "sections/A_appendix.tex" 1782528555.99846 1273 c9a6d337992a2359cb3530e2ac8ef7b8 ""

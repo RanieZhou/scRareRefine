@@ -70,6 +70,34 @@ directional evidence given the correlated paired cells. Because the labelled bud
 $18$ nominal scarce configurations collapse to $15$ distinct ones; over these, scRareRefine beats the majority of
 baselines in $15/15$ and is the single best method in $14/15$ (Supplementary~S3).
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig6_comparison_heatmap.png}
+\caption{\textbf{Per-method $\times$ per-dataset comparison in the label-scarce regime} ($p\le0.10$, mean over three
+fractions and three seeds). (a) rare-cell F1 and (b) rare-cell recall, with $*$ marking the best method on each
+dataset; (c) FFR, where darker shading means more false rescues. scRareRefine (boxed column) is best or tied-best in
+F1 on five of six datasets while its FFR shading stays light throughout, whereas scCAD and TOSICA show the darkest
+FFR cells. $\dagger$ HiCat is transductive (upper-bound reference).}
+\label{fig:heatmap}
+\end{figure*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig7_comparison_boxplot.png}
+\caption{\textbf{Across-dataset distribution in the label-scarce regime.} Each box summarises a method over $54$
+scarce configurations (six datasets $\times$ three fractions $\times$ three seeds); the median is labelled. Top to
+bottom: rare-cell F1, rare-cell recall, FFR (dashed line is the budget $\alpha=0.01$). scRareRefine has the highest
+and tightest F1/recall distributions and is the only method whose FFR box stays at zero, below the budget. $\dagger$
+HiCat is transductive.}
+\label{fig:box}
+\end{figure*}
+
+\Cref{fig:heatmap} resolves the per-method summary of \cref{fig:main} into the full method$\times$dataset grid:
+scRareRefine carries the F1/recall stars on most datasets while keeping uniformly light FFR shading, in contrast to
+the dark FFR cells of scCAD and TOSICA. \Cref{fig:box} shows the same effect as across-dataset distributions ---
+scRareRefine attains the highest and tightest F1 and recall medians ($0.93$ and $0.93$) and is the only method whose
+FFR box rests at zero, below $\alpha$.
+
 \subsection{Component ablation}
 \label{sec:results-ablation}
 
