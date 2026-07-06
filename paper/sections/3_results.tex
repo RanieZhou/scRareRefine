@@ -12,7 +12,7 @@ configuration over three random seeds ($42,43,44$). We compare scRareRefine agai
 same split and the same labelled subset: the scANVI backbone, a $k$-NN classifier on the scANVI latent, CellTypist,
 scBalance, ProtoCloud, scCAD, TOSICA, and HiCat. HiCat is transductive (its dimensionality reduction is fit on
 combined train and test cells) and is therefore reported as an upper-bound reference rather than a fair inductive
-competitor; TOSICA is run with its default pathway configuration. We report rare-cell F1 and the false-rescue
+competitor; TOSICA is run with a reduced pathway-token configuration for tractability. We report rare-cell F1 and the false-rescue
 rate (FFR), aggregated as mean $\pm$ standard deviation over seeds. Because the labelled budget is
 $\max(5,\lfloor p\,\Ntrain^{\rare}\rfloor)$, several nominal fractions collapse to the same labelled set on
 small-rare datasets; we therefore report the label-scarce comparison over the $15$ \emph{distinct} labelled
@@ -20,6 +20,16 @@ configurations rather than the $18$ nominal ones.
 
 \subsection{scRareRefine improves rare-cell F1 in the scarce regime with controlled FFR}
 \label{sec:results-main}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig2_recovery_curves.png}
+\caption{\textbf{Label-scarcity recovery curves.} Rare-cell F1 for scANVI and scRareRefine across labelled rare-cell
+fractions, shown as three-seed mean $\pm$ standard deviation for each dataset. The largest gains occur where scANVI
+under-recovers the rare type at low label budgets, while scRareRefine converges to a no-op when the backbone is
+already saturated.}
+\label{fig:recovery}
+\end{figure*}
 
 \begin{figure*}[t]
 \centering
@@ -52,7 +62,14 @@ integrated pancreas (endo.)   & 0.89 & 0.98 (kNN)        & \textbf{1.00} & 0.000
 \end{tabular}
 \end{table}
 
-Across the label-scarce regime scRareRefine attains the highest mean rare-cell F1 of all nine methods
+The recovery curves show the intended conditional behaviour before method-level aggregation (\cref{fig:recovery}).
+At the most extreme budget, immune dendritic-cell F1 rises from $0.000$ to $0.927$, and the gain shrinks as more
+rare labels are supplied ($+0.033$ at $p=0.10$). On Baron pancreas, scRareRefine improves the unstable scarce points
+($0.383\!\to\!0.567$ at $p=0.01/0.05$; $0.820\!\to\!0.843$ at $p=0.10$), while on already-saturated integrated
+pancreas and small intestine the gates mostly return the backbone. The headline is therefore label-scarcity recovery
+rather than uniform improvement.
+
+Aggregated across the label-scarce regime, scRareRefine attains the highest mean rare-cell F1 of all nine methods
 (\cref{fig:main}a): $0.88$, against $0.72$ for the scANVI backbone and $0.73$ for the next-best inductive method
 ($k$-NN on the scANVI latent); the remaining methods range from $0.48$ to $0.65$, and the transductive HiCat
 reference is lower ($0.19$) because it returns no rare cells on several datasets. Per dataset (\cref{tab:main}),

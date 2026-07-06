@@ -1,0 +1,145 @@
+dataset,seed,rts,rare_class,k,sep,variant,abstain,abstain_reason,chosen_rank,rare_f1,rare_recall,rare_precision,rare_fp_rate,rescue_ffr,n_rescued,n_false_rescue
+immune_dc,42,0.01,ASDC,3,2.1126,kNN,False,,0,0.4524,0.2923,1.0,0.0,0.0,0,0
+immune_dc,42,0.01,ASDC,3,2.1126,kNN+scRareRefine,False,,1,0.903,0.8231,1.0,0.0,0.0,69,0
+immune_dc,42,0.05,ASDC,3,2.1376,kNN,False,,0,0.7793,0.6385,1.0,0.0,0.0,0,0
+immune_dc,42,0.05,ASDC,3,2.1376,kNN+scRareRefine,False,,1,0.9435,0.9,0.9915,0.000167,0.000167,35,1
+immune_dc,42,0.10,ASDC,5,2.1041,kNN,False,,0,0.8393,0.7231,1.0,0.0,0.0,0,0
+immune_dc,42,0.10,ASDC,5,2.1041,kNN+scRareRefine,False,,1,0.9274,0.8846,0.9746,0.0005,0.0005,24,3
+immune_dc,42,all,ASDC,10,1.7622,kNN,False,,0,0.935,0.8846,0.9914,0.000167,0.0,0,0
+immune_dc,42,all,ASDC,10,1.7622,kNN+scRareRefine,False,,1,0.9486,0.9231,0.9756,0.0005,0.000333,7,2
+immune_dc,43,0.01,ASDC,3,2.4436,kNN,False,,0,0.5311,0.3615,1.0,0.0,0.0,0,0
+immune_dc,43,0.01,ASDC,3,2.4436,kNN+scRareRefine,False,,1,0.9306,0.8769,0.9913,0.000167,0.000167,68,1
+immune_dc,43,0.05,ASDC,3,1.9468,kNN,False,,0,0.8596,0.7538,1.0,0.0,0.0,0,0
+immune_dc,43,0.05,ASDC,3,1.9468,kNN+scRareRefine,False,,1,0.9398,0.9,0.9832,0.000333,0.000333,21,2
+immune_dc,43,0.10,ASDC,3,1.7472,kNN,False,,0,0.8546,0.7462,1.0,0.0,0.0,0,0
+immune_dc,43,0.10,ASDC,3,1.7472,kNN+scRareRefine,False,,1,0.9565,0.9308,0.9837,0.000333,0.000333,26,2
+immune_dc,43,all,ASDC,3,1.9374,kNN,False,,0,0.944,0.9077,0.9833,0.000333,0.0,0,0
+immune_dc,43,all,ASDC,3,1.9374,kNN+scRareRefine,False,,1,0.9569,0.9385,0.976,0.0005,0.000167,5,1
+immune_dc,44,0.01,ASDC,3,2.7583,kNN,False,,0,0.4524,0.2923,1.0,0.0,0.0,0,0
+immune_dc,44,0.01,ASDC,3,2.7583,kNN+scRareRefine,False,,1,0.9474,0.9,1.0,0.0,0.0,79,0
+immune_dc,44,0.05,ASDC,3,1.6314,kNN,False,,0,0.8128,0.6846,1.0,0.0,0.0,0,0
+immune_dc,44,0.05,ASDC,3,1.6314,kNN+scRareRefine,False,,1,0.9375,0.9231,0.9524,0.000999,0.000999,37,6
+immune_dc,44,0.10,ASDC,3,1.9127,kNN,False,,0,0.8889,0.8,1.0,0.0,0.0,0,0
+immune_dc,44,0.10,ASDC,3,1.9127,kNN+scRareRefine,False,,1,0.9453,0.9308,0.9603,0.000833,0.000833,22,5
+immune_dc,44,all,ASDC,10,1.8292,kNN,False,,0,0.9431,0.8923,1.0,0.0,0.0,0,0
+immune_dc,44,all,ASDC,10,1.8292,kNN+scRareRefine,False,,1,0.9385,0.9385,0.9385,0.001332,0.001332,14,8
+pancreas_baron,42,0.01,gamma,3,1.5213,kNN,False,,0,0.3301,0.1977,1.0,0.0,0.0,0,0
+pancreas_baron,42,0.01,gamma,3,1.5213,kNN+scRareRefine,False,,2,0.7784,0.7558,0.8025,0.009768,0.009768,64,16
+pancreas_baron,42,0.05,gamma,3,1.5213,kNN,False,,0,0.3301,0.1977,1.0,0.0,0.0,0,0
+pancreas_baron,42,0.05,gamma,3,1.5213,kNN+scRareRefine,False,,2,0.7784,0.7558,0.8025,0.009768,0.009768,64,16
+pancreas_baron,42,0.10,gamma,3,1.4422,kNN,False,,0,0.4074,0.2558,1.0,0.0,0.0,0,0
+pancreas_baron,42,0.10,gamma,3,1.4422,kNN+scRareRefine,False,,1,0.7234,0.593,0.9273,0.002442,0.002442,33,4
+pancreas_baron,42,all,gamma,3,1.1597,kNN,False,,0,0.9162,0.9535,0.8817,0.006716,0.0,0,0
+pancreas_baron,42,all,gamma,3,1.1597,kNN+scRareRefine,True,sep<1.3,0,0.9162,0.9535,0.8817,0.006716,0.0,0,0
+pancreas_baron,43,0.01,gamma,3,1.1245,kNN,False,,0,0.2083,0.1163,1.0,0.0,0.0,0,0
+pancreas_baron,43,0.01,gamma,3,1.1245,kNN+scRareRefine,True,sep<1.3,0,0.2083,0.1163,1.0,0.0,0.0,0,0
+pancreas_baron,43,0.05,gamma,3,1.1245,kNN,False,,0,0.2083,0.1163,1.0,0.0,0.0,0,0
+pancreas_baron,43,0.05,gamma,3,1.1245,kNN+scRareRefine,True,sep<1.3,0,0.2083,0.1163,1.0,0.0,0.0,0,0
+pancreas_baron,43,0.10,gamma,5,1.5543,kNN,False,,0,0.7015,0.5465,0.9792,0.000611,0.0,0,0
+pancreas_baron,43,0.10,gamma,5,1.5543,kNN+scRareRefine,False,,1,0.72,0.6279,0.8438,0.006105,0.005495,16,9
+pancreas_baron,43,all,gamma,10,1.1218,kNN,False,,0,0.9146,0.8721,0.9615,0.001832,0.0,0,0
+pancreas_baron,43,all,gamma,10,1.1218,kNN+scRareRefine,True,sep<1.3,0,0.9146,0.8721,0.9615,0.001832,0.0,0,0
+pancreas_baron,44,0.01,gamma,3,1.222,kNN,False,,0,0.5968,0.4302,0.9737,0.000611,0.0,0,0
+pancreas_baron,44,0.01,gamma,3,1.222,kNN+scRareRefine,True,sep<1.3,0,0.5968,0.4302,0.9737,0.000611,0.0,0,0
+pancreas_baron,44,0.05,gamma,3,1.222,kNN,False,,0,0.5968,0.4302,0.9737,0.000611,0.0,0,0
+pancreas_baron,44,0.05,gamma,3,1.222,kNN+scRareRefine,True,sep<1.3,0,0.5968,0.4302,0.9737,0.000611,0.0,0,0
+pancreas_baron,44,0.10,gamma,3,1.1241,kNN,False,,0,0.7862,0.6628,0.9661,0.001221,0.0,0,0
+pancreas_baron,44,0.10,gamma,3,1.1241,kNN+scRareRefine,True,sep<1.3,0,0.7862,0.6628,0.9661,0.001221,0.0,0,0
+pancreas_baron,44,all,gamma,3,1.0929,kNN,False,,0,0.9143,0.9302,0.8989,0.005495,0.0,0,0
+pancreas_baron,44,all,gamma,3,1.0929,kNN+scRareRefine,True,sep<1.3,0,0.9143,0.9302,0.8989,0.005495,0.0,0,0
+pancreas_integrated,42,0.01,endothelial,3,1.4516,kNN,False,,0,0.9778,0.9565,1.0,0.0,0.0,0,0
+pancreas_integrated,42,0.01,endothelial,3,1.4516,kNN+scRareRefine,False,,2,0.9388,1.0,0.8846,0.001764,0.001764,4,3
+pancreas_integrated,42,0.05,endothelial,3,1.5432,kNN,False,,0,0.9787,1.0,0.9583,0.000588,0.0,0,0
+pancreas_integrated,42,0.05,endothelial,3,1.5432,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9787,1.0,0.9583,0.000588,0.0,0,0
+pancreas_integrated,42,0.10,endothelial,3,1.341,kNN,False,,0,1.0,1.0,1.0,0.0,0.0,0,0
+pancreas_integrated,42,0.10,endothelial,3,1.341,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,1.0,1.0,1.0,0.0,0.0,0,0
+pancreas_integrated,42,all,endothelial,3,1.4442,kNN,False,,0,0.9388,1.0,0.8846,0.001764,0.0,0,0
+pancreas_integrated,42,all,endothelial,3,1.4442,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9388,1.0,0.8846,0.001764,0.0,0,0
+pancreas_integrated,43,0.01,endothelial,3,2.3225,kNN,False,,0,1.0,1.0,1.0,0.0,0.0,0,0
+pancreas_integrated,43,0.01,endothelial,3,2.3225,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,1.0,1.0,1.0,0.0,0.0,0,0
+pancreas_integrated,43,0.05,endothelial,3,1.6065,kNN,False,,0,1.0,1.0,1.0,0.0,0.0,0,0
+pancreas_integrated,43,0.05,endothelial,3,1.6065,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,1.0,1.0,1.0,0.0,0.0,0,0
+pancreas_integrated,43,0.10,endothelial,3,1.3032,kNN,False,,0,1.0,1.0,1.0,0.0,0.0,0,0
+pancreas_integrated,43,0.10,endothelial,3,1.3032,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,1.0,1.0,1.0,0.0,0.0,0,0
+pancreas_integrated,43,all,endothelial,10,1.4104,kNN,False,,0,0.9787,1.0,0.9583,0.000588,0.0,0,0
+pancreas_integrated,43,all,endothelial,10,1.4104,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9787,1.0,0.9583,0.000588,0.0,0,0
+pancreas_integrated,44,0.01,endothelial,3,1.4167,kNN,False,,0,0.9302,0.8696,1.0,0.0,0.0,0,0
+pancreas_integrated,44,0.01,endothelial,3,1.4167,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,0.9302,0.8696,1.0,0.0,0.0,0,0
+pancreas_integrated,44,0.05,endothelial,3,1.5341,kNN,False,,0,0.9778,0.9565,1.0,0.0,0.0,0,0
+pancreas_integrated,44,0.05,endothelial,3,1.5341,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,0.9778,0.9565,1.0,0.0,0.0,0,0
+pancreas_integrated,44,0.10,endothelial,3,1.5686,kNN,False,,0,0.9778,0.9565,1.0,0.0,0.0,0,0
+pancreas_integrated,44,0.10,endothelial,3,1.5686,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9778,0.9565,1.0,0.0,0.0,0,0
+pancreas_integrated,44,all,endothelial,15,1.3665,kNN,False,,0,0.9787,1.0,0.9583,0.000588,0.0,0,0
+pancreas_integrated,44,all,endothelial,15,1.3665,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9787,1.0,0.9583,0.000588,0.0,0,0
+tabula_lung_endo,42,0.01,endothelial cell of lymphatic vessel,3,2.3468,kNN,False,,0,0.9076,0.8308,1.0,0.0,0.0,0,0
+tabula_lung_endo,42,0.01,endothelial cell of lymphatic vessel,3,2.3468,kNN+scRareRefine,False,,1,0.9848,1.0,0.9701,0.001166,0.001166,13,2
+tabula_lung_endo,42,0.05,endothelial cell of lymphatic vessel,5,1.879,kNN,False,,0,0.944,0.9077,0.9833,0.000583,0.0,0,0
+tabula_lung_endo,42,0.05,endothelial cell of lymphatic vessel,5,1.879,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,0.944,0.9077,0.9833,0.000583,0.0,0,0
+tabula_lung_endo,42,0.10,endothelial cell of lymphatic vessel,3,1.6589,kNN,False,,0,0.96,0.9231,1.0,0.0,0.0,0,0
+tabula_lung_endo,42,0.10,endothelial cell of lymphatic vessel,3,1.6589,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,0.96,0.9231,1.0,0.0,0.0,0,0
+tabula_lung_endo,42,all,endothelial cell of lymphatic vessel,3,1.671,kNN,False,,0,0.9771,0.9846,0.9697,0.001166,0.0,0,0
+tabula_lung_endo,42,all,endothelial cell of lymphatic vessel,3,1.671,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9771,0.9846,0.9697,0.001166,0.0,0,0
+tabula_lung_endo,43,0.01,endothelial cell of lymphatic vessel,3,1.9886,kNN,False,,0,0.8889,0.8,1.0,0.0,0.0,0,0
+tabula_lung_endo,43,0.01,endothelial cell of lymphatic vessel,3,1.9886,kNN+scRareRefine,False,,1,0.9844,0.9692,1.0,0.0,0.0,11,0
+tabula_lung_endo,43,0.05,endothelial cell of lymphatic vessel,3,1.6913,kNN,False,,0,0.9344,0.8769,1.0,0.0,0.0,0,0
+tabula_lung_endo,43,0.05,endothelial cell of lymphatic vessel,3,1.6913,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,0.9344,0.8769,1.0,0.0,0.0,0,0
+tabula_lung_endo,43,0.10,endothelial cell of lymphatic vessel,3,1.7338,kNN,False,,0,0.944,0.9077,0.9833,0.000583,0.0,0,0
+tabula_lung_endo,43,0.10,endothelial cell of lymphatic vessel,3,1.7338,kNN+scRareRefine,False,,1,0.9848,1.0,0.9701,0.001166,0.000583,7,1
+tabula_lung_endo,43,all,endothelial cell of lymphatic vessel,3,1.4801,kNN,False,,0,0.9846,0.9846,0.9846,0.000583,0.0,0,0
+tabula_lung_endo,43,all,endothelial cell of lymphatic vessel,3,1.4801,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9846,0.9846,0.9846,0.000583,0.0,0,0
+tabula_lung_endo,44,0.01,endothelial cell of lymphatic vessel,3,2.0898,kNN,False,,0,0.8793,0.7846,1.0,0.0,0.0,0,0
+tabula_lung_endo,44,0.01,endothelial cell of lymphatic vessel,3,2.0898,kNN+scRareRefine,False,,1,0.9767,0.9692,0.9844,0.000583,0.000583,13,1
+tabula_lung_endo,44,0.05,endothelial cell of lymphatic vessel,3,1.797,kNN,False,,0,0.8983,0.8154,1.0,0.0,0.0,0,0
+tabula_lung_endo,44,0.05,endothelial cell of lymphatic vessel,3,1.797,kNN+scRareRefine,False,,1,0.9924,1.0,0.9848,0.000583,0.000583,13,1
+tabula_lung_endo,44,0.10,endothelial cell of lymphatic vessel,3,1.6894,kNN,False,,0,0.9516,0.9077,1.0,0.0,0.0,0,0
+tabula_lung_endo,44,0.10,endothelial cell of lymphatic vessel,3,1.6894,kNN+scRareRefine,True,val_missed=2 < MIN_VAL_MISSED=3,0,0.9516,0.9077,1.0,0.0,0.0,0,0
+tabula_lung_endo,44,all,endothelial cell of lymphatic vessel,3,1.6533,kNN,False,,0,0.9764,0.9538,1.0,0.0,0.0,0,0
+tabula_lung_endo,44,all,endothelial cell of lymphatic vessel,3,1.6533,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9764,0.9538,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,42,0.01,mast cell,3,1.7794,kNN,False,,0,0.2222,0.125,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,42,0.01,mast cell,3,1.7794,kNN+scRareRefine,False,,2,0.7451,0.5938,1.0,0.0,0.0,15,0
+tabula_sapiens_stomach,42,0.05,mast cell,3,1.7794,kNN,False,,0,0.2222,0.125,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,42,0.05,mast cell,3,1.7794,kNN+scRareRefine,False,,2,0.7451,0.5938,1.0,0.0,0.0,15,0
+tabula_sapiens_stomach,42,0.10,mast cell,3,1.7794,kNN,False,,0,0.2222,0.125,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,42,0.10,mast cell,3,1.7794,kNN+scRareRefine,False,,2,0.7451,0.5938,1.0,0.0,0.0,15,0
+tabula_sapiens_stomach,42,all,mast cell,10,1.8181,kNN,False,,0,0.4762,0.3125,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,42,all,mast cell,10,1.8181,kNN+scRareRefine,False,,2,0.6939,0.5312,1.0,0.0,0.0,7,0
+tabula_sapiens_stomach,43,0.01,mast cell,3,2.5124,kNN,False,,0,0.3158,0.1875,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,43,0.01,mast cell,3,2.5124,kNN+scRareRefine,False,,3,0.6667,0.5,1.0,0.0,0.0,10,0
+tabula_sapiens_stomach,43,0.05,mast cell,3,2.5124,kNN,False,,0,0.3158,0.1875,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,43,0.05,mast cell,3,2.5124,kNN+scRareRefine,False,,3,0.6667,0.5,1.0,0.0,0.0,10,0
+tabula_sapiens_stomach,43,0.10,mast cell,3,2.5124,kNN,False,,0,0.3158,0.1875,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,43,0.10,mast cell,3,2.5124,kNN+scRareRefine,False,,3,0.6667,0.5,1.0,0.0,0.0,10,0
+tabula_sapiens_stomach,43,all,mast cell,10,1.7546,kNN,False,,0,0.5116,0.3438,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,43,all,mast cell,10,1.7546,kNN+scRareRefine,False,,2,0.72,0.5625,1.0,0.0,0.0,7,0
+tabula_sapiens_stomach,44,0.01,mast cell,5,1.8939,kNN,False,,0,0.3158,0.1875,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,44,0.01,mast cell,5,1.8939,kNN+scRareRefine,False,,1,0.6939,0.5312,1.0,0.0,0.0,11,0
+tabula_sapiens_stomach,44,0.05,mast cell,5,1.8939,kNN,False,,0,0.3158,0.1875,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,44,0.05,mast cell,5,1.8939,kNN+scRareRefine,False,,1,0.6939,0.5312,1.0,0.0,0.0,11,0
+tabula_sapiens_stomach,44,0.10,mast cell,5,1.8939,kNN,False,,0,0.3158,0.1875,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,44,0.10,mast cell,5,1.8939,kNN+scRareRefine,False,,1,0.6939,0.5312,1.0,0.0,0.0,11,0
+tabula_sapiens_stomach,44,all,mast cell,5,1.7388,kNN,False,,0,0.5455,0.375,1.0,0.0,0.0,0,0
+tabula_sapiens_stomach,44,all,mast cell,5,1.7388,kNN+scRareRefine,False,,2,0.7692,0.625,1.0,0.0,0.0,8,0
+tabula_small_intestine,42,0.01,intestinal tuft cell,3,3.165,kNN,False,,0,0.9848,1.0,0.9701,0.000318,0.0,0,0
+tabula_small_intestine,42,0.01,intestinal tuft cell,3,3.165,kNN+scRareRefine,True,val_missed=2 < MIN_VAL_MISSED=3,0,0.9848,1.0,0.9701,0.000318,0.0,0,0
+tabula_small_intestine,42,0.05,intestinal tuft cell,3,2.6237,kNN,False,,0,0.9774,1.0,0.9559,0.000477,0.0,0,0
+tabula_small_intestine,42,0.05,intestinal tuft cell,3,2.6237,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,0.9774,1.0,0.9559,0.000477,0.0,0,0
+tabula_small_intestine,42,0.10,intestinal tuft cell,15,2.301,kNN,False,,0,0.9848,1.0,0.9701,0.000318,0.0,0,0
+tabula_small_intestine,42,0.10,intestinal tuft cell,15,2.301,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9848,1.0,0.9701,0.000318,0.0,0,0
+tabula_small_intestine,42,all,intestinal tuft cell,3,2.4477,kNN,False,,0,0.9774,1.0,0.9559,0.000477,0.0,0,0
+tabula_small_intestine,42,all,intestinal tuft cell,3,2.4477,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9774,1.0,0.9559,0.000477,0.0,0,0
+tabula_small_intestine,43,0.01,intestinal tuft cell,3,2.5937,kNN,False,,0,0.9692,0.9692,0.9692,0.000318,0.0,0,0
+tabula_small_intestine,43,0.01,intestinal tuft cell,3,2.5937,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,0.9692,0.9692,0.9692,0.000318,0.0,0,0
+tabula_small_intestine,43,0.05,intestinal tuft cell,5,2.4086,kNN,False,,0,0.9771,0.9846,0.9697,0.000318,0.0,0,0
+tabula_small_intestine,43,0.05,intestinal tuft cell,5,2.4086,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9771,0.9846,0.9697,0.000318,0.0,0,0
+tabula_small_intestine,43,0.10,intestinal tuft cell,3,3.2691,kNN,False,,0,0.9697,0.9846,0.9552,0.000477,0.0,0,0
+tabula_small_intestine,43,0.10,intestinal tuft cell,3,3.2691,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9697,0.9846,0.9552,0.000477,0.0,0,0
+tabula_small_intestine,43,all,intestinal tuft cell,3,2.6232,kNN,False,,0,0.9774,1.0,0.9559,0.000477,0.0,0,0
+tabula_small_intestine,43,all,intestinal tuft cell,3,2.6232,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9774,1.0,0.9559,0.000477,0.0,0,0
+tabula_small_intestine,44,0.01,intestinal tuft cell,3,2.5892,kNN,False,,0,0.9692,0.9692,0.9692,0.000318,0.0,0,0
+tabula_small_intestine,44,0.01,intestinal tuft cell,3,2.5892,kNN+scRareRefine,True,val_missed=2 < MIN_VAL_MISSED=3,0,0.9692,0.9692,0.9692,0.000318,0.0,0,0
+tabula_small_intestine,44,0.05,intestinal tuft cell,3,2.1813,kNN,False,,0,0.9771,0.9846,0.9697,0.000318,0.0,0,0
+tabula_small_intestine,44,0.05,intestinal tuft cell,3,2.1813,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9771,0.9846,0.9697,0.000318,0.0,0,0
+tabula_small_intestine,44,0.10,intestinal tuft cell,3,2.6335,kNN,False,,0,0.9848,1.0,0.9701,0.000318,0.0,0,0
+tabula_small_intestine,44,0.10,intestinal tuft cell,3,2.6335,kNN+scRareRefine,True,val_missed=1 < MIN_VAL_MISSED=3,0,0.9848,1.0,0.9701,0.000318,0.0,0,0
+tabula_small_intestine,44,all,intestinal tuft cell,3,2.3482,kNN,False,,0,0.9774,1.0,0.9559,0.000477,0.0,0,0
+tabula_small_intestine,44,all,intestinal tuft cell,3,2.3482,kNN+scRareRefine,True,val baseline 零漏判稀有,0,0.9774,1.0,0.9559,0.000477,0.0,0,0

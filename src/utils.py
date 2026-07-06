@@ -146,6 +146,19 @@ def compute_split_hash(predictions_dict: dict[str, pd.DataFrame]) -> str:
     return h.hexdigest()[:16]
 
 
+def compute_cached_split_hash(run_dir: str | Path) -> str | None:
+    """Compute the train/validation/test cell-id hash from cached predictions."""
+    run_dir = Path(run_dir)
+    emb_dir = run_dir / "embeddings"
+    predictions: dict[str, pd.DataFrame] = {}
+    for split in ["train", "validation", "test"]:
+        path = emb_dir / f"{split}_predictions.csv"
+        if not path.exists():
+            return None
+        predictions[split] = pd.read_csv(path, usecols=["cell_id"])
+    return compute_split_hash(predictions)
+
+
 def build_manifest(
     config: dict[str, Any],
     config_path: str | Path,
@@ -190,6 +203,8 @@ def check_manifest(
     label_column: str | None = None,
     batch_key: str | None = None,
     split_mode: str | None = None,
+    validate_split_hash: bool = True,
+    strict_git_sha: bool = False,
 ) -> bool:
     """ 校验 run_dir/manifest.json 与当前实验参数是否一致。
 
@@ -212,10 +227,31 @@ def check_manifest(
         "rare_train_size": str(rare_train_size),
     }
     mism = [(k, m.get(k), v) for k, v in checks.items() if str(m.get(k)) != str(v)]
+    if validate_split_hash:
+        cached_split_hash = compute_cached_split_hash(run_dir)
+        manifest_split_hash = m.get("split_hash")
+        if cached_split_hash is None:
+            mism.append(("split_hash", manifest_split_hash, "cached prediction files missing"))
+        elif str(manifest_split_hash) != str(cached_split_hash):
+            mism.append(("split_hash", manifest_split_hash, cached_split_hash))
     if mism:
         print(f"  [provenance] ERROR: manifest 与当前配置不匹配: {mism}")
         return False
-    print(f"  [provenance] OK  split_hash={m.get('split_hash')}  git_sha={m.get('git_sha')}")
+    current_git = git_sha()
+    manifest_git = str(m.get("git_sha", ""))
+    git_note = ""
+    if manifest_git in ("", "unknown", "None"):
+        git_note = "  git_sha=legacy/unknown"
+        if strict_git_sha:
+            print("  [provenance] ERROR: manifest git_sha missing or unknown")
+            return False
+    elif current_git != "unknown" and manifest_git != current_git:
+        git_note = f"  git_sha differs manifest={manifest_git} current={current_git}"
+        if strict_git_sha:
+            print(f"  [provenance] ERROR:{git_note}")
+            return False
+
+    print(f"  [provenance] OK  split_hash={m.get('split_hash')}  git_sha={m.get('git_sha')}{git_note}")
     return True
 
 

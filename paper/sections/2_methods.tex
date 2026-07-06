@@ -100,7 +100,11 @@ $\score\ge\tautest$. All other predictions are left unchanged.
 \label{sec:method-ffr}
 
 We quantify the cost of rescue by the \emph{false-rescue rate}
-$\ffr=\big|\{\text{non-rare test cells relabelled to }\rare\}\big|\,/\,\big|\{\text{non-rare test cells}\}\big|$.
+\[
+\ffr =
+\frac{\big|\{\text{non-rare test cells relabelled to }\rare\}\big|}
+{\big|\{\text{non-rare test cells}\}\big|}.
+\]
 The conformal threshold and gates are designed so that $\ffr$ is controlled at the fixed budget $\alphabudget=0.01$.
 Because validation and test cells come from different donors under our split, this control is empirical rather than a
 strict finite-sample guarantee; we report $\ffr$ with raw counts and treat $\alphabudget$ as a fixed prior, never

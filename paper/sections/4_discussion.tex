@@ -28,14 +28,21 @@ on one dataset is positive on average but unstable across seeds, mirroring the v
 instability disappears once at least ten rare cells are labelled. We therefore do not claim stable improvement at the
 five-label point on that dataset.
 
+\paragraph{Backbone dependence.} The primary evaluation uses scANVI as both the latent representation and the
+backbone classifier. As a scope-limited stress test, we replaced the base predictions with a validation-selected
+$k$-NN classifier on the same scANVI latent space and then applied the unchanged rescue module. In the scarce regime,
+this raises rare-cell F1 from $0.725$ to $0.860$ and recall from $0.651$ to $0.809$, with worst-case FFR $0.0098$;
+paired cells show $27$ wins, $26$ ties and $1$ loss. This supports transfer of the rescue mechanism to a weaker
+predictor, but it is not no-regression evidence and does not establish backbone-agnostic behaviour on foundation-model
+embeddings.
+
 \paragraph{Evaluation caveats.} Because the labelled budget has a floor of five, several nominal label fractions
 collapse to the same labelled set on small-rare datasets; we report distinct configurations to avoid double-counting.
 Our significance tests pair predictions by (dataset, fraction, seed); these cells are correlated across seeds and
 near-duplicated across collapsed fractions, so the $p$-values are optimistic and are best read as a robust paired
 improvement with an effect size whose confidence interval excludes zero. We evaluate six predominantly human
 single-cell datasets and do not test cross-species or disease-state transfer, both of which would further stress the
-exchangeability assumption. Finally, scRareRefine operates on scANVI embeddings; whether the same conformal rescue
-adds value on top of single-cell foundation-model embeddings is untested.
+exchangeability assumption.
 
 \paragraph{Outlook.} The combination of latent-space prototype geometry with conformal calibration offers a general
 template for risk-controlled post-hoc refinement. Natural extensions include expression-side scoring to address the

@@ -1370,3 +1370,121 @@ pancreas_baron ≤5 标注（gain +0.18 但 std 0.23，G71，已记 limitation�
 
 > **关键诚实点**：G82（真实）说 1.3 偏紧（1.22 就破），G14-sweep（合成）说 1.3 偏松（0.7 才破）——两者不矛盾，共同说明 **sep-风险数据集相关，1.3 是跨异质性的保守折中**。这比单看任一实验都更可信。
 
+---
+
+## 第十五轮（2026-07-05）：层次 B — 论文定位重定向 + 完整初稿起草（closes G50，refresh G51）
+
+> **层次 B**（论文 structure/section 写作，ITERATION_BOUNDARY §5.6 G50-B）。本轮不改任何代码/常量/split/数值，**纯写作 + 定位重构**；数字全部回链已有 results CSV 与前轮 log。
+
+### §2 三问（开新轮前必答）
+
+| 必答项 | 回答 |
+|--------|------|
+| **依据从哪来** | 用户明确决定（本会话）把科学问题重心由"FFR-controlled selective rescue"改为"标注稀缺下的召回恢复"；ITERATION_BOUNDARY §5.6 **G50-B-paper-structure / G51-B-failure-modes** 为待办。既有证据链（第十三/十四轮 multiseed + ablation + sep sweep）已足以落成文。 |
+| **现有缺陷** | (1) `PAPER_PLAN.md`（2026-06-21）把 FFR 与召回并列当双头条，与新重心不符；rts 恢复曲线埋在 Supp S5，未作主图。(2) 尚无完整 manuscript 初稿——证据散在 log/CSV，未成连贯正文。 |
+| **最低验收线（falsifiable，预设）** | (a) 产出覆盖 Abstract→Conclusion 全章节的英文初稿；(b) 主线为 rts 召回恢复、F1 头条、recall 补充 panel、FFR 降为安全约束；(c) **每个定量断言可回链到具体 results CSV / 前轮 log 行**（草稿末附 Evidence source map）；(d) **零 R5 越界主张**（无 SOTA/solved/全面最优/临床/普适）；(e) 不改任何既有数值。 |
+
+### Hypothesis（可证伪）
+
+现有证据（zero-regression 稀缺区 29/25/0、rts 恢复曲线、干净 ablation、sep 保守先验、诚实失败模式）已足以支撑一篇"窄而实"的召回恢复叙事，**无需新实验**即可成文；若起草中发现某头条 claim 缺 CSV 支撑，则该 claim 须降级或标注为待补（不得编造）。
+
+### 决策 / R4 记录
+
+- **改动**：`paper/PAPER_PLAN.md` 顶部加 2026-07-05 重定向说明；Claims 矩阵重排（C1 头条=恢复曲线、C1b=对比幅度、C2 降为安全约束、新增 C-supp recall panel）；图映射注明 rts 曲线升主图。**旧值→新值 + 影响**：仅定位/叙事层，主表 F1/FFR 数字与图产物一字未改。
+- **新增产物**：`paper/scRareRefine_manuscript_draft_v1.md`——全章节英文初稿，整合 `results/paper_drafts/failure_modes_limitations.md`（G10 recall 天花板提为头条失败模式 §4.5）。
+
+### 结果 / 验收核对
+
+- (a)(b) 通过：初稿含 Abstract/Intro/Related/Methods/Results（3.2 恢复主线 + 3.3 对比 + 3.4 ablation + 3.5 sep + 3.6 UMAP）/Discussion(失败模式)/Conclusion；recall 明确为补充 panel。
+- (c) 通过：草稿末 Evidence source map 逐条回链（core_agg / significance_test / scarce_region_distinct / ablation_table1,2 / lowsep_sensitivity / sep_sweep_summary / umap）。
+- (d) 通过：全稿主张限定"六数据集 + 稀缺区"，HiCat 标 transductive、TOSICA 标降配、FFR 写 empirical control、sep 写 conservative prior、p 值写 directional。
+- (e) 通过：未触碰任何 results/outputs 数值文件。
+
+### 闭环 / 待办（写进草稿"Pending before submission"）
+
+- **closes G50-A/B**（完整初稿结构 + 正文成文）；**refresh G51**（failure modes 整合进 Discussion，recall 天花板升头条）。
+- **B 层 codex 外审待做**（§4.1"准备写论文 section"触发点）：本环境无 codex MCP，未跑；提交前须把各 section 数字 + 来源 CSV 交 codex 找 cherry-picking / 未交代局限 / claim 是否被数据支撑。**在 codex 过审前，本初稿视为未定稿。**
+- 仍待（非阻塞）：recall 补充 panel 图（从 core_agg rescue-recall 列生成）、弱 backbone 泛化 demo（框架 B 堵 reviewer）、Fig 1 method overview 图。
+
+---
+
+## 第十六轮（2026-07-06）：论文收尾前补充证据、provenance 审计与初稿同步
+
+> 本轮目标：按"一个月内收尾投稿初稿"要求，检查当前代码/结果，补齐无需重训或可由缓存完成的关键证据，并把论文草稿同步到可引用状态。目标期刊更新为：冲 Bioinformatics，保 BMC Bioinformatics。
+
+### §2 三问
+
+| 必答项 | 回答 |
+|--------|------|
+| **依据从哪来** | 第十五轮 pending：recall 补图、weak-backbone demo、Fig 1；此前 codex/记忆提示 cache provenance 仍缺 `split_hash`/`git_sha` 严格审计。 |
+| **现有缺陷** | (1) 主图仍可能误用 seed=42 旧 rts 曲线；(2) 尚无弱 backbone 证据，容易被 reviewer 质疑"只修 scANVI 输出"；(3) manifest 校验只检查参数，不硬验缓存 split hash；(4) 附录仍是 TODO；(5) 草稿 TOSICA 显著性表有旧数值。 |
+| **最低验收线** | (a) 新图必须来自 `results/multiseed/core_agg.csv` 三种子聚合；(b) weak demo 只读缓存，不改主 claim；(c) provenance 审计明确 split hash/gits 状态；(d) LaTeX 正文/讨论/附录与 Markdown 草稿同步；(e) 运行语法检查与可用构建检查。 |
+
+### 代码与审计改动
+
+- `src/utils.py`：新增 `compute_cached_split_hash()`；`check_manifest()` 增加缓存 split hash 校验，默认硬拒绝 split/hash mismatch；git sha 默认报告差异但不硬拒绝（`strict_git_sha=True` 时才失败），以兼容旧缓存。
+- `tools/analysis/cache_provenance_audit.py`：新增缓存审计脚本。结果：76/76 缓存目录 required files 完整、manifest 存在、split hash 与缓存 cell IDs 一致；git 状态为 64 `different_commit`、12 `legacy_unknown`。
+- `tools/analysis/weak_backbone_demo.py`：新增缓存版弱 backbone demo。用同一 scANVI latent，base prediction 换成 validation-selected kNN，再套 unchanged rescue。稀缺区：kNN F1 0.7248、recall 0.6506；kNN+scRareRefine F1 0.8603、recall 0.8085、FFR_max 0.009768；paired gain 27/26/1，最差 -0.039（`pancreas_integrated`, seed42, rts=0.01）。全 rts 有 2 个负向 cell（含 immune_dc seed44 all -0.0046），因此只能写"机制可转移到弱预测器的 aggregate demo"，不能写 no-regression/backbone-agnostic。
+- `tools/analysis/plot_recall_panel.py`：新增三种子绘图脚本。产物：`paper/figures/fig2_recovery_curves.png` 与 `paper/figures/figS_recall_recovery_panel.png`，同名副本在 `results/multiseed/`。
+
+### 论文同步
+
+- `paper/sections/3_results.tex`：加入新的 Fig. 2 recovery curves，并把主张改成 label-scarcity recovery，而非 uniform improvement；TOSICA 改为 reduced configuration。
+- `paper/sections/4_discussion.tex`：加入 weak-backbone dependence caveat。
+- `paper/sections/A_appendix.tex`：从 TODO 改为可提交附录索引，加入 recall 补图、weak-backbone 表、provenance 审计和 runtime 未完成说明。
+- `paper/scRareRefine_manuscript_draft_v1.md`：目标期刊改为 primary Bioinformatics / fallback BMC Bioinformatics；TOSICA 显著性修正为 53/1/0、ΔF1 +0.387、CI [+0.321,+0.454]、p=1.2e-10；pending 列表删除已完成的 recall/weak demo。
+- `paper/PAPER_PLAN.md`：追加 2026-07-06 状态更新。
+
+### 验证
+
+- `scanvi311` Python `py_compile` 通过：`src/utils.py`、`cache_provenance_audit.py`、`weak_backbone_demo.py`、`plot_recall_panel.py`。
+- `cache_provenance_audit.py` 成功运行并写出 `results/provenance/cache_audit.csv/.md`。
+- `weak_backbone_demo.py` 完整运行成功并写出 `results/weak_backbone/weak_backbone_summary.csv/.agg.csv/.md`。
+- `plot_recall_panel.py` 成功生成并人工查看两张图，无空图或明显标签重叠。
+
+### 仍待投稿前闭环
+
+- 外部/二层数值审稿仍未跑；当前环境未提供专门 codex review MCP。
+- runtime/peak-memory benchmark 仍未补；若投 Bioinformatics/BMC Bioinformatics，建议至少补 post-hoc overhead 表。
+- 最终 journal template、参考文献 bib 与图 1 出版级重绘仍待。官方指南核对后，Bioinformatics Original Paper 有 7 页左右/约 5000 words excluding figures 的强约束；当前通用 article PDF 为 15 页，冲 Bioinformatics 需要压缩主文并把附录证据拆到 Supplement。BMC Bioinformatics 接受 LaTeX，版式压力较小但仍需数据/代码可用性与图件规范。
+- 严格最终复跑建议 clean output 或 `--force`，因为当前 publication caches split hash 正确但不是当前 commit 直接生成。
+
+---
+
+## 第十七轮（2026-07-06）：cell_stratified split sensitivity（seed=42，scANVI + scRareRefine）
+
+> 目的：回应潜在 reviewer 对 batch-heldout 比例不精确和缺少随机比例 split sensitivity 的质疑。主 claim 仍基于 batch-heldout；本轮只作为补充敏感性实验。
+
+### 实验设置
+
+- split：`cell_stratified`，运行时通过 `--split_mode cell_stratified` 覆盖 YAML，不修改主配置。
+- 范围：6 数据集 × seed=42 × `rare_train_size={0.01,0.05,0.10,all}`。
+- 方法：只跑主流程输出里的 `baseline`（scANVI）与 `scRareRefine`，不跑八个外部 baseline。
+- 输出：`outputs/<dataset>/cell_stratified_seed42_*`；汇总在 `results/split_sensitivity/`。
+
+### 完整性
+
+- 24/24 个 `cell_stratified` run 完成；与 24 个 seed42 batch-heldout 对照合计 48/48 行汇总成功。
+- 随机 split 实现了精确近似 70/15/15：所有数据集 cell split 比例均为 train≈0.70、val≈0.15、test≈0.15，且 rare support 非零。
+
+### 核心结果（稀缺区，rts≤0.10，seed=42）
+
+| split | n | scANVI F1 | scRareRefine F1 | ΔF1 | scANVI recall | scRareRefine recall | Δrecall | FFR_max | abstain |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| batch_heldout | 18 | 0.6757 | 0.8639 | +0.1881 | 0.6140 | 0.8199 | +0.2059 | 0.002442 | 1 |
+| cell_stratified | 18 | 0.9016 | 0.9741 | +0.0725 | 0.8657 | 0.9637 | +0.0980 | 0.001870 | 10 |
+
+### 解释
+
+- `cell_stratified` 下 scANVI 明显变强（稀缺区 F1 0.676→0.902），说明这是比 batch-heldout 更容易的 setting；这支持主文继续把 batch-heldout 作为 primary protocol。
+- scRareRefine 在随机 split 下仍有平均增益（稀缺区 ΔF1 +0.0725、Δrecall +0.0980）且 FFR_max=0.00187，远低于 α=0.01；因此可以作为 supplementary sensitivity 写入。
+- 增益集中在 `tabula_lung_endo`：0.01 时 F1 0.0426→0.9890，0.05 时 0.7397→0.9890，0.10 时已饱和而弃权。
+- 多数数据集在随机 split 下 baseline 已接近饱和，scRareRefine 多数弃权（10/18 scarce cells），符合 conservative/no-op 设计。
+- 存在小幅负向 cell：`immune_dc` rts=0.05（ΔF1 -0.0047）和 `pancreas_integrated` rts=0.05（ΔF1 -0.0082）；全 rts 还包括 `immune_dc` all（ΔF1 -0.0053）。这些负向来自 recall 增加但少量 false rescue 降低 precision，幅度很小。不能把 cell_stratified sensitivity 写成 zero-regression。
+
+### 论文使用建议
+
+- 可写：在 seed=42 的 cell-stratified sensitivity 中，随机 split 精确接近 70/15/15；scANVI 变强且 scRareRefine 增益缩小但仍为正，FFR 仍低于预算。
+- 不可写：不要说随机 split 下 no-regression；不要把该 seed=42 sensitivity 与主文三种子 batch-heldout 主结果混为一个 claim。
+- 推荐一句：`In an easier seed-42 cell-stratified sensitivity analysis, the scANVI backbone improved substantially, reducing the rescue opportunity; scRareRefine still improved scarce-regime rare-cell F1 from 0.902 to 0.974 while keeping worst-case FFR at 0.0019, but small negative cells prevent a no-regression claim under this split.`
+

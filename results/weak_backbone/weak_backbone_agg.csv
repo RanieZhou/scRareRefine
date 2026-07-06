@@ -1,0 +1,7 @@
+region,variant,n,f1_mean,recall_mean,precision_mean,rare_fp_rate_max,rescue_ffr_max,n_abstain,wins,ties,losses,worst_delta,best_delta
+ALL,kNN,72,0.764,0.7017,0.9841,0.006716,0.0,0.0,,,,,
+ALL,kNN+scRareRefine,72,0.8749,0.8314,0.9697,0.009768,0.009768,38.0,,,,,
+ALL,paired_gain,72,0.1109,,,,,,32.0,38.0,2.0,-0.039,0.5229
+SCARCE,kNN,54,0.7248,0.6506,0.9911,0.001221,0.0,0.0,,,,,
+SCARCE,kNN+scRareRefine,54,0.8603,0.8085,0.9734,0.009768,0.009768,26.0,,,,,
+SCARCE,paired_gain,54,0.1354,,,,,,27.0,26.0,1.0,-0.039,0.5229
