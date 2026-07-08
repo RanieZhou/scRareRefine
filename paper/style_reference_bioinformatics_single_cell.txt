@@ -1,0 +1,613 @@
+Bioinformatics, 2025, 41(10), btaf521
+https://doi.org/10.1093/bioinformatics/btaf521
+Advance Access Publication Date: 18 September 2025
+Original Paper
+
+
+
+
+Gene expression
+Conformal inference for reliable single cell
+RNA-seq annotation
+        � pez-De-Castro1,2,3,†,� , Alberto Garc�ıa-Galindo1,2,3,† , Jose
+Marcos Lo                                                                    � lez-Gomariz1,2,3 ,
+                                                                       � Gonza
+
+
+
+
+                                                                                                                                                               Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+   �n Arman
+Rube        ~ anzas1,2,3
+1
+  Institute of Data Science and Artificial Intelligence (DATAI), University of Navarra, Pamplona, Navarra 31009, Spain
+2
+  TECNUN School of Engineering, University of Navarra, Donostia-San Sebasti�an, Basque Country, 20018, Spain
+3
+  Cancer Center CCUN, Cl�ınica Universidad de Navarra, Pamplona, Navarra, 31080, Spain
+�Corresponding author. Institute of Data Science and Artificial Intelligence (DATAI), University of Navarra, Pamplona, Navarra 31009, Spain.
+E-mail: mlopezdecas@unav.es
+†
+  Equally contributed.
+Associate Editor: Anthony Mathelier
+
+Abstract
+Motivation: Despite the inherent complexity associated to automatic cell type assignments, most supervised learning models overlook
+rigorous uncertainty quantification on the annotations. Although some existing pipelines incorporate rejection options under predefined
+circumstances, they usually rely on arbitrary assumptions and do not provide statistical guarantees. In this work, we propose a methodology
+based on the conformal prediction framework to provide reliable single-cell annotations. Conformal prediction provides statistical guarantees on
+the outcome predictions without making any assumption about the underlying distribution of the data. Our methodological proposal leverages
+conformal inference to address two critical challenges in single-cell RNA sequencing annotations: (i) detect out-of-distribution cell types in the
+query data; and, (ii) perform reliable uncertainty quantification of the cell annotations through well-calibrated prediction sets.
+Results: We evaluated the anomaly detector and the uncertainty-aware annotator in 10 batched experiments derived from various tissues.
+Specifically, we studied three different annotation taxonomies (standard, classwise, and cluster) alongside three different non-conformity
+measures. The results showed that our anomaly detector effectively identified previously unseen cell types, producing well-calibrated prediction
+sets. This rigorous annotation helped maintain coverage probabilities at the expected significance level. Finally, we illustrate how the integration
+of conformal prediction outputs enhanced further downstream analyses.
+Availability and implementation: The automatic scRNA-seq annotator is available at https://github.com/digital-medicine-research-group-
+UNAV/conformalized_single_cell_annotator and https://doi.org/10.5281/zenodo.15870599.
+
+
+
+1 Introduction                                                                    limitations, a second approach based on supervised classifica­
+                                                                                  tion algorithms was recently introduced as a promising alter­
+Single-cell RNA sequencing (scRNA-seq) enables the profil­
+ing of human tissues at individual cell resolution, allowing                      native to automatic annotation of cell types (Abdelaal et al.
+the study of complex cell population dynamics along differ­                       2019, Pliner et al. 2019, Clarke et al. 2021). These annota­
+ent processes (Zhu et al. 2020, Jovic et al. 2022). Exploring                     tors usually rely on learning transcriptomic patterns from
+transcriptomic patterns with this unprecedented resolution                        well-annotated reference datasets and exploit them to classify
+has become an essential tool for understanding cellular diver­                    new cells from query datasets. Most of the existing automatic
+sity, as well as for assessing the role of specific cell popula­                  annotators are built on top of conventional machine learning
+tions in disease progression and therapeutic response.                            methods, which presents a common limitation: they lack reli­
+   A key step in the analysis of scRNA-seq data often involves                    able uncertainty estimates of the cell type annotation. This
+the accurate categorization of cells into cell types (Heumos                      becomes especially problematic in single-cell classification,
+et al. 2023). The identification of cell types from similar tran­                 where uncertainty can originate from multiple sources, in­
+scriptomic signatures has been mainly addressed through two                       cluding biological variability and the presence of batch effects
+different data-driven approaches. The first approach employs                      (Butler et al. 2018).
+unsupervised clustering methods to group cells with similar                          In this study, we propose a method for reliable single-cell
+gene-expression patterns. These clusters are then manually                        annotation with integrated uncertainty quantification. In par­
+annotated by analysing relevant biomarkers with the help of                       ticular, we present a novel procedure based on conformal
+expert-domain knowledge (Aran et al. 2019). This approach,                        prediction, a robust framework designed to endow machine
+however, presents several drawbacks, such as the labor-                           learning models with statistical guarantees by means of rigor­
+intensive nature of the annotation process and the lack of                        ous prediction sets, without making any assumption about
+reproducibility (Kiselev et al. 2019). To overcome these                          the underlying probability distribution (Toccaceli 2022,
+
+Received: 1 April 2025; Revised: 9 September 2025; Accepted: 15 September 2025
+© The Author(s) 2025. Published by Oxford University Press.
+This is an Open Access article distributed under the terms of the Creative Commons Attribution License (https://creativecommons.org/licenses/by/4.0/), which
+permits unrestricted reuse, distribution, and reproduction in any medium, provided the original work is properly cited.
+2                                                                                                                         � pez-De-Castro et al.
+                                                                                                                         Lo
+
+
+Vovk et al. 2022, Angelopoulos and Bates 2023). For each                 dataset Dtest ¼ ðx1 ; y1 Þ; . . . ; ðxm ; ym Þ, where yi denotes the type
+new query cell, a set of plausible labels covering the true type         label for each cell, which is initially unknown and to be in­
+with a confidence level is returned. The size of the prediction          ferred. Without loss of generality, we assume that Dref and
+sets generated by the conformal predictor can be directly                Dtest share a common feature space X (i.e. the sequenced
+interpreted as uncertainty estimates. A large prediction set             genes are the same in both datasets).
+indicates an ambiguous profile, less confidence in the predic­              We face the task of reliable supervised cell-type annotation
+tion, and, therefore, should be treated with caution.                    through the lens of predictive uncertainty quantification. The
+Conversely, a narrow prediction set reflects high confidence             goal is to construct a set-valued predictor C : X ! 2Y that,
+in the cell type assignment, supported by well-characterized             for a new sequenced cell xn þ 1 2 Dtest , produce a prediction
+gene-expression signatures.                                              set Cðxn þ 1 Þ � Y of plausible types with the following cover­
+   Since our approach is built on conformal prediction, the              age guarantee:
+statistical guarantees hold as long as the independent and
+identically distributed (i.i.d.) assumption is satisfied.                                    Pðyn þ 1 2 Cðxn þ 1 ÞÞ ≥ 1 − α;                  (1)
+
+
+
+
+                                                                                                                                                     Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+However, scRNA-seq experiments often involve the analysis
+of different tissues in which novel cell populations may not             where yn þ 1 is the ground truth, and α 2 ½0; 1� is a nominal er­
+have been available during the training phase. In such cases,            ror level. The construction of C is approached through the
+the i.i.d. assumption is violated, potentially leading to                lens of conformal prediction (Vovk et al. 2022), which pro­
+untrustworthy prediction sets failing to retrieve the desired            vides formal coverage guarantees as long as the i.i.d. assump­
+confidence. These cells should remain unassigned since their             tion holds.
+cell type has not been considered during the training step                  However, a common scenario in single-cell annotation is
+(Theunissen et al. 2025). Existing annotators have usually               the presence of novel cell populations in Dtest that may have
+performed the identification of novel populations by analy­              not been present on the reference Dref (i.e. yn þ 1 62 Y). This sit­
+sing the classifier’s posterior scores and defining threshold-           uation violates the i.i.d. assumption, breaking the conformal
+based rejection strategies (Goyal et al. 2022, Theunissen et al.         guarantee. Hence, we also consider the problem of anoma­
+2024). Unfortunately, it is well-known that most of the classi­          lous cell type detection and formulate it as a statistical hy­
+fication algorithms, including neural networks, tend to pro­             pothesis test (Laxhammar and Falkman 2010, Bates
+duce miscalibrated scores that do not reflect true                       et al. 2023):
+probabilities (Bostr€ om 2008, Minderer et al. 2021). In con­
+trast, we have coupled our annotator with an unsupervised                                         H0 : xn þ 1 � PX Y :                        (2)
+anomaly detector to exclude those cell types that were not
+present in the reference data from the annotation process.                  The construction of valid p-values for testing (2) is our sec­
+This anomaly detector combines the power of black-box                    ond goal. Thus, we propose a sequential machine learning
+unsupervised one-class models with the explainability of the             pipeline comprising two modules: a novel cell type OOD de­
+hypothesis testing theory (i.e. decision accordingly with a              tector, followed by a conformal classifier. Our proposal inte­
+valid null distribution). This is achieved using the conformal           grates recent advances from conformal inference to provide
+prediction framework again, which derives valid P-values for             distinct types of statistical guarantees. Specifically, we em­
+the hypothesis tests.                                                    ploy an inductive scheme (Papadopoulos et al. 2002), such
+   Although conformal prediction has been applied in many                that Dref is partitioned into a proper training set Dtrain and a
+fields, including spatial transcriptomics data (Sun et al.               calibration set Dcal . Under this approach, Dtrain is used to
+2024), to the best of our knowledge only one work has previ­             train the underlying models, whereas Dcal is then employed to
+ously discussed the benefits of using conformal prediction for           calibrate them and provide a reliable prediction (see Fig. S1,
+single-cell label annotation (Khatri and Bonn 2022). In their            available as supplementary data at Bioinformatics online).
+work, the application is limited to the standard conformal               Throughout this work, we adopt the following convention:
+taxonomy, whereas the problem of detecting unknown cell                  OOD observations refer to cells that are OOD as defined pre­
+types is not addressed. Alternatively, we here provide a prac­           viously. In-distribution (ID) observations refer to cells whose
+tical and statistically principled methodology for scRNA-seq             cell types are present in the reference data but may not neces­
+annotation that leverage conformal prediction to (i) detect              sarily satisfy the exchangeability assumption. Lastly, i.i.d.
+out-of-distribution (OOD) cells from the ontology reference              observations refer to cells meeting the exchangeabil­
+using a fully non-parametric approach; and, (ii) annotate                ity condition.
+scRNA-seq data with statistical guarantees through predic­
+tion sets. Our approach was validated across diverse refer­              2.2 Reliable unsupervised identification of novel
+ence and query datasets, and it is suitable for use with any             cell types
+well-established single-cell ontology.                                   2.2.1 Underlying OOD detector
+                                                                         We propose an autoencoder as the underlying novel cell type
+                                                                         OOD detector: X ! R that, for each new sample, produces
+2 Materials and methods                                                  an anomaly score. Intuitively, larger scores indicate higher ev­
+2.1 Notation and problem setup                                           idence that a sample may be an outlier. The autoencoder
+Formally, let us assume a labeled reference dataset                      comprises two feed-forward multi-layer neural networks: the
+Dref ¼ ðx1 ; y1 Þ; . . . ; ðxn ; yn Þ, where xi encodes the transcrip­   encoder and the decoder. The encoder maps the original in­
+tomic expression profiles, and yi denotes the cell type. We as­          put data xi 2 Rp to a low-dimensional representation zi 2 Rq ,
+sume that Dref is i.i.d. sampled from an unknown distribution            with q < p. The decoder reconstructs the low-dimensional
+PX Y , where X 2 Rp is the feature space, and Y ¼ fc1 ; . . . ; cK g     representation back again to the original space, yielding
+is a discrete label space. Additionally, let us consider a query         x0i 2 Rp . This architecture is trained in an unsupervised way
+Conformal inference for reliable scRNA-seq annotation                                                                                             3
+
+
+on Dtrain , clean of any outliers, to minimize the mean squared      � THR (Sadinle et al. 2019): The threshold-based non-con­
+reconstruction error using an Adam optimizer. Additional               formity score at an input x and a label y is defined as
+details about the implementation are given in Section S3.1,
+available as supplementary data at Bioinformatics online.                                       sTHR ðx; yÞ ¼ 1 − b
+                                                                                                                  f y ðxÞ                        (6)
+2.2.2 Induction of conformal valid p-values
+The procedure to determine valid p-values for testing (2) is a
+statistical wrapper around the underlying autoencoder. Once           where b
+                                                                            f y ðxÞ is the softmax score for the true class.
+trained, we computed the anomaly scores on the calibration
+data si ¼ OODðxi Þ; xi 2 Dcal . In the realm of conformal infer­     � APS (Romano et al. 2020): Unlike the THR function, the
+ence, these values are referred to as the non-conformity               adaptive prediction sets employs the softmax scores of all
+scores. Since the calibration samples are i.i.d., the ranking of       classes. Specifically, it computes the cumulative sum of
+the non-conformity scores is uniformly distributed. In this            the sorted scores as the non-conformity score:
+
+
+
+
+                                                                                                                                                       Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+way, if we compute a conformal p-value for a new sample as
+                                                                                    X
+                                                                    sAPS ðx; yÞ ¼           b
+                                                                                            f y0 ðxÞ1ðrf ðx; y0 Þ < rf ðx; yÞÞ þ u � b
+                                                                                                                                     f y0 ðxÞ
+                                Pn                                                                                                               (7)
+                           1þ    i¼1 1ðsi ≥ sn þ 1 Þ                                y0 2Y
+                pn þ 1 ¼                             ;       (3)
+                                    ncal
+
+where 1ð�Þ is the indicator function and sn þ 1 is the non-
+                                                                    where rf is the rank of the softmax scores, and u is a random
+conformity score for the new sample, this p-value is margin­
+                                                                    variable derived from a uniform distribution between [0, 1].
+ally valid for testing (2). In particular,
+                                                                     � RAPS (Angelopoulos et al. 2021): The regularized adap­
+            Pðpn þ 1 ≤ αo Þ ≤ αo ; for any αo 2 ½0; 1�       (4)       tive prediction sets function adds a regularization term to
+                                                                       the APS to penalize noisy scores and reduce the predic­
+is satisfied, allowing to evaluate whether each new sample             tion set sizes:
+from Dtest is a novel cell type in a more statistical informed
+way than traditional one-class models (Pimentel et al. 2014).
+                                                                              sRAPS ðx; yÞ ¼ sAPS ðx; yÞ þ ηðrf ðx; yÞ − κÞ þ ;                  (8)
+   A powerful advantage of the conformal approach is that
+the derived conformal p-values directly control the marginal
+False Positive Rate (FPR). For any chosen significance level
+αo , the expected FPR is bounded by αo over all possible cali­         where η represents the weight of the regularization, κ is a
+bration sets Dcal :                                                 regularization parameter, and ðÞ þ refers to the positive part.
+                                                                       For each function, non-conformity scores are computed on
+                     E½FPRðαo ; Dcal Þ� ≤ αo :               (5)    Dcal . Then, instead of computing a single p-value for a new
+                                                                    query sample, we calculate a set of p-values as in (4), one for
+   This means that, if we set a decision threshold αo , the long-   each of the possible types a cell may belong to. In that way,
+run proportion of ID cells that are falsely flagged as OOD is       each p-value represents how plausible each cell type is for a
+guaranteed to not exceed αo , provided the exchangeability          specific sample. For a given α 2 ½0; 1�, we compute a predic­
+condition between the reference and query data holds.               tion set given by all the types whose p-value is greater than
+Additional guarantees can be introduced through the                 α, formally:
+calibration-conditional conformal p-values (Bates et al.
+2023), at expenses of losing statistical power. Calibration-                                Cðxn þ 1 Þ ¼ fck 2 Yjpk ≥ αg                         (9)
+conditional conformal p-values guarantees that, for our se­
+lected Dcal , FPR is never above αo with some probability 1 − δ        These prediction sets satisfy marginal coverage guarantees
+(Bates et al. 2023).                                                (1) under the i.i.d. assumption. Note that the guarantees are
+                                                                    exclusively marginal, on average, across the entire popula­
+2.3 Uncertainty-aware cell type annotation                          tion. We also consider Mondrian conformal prediction
+We perform experiments with three different underlying              (Vovk et al. 2022), a modification of the original procedure
+multi-class annotators; Scmap, CellTypist, and a feed-              that satisfy validity conditioned on each of the categories de­
+forward deep neural network which we will refer to as               fined by a chosen taxonomy. One of the most powerful tax­
+‘TorchNet’. We impose the following condition to the under­         onomies relies on mapping each sample to the label space
+lying annotator: for a new cell, a softmax score for each of        κ : X × Y ! Y. This taxonomy is known as classwise confor­
+the K types must be returned bf : X ! Δk . This allows us to        mal predictors, and the resulting set-valued predictor
+use well-established non-conformity functions.                      achieves class-conditional coverage guarantees:
+
+2.3.1 Conformal calibration                                               Pðyn þ 1 2 Cðxn þ 1 Þ j yn þ 1 ¼ cÞ ≥ 1 − α; 8c 2 Y                   (10)
+As with the anomaly detector calibration, the non-
+conformity function is a key element in the development of a          The coverage is here satisfied for every cell type in the ref­
+conformal set-valued predictor. The choice of a suitable            erence dataset. This taxonomy is particularly useful for im­
+non-conformity function is a critical step to induce effective      balanced datasets, as it guarantees long-term control of the
+prediction sets. We have implemented three state-of-the-art         error rate across all cell types. However, many single-cell ref­
+non-conformity functions derived from the outputted soft­           erence data exhibit severe class imbalance, where a minority
+max scores of the underlying classifier:                            of cell types have a few dozens of observations and major cell
+4                                                                                                                         � pez-De-Castro et al.
+                                                                                                                         Lo
+
+
+types have thousands. In such highly imbalanced scenarios,                  For experiments using Scmap and Celltypist, the prepro­
+classwise conformal predictors can become unstable for the               cessing concluded at this stage, in accordance with their origi­
+rare classes. Introducing a cluster taxonomy within                      nal publications. For experiments with Torchnet, feature
+Mondrian conformal predictors can help in these situations               selection identified the top 2000 genes exhibiting the highest
+(Ding et al. 2023), because it offers a balance between stan­            cell-to-cell variation using the dispersion-based method
+dard and classwise approaches, thereby improving the effi­               implemented in Seurat (Satija et al. 2015). Finally, we inte­
+ciency of the set predictions. Formally, this approach aims              grated the reference and query datasets using Harmony
+to satisfy,                                                              (Korsunsky et al. 2019) to correct for batch effects.
+
+                                                                         2.5 Evaluation metrics and experimental setup
+Pðyn þ 1 2 Cðxn þ 1 Þ j b
+                        h ðyn þ 1 Þ ¼ mÞ ≥ 1 − α; 8m 2 f1; . . .; mg;
+                                                                         The calibration set Dcal was set to 40% of the available train­
+                                                                  (11)   ing samples over all experiments. We first evaluated the per­
+                                                                         formance of the anomaly detector through its statistical
+where bh is a clustering function that maps each class of Y to
+
+
+
+
+                                                                                                                                                   Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+                                                                         Power (Recall), FPR, and FDR. We used the well-established
+one of the possible M clusters. The three described taxono­              leave-one-cell-type-out strategy, i.e. exclude all observations
+mies, i.e. standard, classwise, and cluster, are included in             of one cell type from the reference dataset, while they were
+our annotator.                                                           retained in the query set.
+2.4 Datasets and preprocessing                                              The annotator outputs were assessed in terms of both over­
+                                                                         all performance and the quality of the conformal prediction.
+We assessed the performance of our approach with several                 The quality of the set-valued annotations was quantified by
+publicly available datasets. Three were gathered from differ­            measuring the average empirical coverage
+ent human tissues, including lung, pancreas, and breast, and
+one from mouse tissue at gastrulation period.                                                            ntest
+   For the lung-tissue analysis, we used a cross-tissue immune-                                     1 X
+                                                                                           Cov ¼               1ðy 2 Cðxi ÞÞ;              (12)
+cell atlas from healthy adult donors as a reference (Dom�ınguez                                    ntest i¼1
+Conde et al. 2022). Immune transcriptional profiles are highly
+state-dependent and represents a challenge in single-cell annota­        where ntest is the query size. The class coverage gap is
+tion. To test our approach, we selected two independent query            then defined as
+datasets. The first query consisted of single-cell RNA sequencing
+data from healthy lung tissue (GEO: GSE178360—accessions                                            1X
+GSM5388411, GSM5388412, and GSM5388413) (Kadur                                         CovGap ¼            jCovk − ð1 − αÞj;               (13)
+                                                                                                    K c 2Y
+                                                                                                        k
+et al. 2022). The second query comprised data from lung cancer
+patients (accessions GSE127465) (Zilionis et al. 2019), where
+                                                                         where Covk is the empirical class-conditional coverage for
+we expect alterations in immune-cell transcriptomic profiles. As
+                                                                         class ck 2 Y. The performance of the set predictions was mea­
+the nomenclature in the query datasets differed from the refer­
+                                                                         sured through the average set size,
+ence, we harmonized the cell population labels to enable direct
+comparison (see Section S4, available as supplementary data at                                                    ntest
+Bioinformatics online).                                                                                      1 X
+                                                                                         Average size ¼                 jCðxi Þj:          (14)
+   For the pancreas tissue, we used the GSE84133 study                                                      ntest i¼1
+(Baron et al. 2016) to create a batched experiment. From the
+four different subjects in the study, we manually built four                In addition to the query data, we reserved a small subset
+reference datasets with three subjects each time, leaving the            (10%) of reference samples as internal test set (containing no
+corresponding fourth subject as the query dataset. This split­           OOD samples). We also set aside another subset (15%) as a
+ting introduces biological variability between reference and             validation set to guide model training and prevent overfitting.
+query data when samples are gathered with the same technol­              The remaining samples were split into training and calibra­
+ogy and conditions, but on different individuals. For the                tion subsets. The former subset was used to fit the underlying
+breast tissue, we considered the GSE180878 study, covering               classifier and anomaly detector, whereas the latter was used
+a human breast atlas. The reference dataset was built from 12            to calibrate the conformal predictor.
+assayed samples with prophylactic mastectomies, whereas the                 We considered three nominal error levels for the annotator,
+remaining four samples with reductive mammoplasties were                 namely α ¼ ½0:01; 0:05; 0:1�. For each experiment, different
+set as query. Finally, the gastrulation dataset was collected            configurations were analysed. Each configuration included an
+from mouse embryos at nine sequential time points (Pijuan-               error level, α, a non-conformity measure (sAPS ; sRAPS ; sTHR ), a
+Sala et al. 2019). We divided the data into two sequencing ex­           taxonomy (standard, classwise, cluster), and a leave-one-cell-
+perimental batches, mimicking reference and query datasets.              type-out strategy. We set κ ¼ 1 and η ¼ 0:01 when employing
+   In total, 10 different experiments were run (see Tables S1–           the sRAPS non-conformity score. The clustering procedure used
+S8, available as supplementary data at Bioinformatics online,            in the cluster taxonomy was carried out by running k-means on
+for additional details). We preprocessed each experiment for             the quantile-based non-conformity scores embedding, as in the
+quality control. First, we excluded cell type populations with           original work (Ding et al. 2023), implemented by default in
+less than 60 observations due to sample size considerations.             TorchCP (Huang et al. 2024). All configurations were repeated
+We flagged doublets and low quality cells as those with a mi­            20 times using different random seeds to ensure robust esti­
+tochondrial gene ratio > 10%, a ribosomal gene ratio > 60%,              mates. Minority cell groups were excluded from the reference
+or a hemoglobin gene ratio > 60%, and filtered them out.                 dataset, but retained in the query set to simulate OOD observa­
+Then the raw count data was normalized to counts per mil­                tions. The anomaly detector was applied using the automatic αo
+lion and then log-transformed with log2 ðx þ 1Þ.                         selection method described in Section S3.1, available as
+Conformal inference for reliable scRNA-seq annotation                                                                                                      5
+
+
+supplementary data at Bioinformatics online, except for experi­                  assumption is broken between the reference and query in
+ment 1 of gastrula tissue, where an αo ¼ 0:15 was fixed due to                   panel B. The conformalized detector effectively identifies
+sample size considerations.                                                      OOD cells in both scenarios, achieving high power scores at
+                                                                                 low significance thresholds. A similar trend is observed for
+                                                                                 the rest of cell types tested in the leave-one-cell-type-out
+3 Results                                                                        experiments (Figs S3 and S4, available as supplementary data
+3.1 Anomaly detector accurately identifies                                       at Bioinformatics online), as well as in the other tissues evalu­
+OOD cells                                                                        ated (Figs S5–S7, available as supplementary data at
+Figure 1 presents marginal and conditional conformal p-val­                      Bioinformatics online). To achieve a high power score is a
+ues for Naive B cells flagged as OOD in the two lung-tissue                      critical step for the reliability of a conformalized single-cell
+queries considered. Over the range of significance levels                        annotator. A low power score inherently leads to numerous
+tested αo , we observe that conformal p-values achieves the                      misclassified cells, which in turn can violate the coverage
+FPR guarantee given by Equation (5) in panel A, but not in                       guarantees provided by the conformal prediction framework.
+
+
+
+
+                                                                                                                                                               Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+panel B. This outcome is expected since observations repre­                         The suboptimal FDR performance is related with the pro­
+sented in panel A were collected from healthy patients,                          portion of OOD cells in the query. As illustrated in Fig. 2A,
+whereas those from panel B were collected from patients with                     the FDR is large when OOD cells are rare relative to ID cells.
+a lung tumor. As a consequence, the exchangeability                              This phenomenon is a direct consequence of the statistical
+
+
+
+
+Figure 1. Performance of the anomaly detector in a leave-one-cell-type-out evaluation. Detection of Naive B cells is displayed for (A) a healthy query, and,
+(B) a query from human patients with lung tumors, representing 1.54% and 1.27% of the query cells, respectively. Metrics reported include statistical
+Power (blue), FDR (orange), and FPR (green). The fraction of true OOD cells among all the query cells is also shown. The α0 values range from 10 − 3
+to 0.3.
+6                                                                                                                                 � pez-De-Castro et al.
+                                                                                                                                 Lo
+
+
+
+
+Figure 2. Probability distributions of marginal conformal p-values derived from the anomaly detector for the lung-tissue experiments. Blue bars indicate p-
+values derived from ID cells, while red bars depict p-values associated to the following OOD cells: MNP/T doublets, Memory B cell, and Naive B cells.
+Panels A and B display results for the healthy patients query, whereas Panel C corresponds to lung tumor patients. Panel A shows a scenario where the
+identified OOD cells are present.
+
+
+
+
+                                                                                                                                                              Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+properties of conformal p-values: for exchangeable ID cells,                    technical variations in the preprocessing stage. By contrast,
+these p-values follow a uniform distribution on [0, 1].                         TorchNet achieves near-theoretical coverage across all taxon­
+Consequently, a baseline proportion of ID cells will inher­                     omies, with only minor deviations on the standard scheme
+ently receive low p-values. When the true OOD cell popula­                      likely due to a small fraction of OOD cells challenging
+tion is small, the number of correctly identified OOD cells is                  to detect.
+overwhelmed by this larger number of false-positive ID cells,                      Global results for the experiments conducted using healthy
+leading to a high FDR.                                                          lung, tumor-patient lung, gastrula, and pancreatic tissues are
+                                                                                provided in Figs S23–S26, available as supplementary data at
+3.2 Beyond OOD cell detection                                                   Bioinformatics online. Although the observed variability is
+A central challenge in single-cell analysis is the presence of co­              greater in the query data compared to the internal tests where
+variate shifts between reference and query datasets. These                      OOD cells are absent and batch effects are negligible (see Figs
+shifts can arise from technical sources (e.g. batch effects) or                 S12–S15, available as supplementary data at Bioinformatics
+biological variation (e.g. different tissues or disease states),                online), the coverage guarantees remain closely satisfied.
+compromising the exchangeability assumption required by                         Small deviations in the healthy lung-tissue experiment are ob­
+conformal prediction. The statistical properties of the confor­                 served. For this particular experiment, the reference/query
+mal p-values generated by our anomaly detector offers a prin­                   pairs were taken from completely independent datasets. We
+cipled way to assess whether the exchangeability is broken.                     could therefore expect that a small fraction of cells, even after
+By theoretical considerations, these p-values must be uni­                      the quality checks and the detection of anomalies, may still
+formly distributed on the interval [0, 1] when exchangeability                  violate exchangeability. Nevertheless, coverage and perfor­
+holds. Any significant deviation from this uniformity in the                    mance scores remain notably closer to the theoretical values
+distribution of the conformal p-values provides evidence of a                   than in the tumor-patient query where the biological batch
+broken exchangeability.                                                         clearly breaks the exchangeability assumption.
+   The results of the experiments carried out with immune                          The robust uncertainty quantification provided by the pre­
+cells highlight three possible scenarios (see Fig. 2).                          diction sets allows for enhanced downstream analyses: practi­
+Specifically, Fig. 2A and B shows the p-value distribution for                  tioners can control the overall annotation error rate, i.e. α, a
+the healthy lung query dataset. In Fig. 2A, OOD cells are pre­                  priori. In addition, they can also identify which specific query
+sent, and the detector correctly identifies them as a very                      observations are more challenging to annotate based on the
+strange cells, i.e. they have an associated low p-value. In                     size of their prediction sets, and take appropriate actions
+Fig. 2B, no OOD cells where included, however, the distribu­                    accordingly.
+tion of the p-values shows a modest peak of low p-values,                          The annotation approach can be adapted according to the
+suggesting small residual batch effects or subtle biological dif­               user’s requirements. For instance, when efficient set predic­
+ferences, while the rest of the distribution is uniform. Finally,               tions (i.e. sets containing a single class) are desired, the stan­
+Fig. 2C shows the distribution for the tumor lung query data­                   dard taxonomy shown in Equation (1) is an appropriate
+set. It clearly illustrates a major covariate shift due to the dis­             choice. By contrast, in unbalanced reference datasets the cov­
+ease state of the patients, confirming that exchangeability                     erage guarantee may not be fulfilled for rare cell types. Using
+is violated.                                                                    the classwise taxonomy from Equation (10) ensures the cov­
+                                                                                erage property is satisfied for every cell type in the reference
+3.3 Uncertainty-aware cell type annotation results                              dataset, see Fig. S16, available as supplementary data at
+Figure 3 illustrates the average performance of the annotator                   Bioinformatics online, at the cost of generating larger predic­
+in experiments conducted on breast tissue data using                            tion sets. Furthermore, calibration for extremely rare cell
+TorchNet, with the results stratified by error level, perfor­                   types can become unstable due to insufficient samples, result­
+mance score, taxonomy, and non-conformity function. The                         ing in higher CovGap score than with the standard taxon­
+results using Scmap and CellTypist as underlying models are                     omy, see Figs S16–S19, available as supplementary data at
+reported in Figs S21 and S22, available as supplementary                        Bioinformatics online. The cluster taxonomy provides a
+data at Bioinformatics online, respectively. Scmap performs                     tradeoff between standard and classwise approaches. In addi­
+well under the classwise and cluster taxonomies, likely due to                  tion, the cluster taxonomy shown in Equation (11) can also
+its cluster-based classification approach, but fails under the                  be tailored to the specific characteristics of the annotation
+standard taxonomy. CellTypist results do not achieve the                        problem (e.g. results of a hierarchical clustering in a sub-cell
+coverage guarantee, probably due to the non-addressed                           annotation problem). However, we report that the cluster
+Conformal inference for reliable scRNA-seq annotation                                                                                                   7
+
+
+
+
+                                                                                                                                                            Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+Figure 3. Average results for the breast tissue query data using TorchNet as undelying supervised model. The columns represent the three taxonomies:
+standard, classwise, and cluster. Each row displays the results for one of the three measured performance scores, namely coverage, covgap, and set
+size. Within each chart, every column corresponds to a nominal error level α ¼ 0:01; 0:05; 0:10, and the different non-conformity functions: sAPS , sRAPS
+and sTHR , are indicated by different colors.
+
+
+
+
+taxonomy becomes unstable under very strict coverage                           several benefits. For example, we could let the annotator au­
+requirements, e.g. α ≥ 0:99, producing completely uninforma­                   tomatically assign a cell type in cases where the conformal
+tive prediction sets.                                                          predictor is confident enough (e.g. in case of singleton
+   Finally, the choice of a non-conformity score plays a role                  predictions).
+in the efficiency of the annotations. Although the sTHR func­                     Beyond producing reliable measures of confidence, the
+tion yields efficient set predictions, it may occasionally pro­                returned sets contain the most probable types the query cell
+duce empty prediction sets. An empty set constitutes a                         should belong to, which could speed the final identification.
+rejection of the prediction that naturally emerges from the                    Let assume an annotated query observation whose prediction
+conformal prediction framework. This is an indication that                     set contains three specific types: c1 , c3 , and c5 , out of K � 5
+the model found that no cell type meets the confidence re­                     possible values. In that case, we could say that we have evi­
+quirement, reflecting that the model cannot make a reliable                    dence at the significance level α that such query cell belongs
+annotation for the query due to extreme uncertainty or                         to one of those types. Additionally, each type has a specific p-
+changes in the distribution on X . In complex scenarios, we                    value associated, pc1 , pc3 , and pc5 , which represents how
+may be interested in a more adaptable-to-condition predic­                     much the query cell conforms with each of the types. This
+tion tool. The prediction sets provided by sAPS and sRAPS                      knowledge can be exploited in different ways, as in the case
+functions offer the advantage of considering the overall dis­                  when a final annotation is needed, manually forcing the pre­
+tribution of class probabilities in their construction, provid­                dictor to classify the query cell as the type with the highest as­
+ing more informative and adaptive prediction sets when                         sociated p-value. Another possibility for a final cell type
+compared to sTHR .                                                             categorization is that an expert could perform an informed
+                                                                               analysis on the differential expression between those possible
+3.4 Conformal prediction for uncertainty-aware                                 types or compare the expression profiles of specific genes of
+annotations: interpreting prediction sets                                      relevance. In this way, the human workload can be signifi­
+The cardinality of the prediction sets returned by a conformal                 cantly reduced, as experts no longer need to analyse the entire
+predictor represents a measure of uncertainty for each query                   space of possible cell types but can focus on a much smaller,
+cell. In a human-in-the-loop scenario, this could lead to                      more relevant subset.
+8                                                                                                                               � pez-De-Castro et al.
+                                                                                                                               Lo
+
+
+
+
+                                                                                                                                                           Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+Figure 4. Power of the anomaly detector and empirical coverage behavior as a function of the significance threshold αo in pancreatic-tissue experiments.
+All four experiments flag the same six cell types as OOD: quiescent_stellate, macrophage, mast, schwann, epsilon and t_cell thereby sampling different
+OOD distributions across experiments. Dashed horizontal black lines shows the expected theoretical
+coverage. αo 2 f5 � 10 − 3 ; 1 � 10 − 3 ; 5 � 10 − 2 ; 0:1; 0:2; 0:35; 0:5g.
+
+
+3.5 Limitations                                                                uncertainty quantification for the automatic annotations.
+Despite the statistical advantages offered by our annotator                    Conformal prediction ensures both reliability and trustwor­
+based on conformal prediction, a poor recall performance in the                thiness of the results.
+anomaly detector can compromise the theoretical guarantees.                       OOD cells are identified using a multiple hypothesis testing
+Figure 4 illustrates this situation for the four experiments con­              approach that leverages valid p-values derived from the con­
+ducted using pancreatic tissue. At very low significance thresh­               formal framework. These guarantees guard the proper con­
+olds αo , the detector rarely flags OOD cells, yielding a                      struction of a valid null distribution to test whether a query
+pronounced gap between empirical and theoretical coverage. As                  cell belongs to the same distribution as the reference cohort.
+αo increases, the probability of detecting OOD cells grows,                    As a result, the anomaly detector provides a statistically
+resulting in improved power scores, and the gap between empir­                 grounded rationale for accepting or rejecting query cells at
+ical and theoretical coverage is progressively closed. We can                  the established significance level. The uncertainty-aware
+also observe this trend in Fig. 4 for experiments 1, 3, and 4.                 scRNA-seq annotator is afterwards applied. We evaluated a
+Experiment 2, however, exhibits an interesting trend. As previ­                broad spectrum of different taxonomies and non-conformity
+ously discussed, bad addressed ID cells also break the exchange­               functions and discussed the conditions under which they can
+ability assumption. For Experiment 2, at αo ¼ 0:1, our detector                be more advantageous to use. Final annotations are provided
+achieves relatively high power detecting those OOD cells which                 in the form of valid set predictions, each of which quantifies
+are present in the query, yet empirical coverage remains sub­                  the uncertainty associated with each individual query cell
+stantially below its theoretical value. Further increases in αo                through the length of the predicted set. This enhanced knowl­
+lead to an abrupt elimination of this gap. This pattern suggests               edge on the annotation process increases the confidence in
+that a subset of ID cells violates the exchangeability assumption.             the automatic annotations and provides confidence in further
+Once these cells are removed using larger significance thresholds              downstream analyses.
+αo , the gap is closed. Finally, although the automatic αo selector               Future work will involve a further comparison across a
+is based on a robust rationale for determining the optimal value               wide range of well-established underlying models. Another
+of αo , be aware that its process may conclude before all OOD                  interesting direction would be to study if introducing cluster-
+samples are identified. However, experiments conducted in                      level information into the anomaly detector improves its per­
+Section S5.3, available as supplementary data at Bioinformatics                formance on the most challenging to identify cell types. Our
+online, show its capacity to largely mitigate or fully remove the              proposal is available through an open source repository in­
+impact of exchangeability violations when batch effects are pre­               cluding functions ready to be applied to scRNA-seq annota­
+sent at different degrees (see Section S5.3, available as supple­              tion tasks.
+mentary data at Bioinformatics online, for additional details).
+                                                                               Author contributions
+4 Conclusions                                                                  Marcos L�  opez De Castro (Conceptualization [lead], Data cura­
+This work presents a robust methodological approach for                        tion [lead], Formal analysis [lead], Investigation [lead],
+scRNA-seq annotation with statistical guarantees. The ap­                      Methodology [lead], Project administration [equal], Resources
+proach, based in conformal prediction theory, effectively                      [equal], Software [lead], Validation [lead], Visualization [lead],
+addresses two critical challenges for the annotation process:                  Writing—original draft [lead], Writing—review & editing
+(i) the detection of OOD cells, and, (ii) well-calibrated                      [equal]), Alberto Garc�ıa-Galindo (Conceptualization [lead], Data
+Conformal inference for reliable scRNA-seq annotation                                                                                                   9
+
+
+curation [supporting], Formal analysis [supporting], Investigation            Ding T, Angelopoulos A, Bates S et al. Class-conditional conformal pre­
+[equal], Methodology [equal], Project administration [equal],                     diction with many classes. In: Oh A, Naumann T, Globerson A et al.
+Resources [supporting], Software [supporting], Supervision [sup­                  (eds), Advances in Neural Information Processing Systems, Vol. 36.
+porting], Validation [supporting], Visualization [supporting],                    Red Hook, NY, USA: Curran Associates, Inc., 2023, 64555–76.
+                                                                              Goyal M, Serrano G, Argemi J et al. JIND: joint integration and dis­
+Writing—original draft [supporting], Writing—review & editing
+                                                                                  crimination for automated single-cell annotation. Bioinformatics
+[equal]), Jos�e Gonz�alez-Gomariz (Conceptualization [equal],
+                                                                                  2022;38:2488–95.
+Data curation [equal], Formal analysis [supporting],                          Heumos L, Schaar AC, Lance C et al.; Single-cell Best Practices
+Investigation [supporting], Methodology [supporting], Project                     Consortium. Best practices for single-cell analysis across modalities.
+administration [supporting], Resources [equal], Software [sup­                    Nat Rev Genet 2023;24:550–72.
+porting], Supervision [equal], Validation [supporting],                       Huang J, Song J, Zhou X et al. TorchCP: a python library for conformal
+Visualization [supporting], Writing—review & editing [support­                    prediction. Unpublished Paper, 2024.
+ing]), and Rub�en Arma~     nanzas (Conceptualization [equal],                Jovic D, Liang X, Zeng H et al. Single-cell RNA sequencing technolo­
+Funding acquisition [lead], Investigation [supporting],                           gies and applications: a brief overview. Clin Transl Med 2022;
+
+
+
+
+                                                                                                                                                             Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+Methodology [supporting], Project administration [supporting],                    12:e694.
+Resources [supporting], Supervision [lead], Writing—review &                  Kadur P, Sontake V, Tata A et al. Human distal lung maps and lineage
+editing [lead])                                                                   hierarchies reveal a bipotent progenitor. Nature 2022;604:111–9.
+                                                                              Khatri R, Bonn S. Uncertainty estimation for single-cell label transfer.
+                                                                                  In: Johansson U, Bostr€ om H, An Nguyen K et al. (eds), Proceedings
+Supplementary data                                                                of the Eleventh Symposium on Conformal and Probabilistic
+                                                                                  Prediction with Applications, Volume 179 of Proceedings of
+Supplementary data is available at Bioinformatics online.
+                                                                                  Machine Learning Research. Brighton, UK: PMLR, 2022, 109–28.
+Conflict of interest: No competing interest is declared.                      Kiselev VY, Andrews TS, Hemberg M. Challenges in unsupervised clus­
+                                                                                  tering of single-cell RNA-seq data. Nat Rev Genet 2019;20:273–82.
+                                                                              Korsunsky I, Millard N, Fan J et al. Fast, sensitive and accurate integra­
+Funding                                                                           tion of single-cell data with harmony. Nat Methods 2019;
+                                                                                  16:1289–96.
+This work was supported by Gobierno de Navarra through
+                                                                              Laxhammar R, Falkman G. Conformal prediction for distribution-
+the ANDIA 2021 Program (Grant Num. 0011-3947-2021-
+                                                                                  independent anomaly detection in streaming vessel data. In:
+000023) and the ERA PerMed JTC2022 PORTRAIT Project                               Proceedings of the First International Workshop on Novel Data
+(Grant Num. 0011-2750-2022-000000).                                               Stream Pattern Mining Techniques, StreamKDD’10. . New York,
+                                                                                  NY, USA: Association for Computing Machinery, 2010, 47–55.
+                                                                              Minderer M, Djolonga J, Romijnders R et al. Revisiting the calibration
+Data availability                                                                 of modern neural networks. In: Ranzato M, Beygelzimer A,
+The scripts supporting the findings of this study and a library with              Dauphin Y et al. (eds). Advances in Neural Information Processing
+the annotator are available at https://github.com/digital-medicine-               Systems, Vol. 34. Red Hook, NY, USA: Curran Associates, Inc.,
+research-group-UNAV/conformalized_single_cell_annotator.                          2021, 15682–694.
+                                                                              Papadopoulos H, Proedrou K, Vovk V et al. Inductive confidence
+                                                                                  machines for regression. In: Machine Learning: ECML 2002:
+References                                                                        Proceedings of the 13th European Conference on Machine Learning,
+                                                                                  Helsinki, Finland, August 19–23, 2002. Berlin, Heidelberg: Springer,
+Abdelaal T, Michielsen L, Cats D et al. A comparison of automatic cell
+                                                                                  2002, 345–56.
+   identification methods for single-cell RNA sequencing data.
+                                                                              Pijuan-Sala B, Griffiths JA, Guibentif C et al. A single-cell molecular
+   Genome Biol 2019;20:194.
+                                                                                  map of mouse gastrulation and early organogenesis. Nature 2019;
+Angelopoulos AN, Bates S. Conformal prediction: a gentle introduc­
+                                                                                  566:490–5.
+   tion. FNT in Machine Learning 2023;16:494–591.
+                                                                              Pimentel MA, Clifton DA, Clifton L et al. A review of novelty detection.
+Angelopoulos AN, Bates S, Jordan M et al. Uncertainty sets for image
+                                                                                  Signal Process 2014;99:215–49.
+   classifiers using conformal prediction. In: International Conference
+                                                                              Pliner HA, Shendure J, Trapnell C. Supervised classification enables
+   on Learning Representations. Vienna, Austria: ICLR, 2021.
+Aran D, Looney AP, Liu L et al. Reference-based analysis of lung single-          rapid annotation of cell atlases. Nat Methods 2019;16:983–6.
+   cell sequencing reveals a transitional profibrotic macrophage. Nat         Romano Y, Sesia M, Cand�es EJ. Classification with valid and adaptive
+   Immunol 2019;20:163–72.                                                        coverage. In: Proceedings of the 34th International Conference on
+Baron M, Veres A, Wolock S et al. A single-cell transcriptomic map of             Neural Information Processing Systems, NIPS’20. Red Hook, NY,
+   the human and mouse pancreas reveals inter- and intra-cell popula­             USA: Curran Associates Inc, 2020.
+   tion structure. Cell Syst 2016;3:111–9.                                    Sadinle M, Lei J, Wasserman L. Least ambiguous set-valued classifiers
+Bates S, Cand�es E, Lei L et al. Testing for outliers with conformal p-val­       with bounded error levels. J Am Stat Assoc 2019;114:223–34.
+   ues. Ann Stat 2023;51:149–78.                                              Satija R, Farrell JA, Gennert D et al. Spatial reconstruction of single-cell
+Bostr€
+     om H. Calibrating random forests. In: 2008 Seventh International             gene expression data. Nat Biotechnol 2015;33:495–502.
+   Conference on Machine Learning and Applications. Los Alamitos,             Sun ED, Ma R, Navarro Negredo P et al. Tissue: uncertainty-calibrated
+   CA, USA: IEEE Computer Society, 2008, 121–6.                                   prediction of single-cell spatial transcriptomics improves down­
+Butler A, Hoffman P, Smibert P et al. Integrating single-cell transcrip­          stream analyses. Nat Methods 2024;21:444–54.
+   tomic data across different conditions, technologies, and species.         Theunissen L, Mortier T, Saeys Y et al. Uncertainty-aware single-cell
+   Nat Biotechnol 2018;36:411–20.                                                 annotation with a hierarchical reject option. Bioinformatics 2024;
+Clarke ZA, Andrews TS, Atif J et al. Tutorial: guidelines for annotating          40:btae128.
+   single-cell transcriptomic maps using automated and manual meth­           Theunissen L, Mortier T, Saeys Y et al. Evaluation of out-of-
+   ods. Nat Protoc 2021;16:2749–64.                                               distribution detection methods for data shifts in single-cell transcrip­
+Dom�ınguez Conde C, Xu C, Jarvis LB et al. Cross-tissue immune cell               tomics. Brief Bioinform 2025;26:bbaf239.
+   analysis reveals tissue-specific features in humans. Science 2022;         Toccaceli P. Introduction to conformal predictors. Pattern Recognit
+   376:eabl5197.                                                                  2022;124:108507.
+10                                                                                                                                          � pez-De-Castro et al.
+                                                                                                                                           Lo
+
+
+Vovk V, Gammerman A, Shafe G. Algorithmic Learning in a Random                        Zilionis R, Engblom C, Pfirschke C et al. Single-cell transcriptomics of
+  World, 2nd edn. Cham, Switzerland: Springer-Cham, 2022.                                 human and mouse lung cancers reveals conserved myeloid popula­
+Zhu C, Preissl S, Ren B. Single-cell multimodal omics: the power of                       tions across individuals and species. Immunity 2019;50:1317–34.
+  many. Nat Methods 2020;17:11–4.                                                         e10. ISSN 1074–7613.
+
+
+
+
+                                                                                                                                                                       Downloaded from https://academic.oup.com/bioinformatics/article/41/10/btaf521/8257682 by guest on 05 July 2026
+
+
+
+
+© The Author(s) 2025. Published by Oxford University Press.
+This is an Open Access article distributed under the terms of the Creative Commons Attribution License (https://creativecommons.org/licenses/by/4.0/), which permits
+unrestricted reuse, distribution, and reproduction in any medium, provided the original work is properly cited.
+Bioinformatics, 2025, 41, 1–10
+https://doi.org/10.1093/bioinformatics/btaf521
+Original Paper
+

@@ -120,7 +120,7 @@ scBalance 官方实现内部固定 `batch_size=128` 且使用 BatchNorm；当 la
 - **mouse add-on 覆盖跨物种 / 跨组织验证**：`mouse_lung_tms_10x` 与 `mouse_pancreas_tms_10x` 使用 raw-count CELLxGENE Census 导出的 Tabula Muris Senis 10x 子集；与原 6 个 human 数据集共同用于 8 数据集 comparison 图。
 - **scRareRefine FFR 仍受控**：聚合表中 scRareRefine 的 `fp_rate_max` 最大为 0.009878（`mouse_lung_tms_10x, rts=all`），低于 α=0.01。
 
-现有 [results/comparison/significance_test.csv](results/comparison/significance_test.csv) 是加入 mouse add-on 前的 6-human-dataset 统计结果；如果论文正文要报告 8 数据集统一 p 值，需要基于当前 864 行结果重新计算。完整迭代日志见 [results/experiment_log.md](results/experiment_log.md)。
+[results/comparison/significance_test.csv](results/comparison/significance_test.csv) 已基于当前 864 行 8-dataset 结果重算：ALL rts 为 96 个配对单元，稀缺区为 72 个配对单元；vs scANVI 稀缺区 41 胜 / 30 平 / 1 负，平均 ΔF1=+0.1545，bootstrap 95% CI [+0.0956,+0.2199]，one-sided Wilcoxon p=8.82e-09。旧 6-human 统计已备份为 [results/comparison/significance_test_6human_backup_20260708.csv](results/comparison/significance_test_6human_backup_20260708.csv)。完整迭代日志见 [results/experiment_log.md](results/experiment_log.md)。
 
 ## 设计原则
 
