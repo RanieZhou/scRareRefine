@@ -1,7 +1,7 @@
 # scRareRefine
 
 > 基于 scANVI 的稀有细胞类型识别 post-hoc refinement 模块。
-> 用 prototype 距离 + conformal 阈值，在 FFR 受控（≤ α = 1%）的前提下，于评估的数据集、标注稀缺区（rts ≤ 0.10）内提升 rare cell type 的 F1 / recall（配对检验显著，从不伤害 baseline）。
+> 用 prototype 距离 + conformal 阈值，在 FFR 受控（≤ α = 1%）的前提下，于评估的数据集、标注稀缺区（rts ≤ 0.10）内提升 rare cell type 的 F1 / recall。当前主结果覆盖 6 个 human 数据集与 2 个 mouse TMS add-on 数据集。
 
 ## 方法概览
 
@@ -26,7 +26,7 @@ src/
 ├── model.py                    # scVI + scANVI 半监督训练
 ├── rescue.py                   # 4 个 Rescuer + conformal_rescue() 单一入口
 └── utils.py                    # config / metrics / 缓存 manifest / 可视化
-configs/                        # 7 个数据集 YAML
+configs/                        # 9 个数据集 YAML（8 个纳入主 comparison，1 个 lung stroma 备用）
 tools/
 ├── comparison/                 # 9 个 baseline 对比脚本 + 汇总绘图
 ├── analysis/                   # ablation / UMAP / rts 扫描
@@ -42,18 +42,20 @@ tests/                          # pytest
 |------|--------|--------|
 | [immune_dc](configs/immune_dc.yaml) | Human Immune Health Atlas (DC) | ASDC |
 | [pancreas_baron](configs/pancreas_baron.yaml) | Baron pancreas | gamma / epsilon |
-| [pancreas_integrated](configs/pancreas_integrated.yaml) | 多源整合 pancreas | — |
+| [pancreas_integrated](configs/pancreas_integrated.yaml) | 多源整合 pancreas | endothelial |
 | [tabula_lung_endo](configs/tabula_lung_endo.yaml) | Tabula Sapiens lung | endothelial 子型 |
-| [tabula_lung_stroma](configs/tabula_lung_stroma.yaml) | Tabula Sapiens lung | stromal 子型 |
+| [tabula_lung_stroma](configs/tabula_lung_stroma.yaml) | Tabula Sapiens lung | bronchial smooth muscle cell（备用，未纳入当前主 comparison） |
 | [tabula_sapiens_stomach](configs/tabula_sapiens_stomach.yaml) | Tabula Sapiens stomach | mast cell |
-| [tabula_small_intestine](configs/tabula_small_intestine.yaml) | Tabula Sapiens small intestine | — |
+| [tabula_small_intestine](configs/tabula_small_intestine.yaml) | Tabula Sapiens small intestine | intestinal tuft cell |
+| [mouse_lung_tms_10x](configs/mouse_lung_tms_10x.yaml) | Tabula Muris Senis lung, 10x | vein endothelial cell |
+| [mouse_pancreas_tms_10x](configs/mouse_pancreas_tms_10x.yaml) | Tabula Muris Senis pancreas, 10x | pancreatic D cell |
 
 ## 环境
 
 两套 conda 虚拟环境分工：
 
-- `scanvi311` — 主流水线（PyTorch / scvi-tools / scANVI）
-- `sandbox310` — 部分对比方法（CellTypist / TOSICA / scBalance / ProtoCloud / HiCat / scCAD）
+- `scanvi311` — 主流水线与大部分 inductive 对比方法：scANVI / kNN / CellTypist / scBalance / scCAD / scRareRefine
+- `sandbox310` — 依赖旧包栈的对比方法：ProtoCloud / HiCat / TOSICA
 
 对比脚本通过 [tools/comparison/_conda_python.py](tools/comparison/_conda_python.py) 自动调度对应环境，无需手动切换。
 
@@ -88,27 +90,37 @@ python tools/comparison/run_scrarerefine_comparison.py --config configs/immune_d
 python tools/comparison/run_scanvi_comparison.py       --config configs/immune_dc.yaml --seed 42 --rare_train_size 0.05
 # ...
 
+# 2 个 mouse TMS add-on 数据集：cache + 9-method comparison
+python tools/comparison/run_mouse_tms_comparison.py --stage all
+
+# 只补跑指定方法 / 数据集 / seed / rare_train_size，不覆盖其它组合
+python tools/comparison/run_mouse_tms_comparison.py --stage methods --methods scBalance --configs configs/mouse_lung_tms_10x.yaml --seeds 42 43 44 --rts 0.01
+
 # 汇总 + 绘图
 python tools/comparison/plot_comparison.py
 python tools/comparison/plot_comparison_grid.py
 python tools/analysis/plot_sweep_rts_from_comparison.py
 ```
 
+`run_mouse_tms_comparison.py` 会把结果日志写到 `results/mouse_tms_comparison/logs/`。方法脚本按 `(dataset, seed, rare_train_size, method)` 精确替换对应行，因此补跑单个方法不会覆盖其它方法结果。
+
+scBalance 官方实现内部固定 `batch_size=128` 且使用 BatchNorm；当 labeled reference 数量 `mod 128 == 1` 时最后一个 batch 会只有 1 个样本并报错。本仓库的 [run_scbalance_comparison.py](tools/comparison/run_scbalance_comparison.py) 在这个边界条件下只把 weighted sampler 的 `num_samples` 减 1，避免 BatchNorm 单样本 batch，同时保留 weighted sampling 设定。
+
 汇总产物：
 - [results/comparison/comparison_summary.csv](results/comparison/comparison_summary.csv) / `_agg.csv`
 - [results/comparison/comparison_bars.png](results/comparison/comparison_bars.png) / `comparison_bars_grid.png`
 - [results/sweep_rts/sweep_rts_curves.png](results/sweep_rts/sweep_rts_curves.png)
 
-## 最新结果（第十四轮，3-seed）
+## 最新结果（8 数据集，3-seed）
 
-6 数据集 × 4 比例（0.01 / 0.05 / 0.10 / all）× 9 方法 × 3 seed（42/43/44，共 **648/648 全部完成、0 失败**）的对比见 [results/comparison/comparison_summary_agg.csv](results/comparison/comparison_summary_agg.csv)（3-seed mean±std）。配对显著性检验（paired Wilcoxon + bootstrap 95% CI，配对单元 = dataset×rts×seed）见 [results/comparison/significance_test.csv](results/comparison/significance_test.csv)。
+8 数据集（6 human + 2 mouse TMS）× 4 比例（0.01 / 0.05 / 0.10 / all）× 9 方法 × 3 seed（42/43/44，共 **864/864 全部完成、0 失败**）的对比见 [results/comparison/comparison_summary.csv](results/comparison/comparison_summary.csv)。按 dataset × rare_train_size × method 聚合后为 **288/288** 个组合，见 [results/comparison/comparison_summary_agg.csv](results/comparison/comparison_summary_agg.csv)（3-seed mean±std）。
 
-- **标注稀缺区（rts ∈ {0.01, 0.05, 0.10}）**：去重后 15 格，**win-most 15/15、best 14/15**（唯一非 best：small_intestine rts=0.10，baseline 已 saturated）
-- **vs scANVI（稀缺区）**：29 胜 / 25 平 / **0 负**，ΔF1 = +0.160（bootstrap 95% CI [+0.085, +0.244]，Wilcoxon p = 1.3e-6）；平局对应 necessity 弃权（不伤害 baseline）
-- **对全部 8 个 baseline 的 ΔF1 CI 均 > 0**（HiCat† 为 transductive 上界，单列）
-- **FFR 全部 ≤ α = 0.01**（跨全部行最大 0.0098，pancreas_baron）
+- **标注稀缺区（rts ∈ {0.01, 0.05, 0.10}）**：24 个 dataset×rts 聚合格中，scRareRefine 为 best/tied-best **23/24**；唯一非 best 为 `tabula_small_intestine, rts=0.10`，ProtoCloud F1=0.9848，scRareRefine F1=0.9823，差距 0.0025。
+- **vs scANVI（稀缺区，72 个 dataset×rts×seed 配对单元）**：41 胜 / 30 平 / **1 负**，平均 ΔF1 = +0.1545；大量平局来自 necessity 弃权或 baseline 已 saturated。
+- **mouse add-on 覆盖跨物种 / 跨组织验证**：`mouse_lung_tms_10x` 与 `mouse_pancreas_tms_10x` 使用 raw-count CELLxGENE Census 导出的 Tabula Muris Senis 10x 子集；与原 6 个 human 数据集共同用于 8 数据集 comparison 图。
+- **scRareRefine FFR 仍受控**：聚合表中 scRareRefine 的 `fp_rate_max` 最大为 0.009878（`mouse_lung_tms_10x, rts=all`），低于 α=0.01。
 
-> p 值偏乐观：同 (dataset, rts) 的 3 seed 非完全独立，论文作「方向性证据」而非严格独立检验。完整迭代日志见 [results/experiment_log.md](results/experiment_log.md)。
+现有 [results/comparison/significance_test.csv](results/comparison/significance_test.csv) 是加入 mouse add-on 前的 6-human-dataset 统计结果；如果论文正文要报告 8 数据集统一 p 值，需要基于当前 864 行结果重新计算。完整迭代日志见 [results/experiment_log.md](results/experiment_log.md)。
 
 ## 设计原则
 
@@ -119,7 +131,7 @@ python tools/analysis/plot_sweep_rts_from_comparison.py
 
 ## 局限
 
-- 主流水线主要在 6 个公开 scRNA-seq 数据集上验证；其他模态/物种尚未测试。
+- 主流水线目前在 6 个 human scRNA-seq 数据集和 2 个 mouse TMS add-on 数据集上验证；其他模态、疾病状态和更远物种尚未测试。
 - stomach 上 recall 上限约 0.59 — 余下漏判的 mast cell 与多数类几何纠缠在 rank ≥ 3，prototype 几何上救不回（非阈值问题）。
 - pancreas_baron batch_heldout 在 rank=2 时 test FFR ≈ 0.0098，逼近 α=0.01 上界，源于 val/test 分布漂移。
 - pancreas_baron 在极端稀缺点（≤5 标注，rts=0.01/0.05）seed 敏感：gain 均值仍正（+0.18）但被 seed 方差淹没（±0.26），不宜宣称为「稳定提升」；rts≥0.10 即稳定。

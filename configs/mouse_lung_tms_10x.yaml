@@ -1,0 +1,56 @@
+# ==============================================================================
+# scRareRefine experiment config: mouse_lung_tms_10x
+# Source: CELLxGENE Discover / Tabula Muris Senis
+# File: data/raw/mouse/mouse_lung_tms_10x_raw_counts.h5ad
+#
+# 24,540 cells x 16,204 expressed genes | Mus musculus | lung | normal | 10x 3' v2
+# Batch key: donor_id, 16 donors.
+# Raw-count X exported from CELLxGENE Census 2025-11-17, using the current
+# Tabula Muris Senis all-10x dataset id and tissue == 'lung'. All-zero genes
+# were dropped after export. The website local H5AD remains non-integer X
+# with max=10 and no layers, so it is kept only as provenance/reference.
+#
+# Main rare class is selected for stable batch-heldout evaluation:
+#   vein endothelial cell: 320 cells (1.30%), seed42 split train/val/test=213/56/51.
+#
+# Exact semantic counterpart to the human lung rare class is available but too small
+# for main batch-heldout metrics:
+#   endothelial cell of lymphatic vessel: 41 cells, seed42 split=29/5/7.
+# ==============================================================================
+
+dataset:
+  name: mouse_lung_tms_10x
+  path: data/raw/mouse/mouse_lung_tms_10x_raw_counts.h5ad
+  use_raw: false
+  label_key: cell_type
+  batch_key: donor_id
+
+experiment:
+  rare_class: vein endothelial cell
+  split_mode: batch_heldout
+  rare_train_sizes:
+    - 0.01
+    - 0.05
+    - 0.10
+    - all
+  seeds:
+    - 42
+    - 43
+    - 44
+  unlabeled_category: Unknown
+
+model:
+  n_top_hvg: 2000
+  n_latent: 20
+  scvi_max_epochs: 200
+  scanvi_max_epochs: 100
+  batch_size: 128
+
+analysis:
+  rare_threshold: 0.05
+  rare_max_cells: 200
+  review_fractions:
+    - 0.01
+    - 0.05
+    - 0.10
+    - 0.20

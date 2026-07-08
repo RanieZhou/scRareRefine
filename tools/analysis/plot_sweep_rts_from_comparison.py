@@ -38,6 +38,8 @@ DATASETS = [
     ("tabula_small_intestine", "tabula_small_intestine (tuft)\nhigh sep (~2.3-3.2)"),
     ("tabula_sapiens_stomach", "tabula_sapiens_stomach (mast)\nmid sep (~1.8)"),
     ("pancreas_integrated",    "pancreas_integrated (endothelial)\nintegrated 5-platform"),
+    ("mouse_lung_tms_10x",     "mouse_lung_tms (vein EC)\nmouse lung"),
+    ("mouse_pancreas_tms_10x", "mouse_pancreas_tms (D cell)\nmouse pancreas"),
 ]
 # (name, color, marker, linewidth, markersize) — scRareRefine 最后画、置顶突出
 # Colors match comparison plots (low-saturation muted palette)
@@ -58,7 +60,7 @@ def main():
     df = pd.read_csv(AGG, dtype={"rare_train_size": str})
     x = list(range(len(RTS_ORDER)))
 
-    fig, axes = plt.subplots(2, 3, figsize=(17, 9.5), sharey=True)
+    fig, axes = plt.subplots(2, 4, figsize=(22, 9.5), sharey=True)
     axes = axes.ravel()
 
     for ax, (ds, title) in zip(axes, DATASETS):
@@ -85,8 +87,8 @@ def main():
         ax.grid(True, ls="--", alpha=0.4, linewidth=0.6)
         ax.tick_params(length=4, width=0.8)
 
-    axes[0].set_ylabel("Rare-cell F1 (seed=42)")
-    axes[3].set_ylabel("Rare-cell F1 (seed=42)")
+    axes[0].set_ylabel("Rare-cell F1")
+    axes[4].set_ylabel("Rare-cell F1")
 
     # 隐藏多余空子图（数据集数 < 网格数时）
     for ax in axes[len(DATASETS):]:

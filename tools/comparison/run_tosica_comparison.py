@@ -124,6 +124,8 @@ GMT_MAP = {
     "tabula_small_intestine":  "human_gobp",
     "tabula_sapiens_stomach":  "human_gobp",
     "pancreas_integrated":     "human_gobp",
+    "mouse_lung_tms_10x":      "mouse_gobp",
+    "mouse_pancreas_tms_10x":  "mouse_gobp",
 }
 
 ALL_METHODS = ["scANVI", "kNN", "CellTypist", "scBalance",

@@ -60,6 +60,8 @@ DATASETS = [
     ("tabula_small_intestine", "tabula_small_intestine\n(tuft cell)"),
     ("tabula_sapiens_stomach", "tabula_sapiens_stomach\n(mast cell)"),
     ("pancreas_integrated",    "pancreas_integrated\n(endothelial)"),
+    ("mouse_lung_tms_10x",     "mouse_lung_tms\n(vein EC)"),
+    ("mouse_pancreas_tms_10x", "mouse_pancreas_tms\n(D cell)"),
 ]
 
 

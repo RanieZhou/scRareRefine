@@ -50,6 +50,8 @@ DATASETS = [
     ("tabula_small_intestine", "tabula_small_intestine\n(tuft cell)"),
     ("tabula_sapiens_stomach", "tabula_sapiens_stomach\n(mast cell)"),
     ("pancreas_integrated",    "pancreas_integrated\n(endothelial)"),
+    ("mouse_lung_tms_10x",     "mouse_lung_tms\n(vein EC)"),
+    ("mouse_pancreas_tms_10x", "mouse_pancreas_tms\n(D cell)"),
 ]
 
 
@@ -57,7 +59,7 @@ def main():
     df = pd.read_csv(AGG, dtype={"rare_train_size": str})
     x = np.arange(len(METHODS))
     colors  = [c for _, c in METHODS]
-    xlabels = [m + "†" if m == "HiCat" else m for m, _ in METHODS]
+    xlabels = [m + "*" if m == "HiCat" else m for m, _ in METHODS]
     ours_idx = [m for m, _ in METHODS].index("scRareRefine")
 
     n_row, n_col = len(DATASETS), len(RTS_ORDER)
@@ -78,6 +80,8 @@ def main():
             for i, v in enumerate(f1s):
                 if pd.isna(v):
                     bars[i].set_hatch("//"); bars[i].set_facecolor("#eeeeee")
+                    ax.text(i, 0.03, "NA", ha="center", va="bottom",
+                            fontsize=6.5, color="#666666")
             bars[ours_idx].set_linewidth(2.0); bars[ours_idx].set_edgecolor("#1A7A4A")
 
             # 每个方法柱子都标数值（横排，scRareRefine 加粗绿色；相邻交错上下高度防重叠）
@@ -106,15 +110,16 @@ def main():
 
     legend_handles = [Patch(facecolor=c, edgecolor="k",
                             label=("scRareRefine (ours)" if m == "scRareRefine" else
-                                   ("HiCat† (transductive)" if m == "HiCat" else m)))
+                                   ("HiCat* (transductive)" if m == "HiCat" else m)))
                       for m, c in METHODS]
     fig.legend(handles=legend_handles, loc="upper center", ncol=len(METHODS),
                frameon=True, bbox_to_anchor=(0.5, 1.015))
-    fig.suptitle("Rare-cell F1 by dataset (rows) × rare_train_size (cols)  —  scRareRefine vs. 8 baselines (mean ± SD over 3 seeds: 42/43/44)",
+    fig.suptitle("Rare-cell F1 by dataset (rows) x rare_train_size (cols) - scRareRefine vs. 8 baselines (mean +/- SD over seeds 42/43/44)",
                  fontsize=13, y=1.035)
     fig.text(0.5, -0.008,
-             "† HiCat transductive (test-aware dimensionality reduction) — upper-bound reference, not an inductive baseline.   "
-             "Error bars = SD across seeds 42/43/44 (all 9 methods × 6 datasets × 4 rts complete for 3 seeds).",
+             f"* HiCat is transductive (test-aware dimensionality reduction), shown as an upper-bound reference. "
+             f"Error bars = SD across seeds 42/43/44; hatched bars mark missing runs. "
+             f"Grid scope: 9 methods x {len(DATASETS)} datasets x {len(RTS_ORDER)} rare_train_size values.",
              ha="center", va="top", fontsize=8, color="#444")
 
     fig.tight_layout(rect=[0, 0, 1, 0.985])

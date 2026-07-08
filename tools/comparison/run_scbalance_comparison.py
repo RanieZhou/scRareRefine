@@ -131,8 +131,27 @@ def _run_scbalance(train_X: np.ndarray, train_labels: np.ndarray,
     ref_df   = pd.DataFrame(train_X)
     test_df  = pd.DataFrame(test_X)
     label_df = pd.DataFrame({"Label": train_labels})
-    preds = scBalance.scBalance(test=test_df, reference=ref_df, label=label_df,
-                                processing_unit="cpu")
+    original_weighted_sampling = scBalance.Weighted_Sampling
+
+    def _safe_weighted_sampling(y_train):
+        sampler = original_weighted_sampling(y_train)
+        n_train = int(len(y_train))
+        if n_train % 128 == 1 and getattr(sampler, "num_samples", None) == n_train:
+            sampler.num_samples = n_train - 1
+            print(
+                f"  [scBalance guard] sampler num_samples {n_train} -> {sampler.num_samples} "
+                "to avoid final batch size 1",
+                flush=True,
+            )
+        return sampler
+
+    if len(train_labels) % 128 == 1:
+        scBalance.Weighted_Sampling = _safe_weighted_sampling
+    try:
+        preds = scBalance.scBalance(test=test_df, reference=ref_df, label=label_df,
+                                    processing_unit="cpu")
+    finally:
+        scBalance.Weighted_Sampling = original_weighted_sampling
     return np.array(preds, dtype=str)
 
 
