@@ -30,6 +30,7 @@
 
 用法：D:/setup/anaconda/envs/scanvi311/python.exe tools/analysis/ablation.py
 """
+
 from __future__ import annotations
 import sys
 import json
@@ -42,17 +43,31 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.utils import load_config, make_run_dir, parse_rare_train_size, classification_tables  # noqa: E402
+from src.utils import (
+    load_config,
+    make_run_dir,
+    parse_rare_train_size,
+    classification_tables,
+)  # noqa: E402
 from src.rescue import (  # noqa: E402
-    PrototypeRescuer, ConformalRescuer, conformal_rescue,
-    DEFAULT_CONFORMAL_ALPHA, CONFORMAL_LOW_SEP, CONFORMAL_RANK_GRID, MIN_VAL_MISSED,
+    PrototypeRescuer,
+    ConformalRescuer,
+    conformal_rescue,
+    DEFAULT_CONFORMAL_ALPHA,
+    CONFORMAL_LOW_SEP,
+    CONFORMAL_RANK_GRID,
+    MIN_VAL_MISSED,
 )
 
 ALPHA = DEFAULT_CONFORMAL_ALPHA
 SEEDS = [42, 43, 44]
 CONFIGS = [
-    "configs/immune_dc.yaml", "configs/pancreas_baron.yaml", "configs/pancreas_integrated.yaml",
-    "configs/tabula_lung_endo.yaml", "configs/tabula_sapiens_stomach.yaml", "configs/tabula_small_intestine.yaml",
+    "configs/immune_dc.yaml",
+    "configs/pancreas_baron.yaml",
+    "configs/pancreas_integrated.yaml",
+    "configs/tabula_lung_endo.yaml",
+    "configs/tabula_sapiens_stomach.yaml",
+    "configs/tabula_small_intestine.yaml",
 ]
 RTS = ["0.01", "0.05", "0.10", "all"]
 RUNS = [(c, s, r) for c in CONFIGS for s in SEEDS for r in RTS]
@@ -60,18 +75,23 @@ RUNS = [(c, s, r) for c in CONFIGS for s in SEEDS for r in RTS]
 # 变体定义：(name, group, spec)
 #   group ∈ {"A"(表1 留一法), "R"(表2 rank 敏感性)}
 #   spec: None=baseline | "full"=conformal_rescue | dict=_conformal_with_overrides 的 kwargs
-_FULL_KW = dict(low_sep=CONFORMAL_LOW_SEP, enforce_necessity=True, rank_grid=CONFORMAL_RANK_GRID, use_conformal_tau=True)
+_FULL_KW = dict(
+    low_sep=CONFORMAL_LOW_SEP,
+    enforce_necessity=True,
+    rank_grid=CONFORMAL_RANK_GRID,
+    use_conformal_tau=True,
+)
 VARIANTS = [
-    ("A0_baseline",            "A", None),
-    ("A1_minus_sep",           "A", {**_FULL_KW, "low_sep": 0.0}),
-    ("A2_minus_necessity",     "A", {**_FULL_KW, "enforce_necessity": False}),
+    ("A0_baseline", "A", None),
+    ("A1_minus_sep", "A", {**_FULL_KW, "low_sep": 0.0}),
+    ("A2_minus_necessity", "A", {**_FULL_KW, "enforce_necessity": False}),
     ("A3_minus_adaptive_rank", "A", {**_FULL_KW, "rank_grid": (1,)}),
-    ("A4_minus_tau",           "A", {**_FULL_KW, "use_conformal_tau": False}),
-    ("A5_full",                "A", "full"),
-    ("R1_rank1",               "R", {**_FULL_KW, "rank_grid": (1,)}),
-    ("R2_rank2",               "R", {**_FULL_KW, "rank_grid": (2,)}),
-    ("R3_rank3",               "R", {**_FULL_KW, "rank_grid": (3,)}),
-    ("R_adaptive",             "R", "full"),
+    ("A4_minus_tau", "A", {**_FULL_KW, "use_conformal_tau": False}),
+    ("A5_full", "A", "full"),
+    ("R1_rank1", "R", {**_FULL_KW, "rank_grid": (1,)}),
+    ("R2_rank2", "R", {**_FULL_KW, "rank_grid": (2,)}),
+    ("R3_rank3", "R", {**_FULL_KW, "rank_grid": (3,)}),
+    ("R_adaptive", "R", "full"),
 ]
 
 
@@ -80,16 +100,32 @@ def _lat(df: pd.DataFrame) -> np.ndarray:
 
 
 def _conformal_with_overrides(
-    proto, base_pred_test, val_pred_labels, val_true, val_lat, test_lat,
-    *, low_sep=CONFORMAL_LOW_SEP, enforce_necessity=True, min_val_missed=MIN_VAL_MISSED,
-    rank_grid=CONFORMAL_RANK_GRID, use_conformal_tau=True,
+    proto,
+    base_pred_test,
+    val_pred_labels,
+    val_true,
+    val_lat,
+    test_lat,
+    *,
+    low_sep=CONFORMAL_LOW_SEP,
+    enforce_necessity=True,
+    min_val_missed=MIN_VAL_MISSED,
+    rank_grid=CONFORMAL_RANK_GRID,
+    use_conformal_tau=True,
 ):
     """conformal_rescue 的可消融版：三道闸门 + τ 独立开关。inductive 协议不变（val 选参，不碰 test 标签）。"""
     base_pred_test = pd.Series(base_pred_test).astype(str).reset_index(drop=True)
     val_pred_labels = pd.Series(val_pred_labels).astype(str).reset_index(drop=True)
     val_true = pd.Series(val_true).astype(str).reset_index(drop=True)
     rare = proto.rare_class
-    summary = {"abstain": False, "reason": "", "chosen_rank": 0, "tau": float("inf"), "n_candidate": 0, "n_rescued": 0}
+    summary = {
+        "abstain": False,
+        "reason": "",
+        "chosen_rank": 0,
+        "tau": float("inf"),
+        "n_candidate": 0,
+        "n_rescued": 0,
+    }
 
     if proto.separability_ratio < low_sep:
         summary.update(abstain=True, reason=f"sep<{low_sep}")
@@ -97,7 +133,11 @@ def _conformal_with_overrides(
 
     val_missed = int((val_true.eq(rare) & val_pred_labels.ne(rare)).sum())
     summary["val_missed"] = val_missed
-    if enforce_necessity and int(val_true.eq(rare).sum()) > 0 and val_missed < min_val_missed:
+    if (
+        enforce_necessity
+        and int(val_true.eq(rare).sum()) > 0
+        and val_missed < min_val_missed
+    ):
         summary.update(abstain=True, reason="necessity")
         return base_pred_test.copy(), summary
 
@@ -118,7 +158,7 @@ def _conformal_with_overrides(
         val_ranks = proto.rare_rank(val_lat)
         n_val_nonrare = int(val_true.ne(rare).sum())
         best = None
-        chosen_rank = rank_grid[0]
+        chosen_rank = None
         z = 1.96
         for k in rank_grid:
             v_cand = (val_ranks <= k) & val_pred_labels.ne(rare).to_numpy()
@@ -138,6 +178,9 @@ def _conformal_with_overrides(
             if best is None or key > best:
                 best = key
                 chosen_rank = k
+        if best is None:
+            summary.update(abstain=True, reason="no_feasible_rank")
+            return base_pred_test.copy(), summary
     summary["chosen_rank"] = chosen_rank
 
     test_cand = proto.rank_candidate(test_lat, base_pred_test, max_rank=chosen_rank)
@@ -154,13 +197,22 @@ def run_variant(spec, proto, val_lat, test_lat, val_pred, test_pred, y_true, rar
     val_base = val_pred["predicted_label"].astype(str)
     val_true = val_pred["true_label"].astype(str)
 
-    if spec is None:                     # baseline
+    if spec is None:  # baseline
         final = base_pred.copy()
-        summary = {"abstain": False, "chosen_rank": 0, "tau": float("nan"), "n_rescued": 0}
-    elif spec == "full":                 # 完整方法
-        final, summary = conformal_rescue(proto, base_pred, val_base, val_true, val_lat, test_lat, alpha=ALPHA)
-    else:                                # 可消融版
-        final, summary = _conformal_with_overrides(proto, base_pred, val_base, val_true, val_lat, test_lat, **spec)
+        summary = {
+            "abstain": False,
+            "chosen_rank": 0,
+            "tau": float("nan"),
+            "n_rescued": 0,
+        }
+    elif spec == "full":  # 完整方法
+        final, summary = conformal_rescue(
+            proto, base_pred, val_base, val_true, val_lat, test_lat, alpha=ALPHA
+        )
+    else:  # 可消融版
+        final, summary = _conformal_with_overrides(
+            proto, base_pred, val_base, val_true, val_lat, test_lat, **spec
+        )
 
     fp = final.astype(str).to_numpy()
     base_arr = base_pred.to_numpy()
@@ -169,6 +221,7 @@ def run_variant(spec, proto, val_lat, test_lat, val_pred, test_pred, y_true, rar
     n_nonrare = int((y_true != rare).sum())
     m, _ = classification_tables(y_true, fp, rare_class=rare)
     bl, _ = classification_tables(y_true, base_arr, rare_class=rare)
+    incremental_fpr = round(n_false / max(n_nonrare, 1), 6)
     return {
         "abstain": bool(summary.get("abstain", False)),
         "chosen_rank": int(summary.get("chosen_rank", 0)),
@@ -176,8 +229,10 @@ def run_variant(spec, proto, val_lat, test_lat, val_pred, test_pred, y_true, rar
         "rare_f1": round(m["rare_f1"], 4),
         "rare_recall": round(m["rare_recall"], 4),
         "rare_precision": round(m["rare_precision"], 4),
-        "n_rescued": n_rescued, "n_false_rescues": n_false,
-        "ffr": round(n_false / max(n_nonrare, 1), 6),
+        "n_rescued": n_rescued,
+        "n_false_rescues": n_false,
+        "incremental_fpr": incremental_fpr,
+        "ffr": incremental_fpr,
     }
 
 
@@ -187,7 +242,11 @@ def _cell_id_align_hash(*paths) -> str:
         if not p.exists():
             continue
         try:
-            ids = pd.read_csv(p, usecols=["cell_id"], low_memory=False)["cell_id"].astype(str).tolist()
+            ids = (
+                pd.read_csv(p, usecols=["cell_id"], low_memory=False)["cell_id"]
+                .astype(str)
+                .tolist()
+            )
         except Exception:
             ids = []
         h.update(("|".join(ids) + "\n").encode("utf-8"))
@@ -218,7 +277,10 @@ def main():
         else:
             split_hash = git_sha = "no_manifest"
         cell_id_hash = _cell_id_align_hash(
-            emb / "train_predictions.csv", emb / "validation_predictions.csv", emb / "test_predictions.csv")
+            emb / "train_predictions.csv",
+            emb / "validation_predictions.csv",
+            emb / "test_predictions.csv",
+        )
 
         train_pred = pd.read_csv(emb / "train_predictions.csv")
         train_lat = _lat(pd.read_csv(emb / "train_latent.csv"))
@@ -235,33 +297,59 @@ def main():
 
         print(f"\n[{ds} seed={seed} rts={rts_str}] sep={proto.separability_ratio:.3f}")
         for name, group, spec in VARIANTS:
-            res = run_variant(spec, proto, val_lat, test_lat, val_pred, test_pred, y_true, rare)
+            res = run_variant(
+                spec, proto, val_lat, test_lat, val_pred, test_pred, y_true, rare
+            )
             tag = " (abstain)" if res["abstain"] else ""
-            print(f"  {name:24s}: F1={res['rare_f1']:.4f}{tag}  rec={res['rare_recall']:.4f}  "
-                  f"rank={res['chosen_rank']}  rescued={res['n_rescued']}  false={res['n_false_rescues']}  ffr={res['ffr']:.5f}")
-            rows.append({
-                "dataset": ds, "rare_class": rare, "seed": seed, "rts": rts_str,
-                "variant": name, "group": group, "sep": round(proto.separability_ratio, 4),
-                "split_hash": split_hash, "git_sha": git_sha, "cell_id_align_hash": cell_id_hash, **res,
-            })
+            print(
+                f"  {name:24s}: F1={res['rare_f1']:.4f}{tag}  rec={res['rare_recall']:.4f}  "
+                f"rank={res['chosen_rank']}  rescued={res['n_rescued']}  false={res['n_false_rescues']}  "
+                f"incremental_fpr={res['incremental_fpr']:.5f}"
+            )
+            rows.append(
+                {
+                    "dataset": ds,
+                    "rare_class": rare,
+                    "seed": seed,
+                    "rts": rts_str,
+                    "variant": name,
+                    "group": group,
+                    "sep": round(proto.separability_ratio, 4),
+                    "split_hash": split_hash,
+                    "git_sha": git_sha,
+                    "cell_id_align_hash": cell_id_hash,
+                    **res,
+                }
+            )
 
     out_dir = ROOT / "results" / "ablation"
     out_dir.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(rows)
     df.to_csv(out_dir / "ablation_summary.csv", index=False)
-    print(f"\n[saved] {out_dir/'ablation_summary.csv'}  ({len(df)} 行, seeds={SEEDS})")
+    print(
+        f"\n[saved] {out_dir / 'ablation_summary.csv'}  ({len(df)} 行, seeds={SEEDS})"
+    )
 
     # 每 cell 的 full F1（算 Δvs_full）
-    full_f1 = (df[df.variant == "A5_full"].set_index(["dataset", "seed", "rts"])["rare_f1"])
+    full_f1 = df[df.variant == "A5_full"].set_index(["dataset", "seed", "rts"])[
+        "rare_f1"
+    ]
 
     def _delta_vs_full(sub):
         # 约定：delta = Full - 该变体（逐 cell）。正 = 去掉该组件后 F1 掉这么多（组件对 F1 有正贡献）；
         # 负 = 去掉反而升（该组件价值在 FFR/安全而非 F1，须看 FFR_max）。
         idx = sub.set_index(["dataset", "seed", "rts"]).index
-        return (full_f1.reindex(idx).to_numpy() - sub["rare_f1"].to_numpy())
+        return full_f1.reindex(idx).to_numpy() - sub["rare_f1"].to_numpy()
 
     # 表 1：组件留一法（group A），按 (dataset, variant) 聚合 12 cell(4rts×3seed)
-    A_order = ["A0_baseline", "A1_minus_sep", "A2_minus_necessity", "A3_minus_adaptive_rank", "A4_minus_tau", "A5_full"]
+    A_order = [
+        "A0_baseline",
+        "A1_minus_sep",
+        "A2_minus_necessity",
+        "A3_minus_adaptive_rank",
+        "A4_minus_tau",
+        "A5_full",
+    ]
     t1 = []
     for ds in df["dataset"].unique():
         for v in A_order:
@@ -269,14 +357,22 @@ def main():
             if sub.empty:
                 continue
             dvf = _delta_vs_full(sub)
-            t1.append({
-                "dataset": ds, "variant": v, "n_cells": len(sub),
-                "f1_mean": round(sub.rare_f1.mean(), 4), "f1_std": round(sub.rare_f1.std(ddof=0), 4),
-                "recall_mean": round(sub.rare_recall.mean(), 4), "ffr_max": round(sub.ffr.max(), 6),
-                "gain_vs_baseline": round((sub.rare_f1 - sub.baseline_f1).mean(), 4),
-                "delta_vs_full": round(float(np.nanmean(dvf)), 4),
-                "n_abstain": int(sub.abstain.sum()),
-            })
+            t1.append(
+                {
+                    "dataset": ds,
+                    "variant": v,
+                    "n_cells": len(sub),
+                    "f1_mean": round(sub.rare_f1.mean(), 4),
+                    "f1_std": round(sub.rare_f1.std(ddof=0), 4),
+                    "recall_mean": round(sub.rare_recall.mean(), 4),
+                    "ffr_max": round(sub.ffr.max(), 6),
+                    "gain_vs_baseline": round(
+                        (sub.rare_f1 - sub.baseline_f1).mean(), 4
+                    ),
+                    "delta_vs_full": round(float(np.nanmean(dvf)), 4),
+                    "n_abstain": int(sub.abstain.sum()),
+                }
+            )
     t1df = pd.DataFrame(t1)
     t1df.to_csv(out_dir / "ablation_table1_components.csv", index=False)
 
@@ -288,15 +384,23 @@ def main():
             sub = df[(df.dataset == ds) & (df.variant == v)]
             if sub.empty:
                 continue
-            t2.append({
-                "dataset": ds, "variant": v, "n_cells": len(sub),
-                "f1_mean": round(sub.rare_f1.mean(), 4), "f1_std": round(sub.rare_f1.std(ddof=0), 4),
-                "recall_mean": round(sub.rare_recall.mean(), 4),
-                "ffr_max": round(sub.ffr.max(), 6), "n_abstain": int(sub.abstain.sum()),
-            })
+            t2.append(
+                {
+                    "dataset": ds,
+                    "variant": v,
+                    "n_cells": len(sub),
+                    "f1_mean": round(sub.rare_f1.mean(), 4),
+                    "f1_std": round(sub.rare_f1.std(ddof=0), 4),
+                    "recall_mean": round(sub.rare_recall.mean(), 4),
+                    "ffr_max": round(sub.ffr.max(), 6),
+                    "n_abstain": int(sub.abstain.sum()),
+                }
+            )
     t2df = pd.DataFrame(t2)
     t2df.to_csv(out_dir / "ablation_table2_rank.csv", index=False)
-    print(f"[saved] {out_dir/'ablation_table1_components.csv'}  {out_dir/'ablation_table2_rank.csv'}")
+    print(
+        f"[saved] {out_dir / 'ablation_table1_components.csv'}  {out_dir / 'ablation_table2_rank.csv'}"
+    )
 
     # 跨数据集 OVERALL 行（pool 所有 cell）
     def _overall(order, group):
@@ -305,12 +409,20 @@ def main():
             sub = df[df.variant == v]
             if sub.empty:
                 continue
-            row = {"dataset": "OVERALL", "variant": v, "n_cells": len(sub),
-                   "f1_mean": round(sub.rare_f1.mean(), 4), "f1_std": round(sub.rare_f1.std(ddof=0), 4),
-                   "recall_mean": round(sub.rare_recall.mean(), 4), "ffr_max": round(sub.ffr.max(), 6),
-                   "n_abstain": int(sub.abstain.sum())}
+            row = {
+                "dataset": "OVERALL",
+                "variant": v,
+                "n_cells": len(sub),
+                "f1_mean": round(sub.rare_f1.mean(), 4),
+                "f1_std": round(sub.rare_f1.std(ddof=0), 4),
+                "recall_mean": round(sub.rare_recall.mean(), 4),
+                "ffr_max": round(sub.ffr.max(), 6),
+                "n_abstain": int(sub.abstain.sum()),
+            }
             if group == "A":
-                row["gain_vs_baseline"] = round((sub.rare_f1 - sub.baseline_f1).mean(), 4)
+                row["gain_vs_baseline"] = round(
+                    (sub.rare_f1 - sub.baseline_f1).mean(), 4
+                )
                 row["delta_vs_full"] = round(float(np.nanmean(_delta_vs_full(sub))), 4)
             out.append(row)
         return out
@@ -321,8 +433,10 @@ def main():
     # 人读 log（两张表）
     L = [
         "# Ablation Report（重构版，3-seed）",
-        "", f"**Date**: 2026-06-21  |  **Seeds**: {SEEDS}  |  **Datasets**: {df['dataset'].nunique()}  |  **rts**: {RTS}",
-        "", "真正可拆组件 = 4 个（sep / necessity 弃权闸门 + 自适应rank / τ 拯救机制）。",
+        "",
+        f"**Date**: 2026-06-21  |  **Seeds**: {SEEDS}  |  **Datasets**: {df['dataset'].nunique()}  |  **rts**: {RTS}",
+        "",
+        "真正可拆组件 = 4 个（sep / necessity 弃权闸门 + 自适应rank / τ 拯救机制）。",
         "表 1 答「每个组件该不该留」，表 2 答「自适应 rank 为何优于任何固定值」。",
         "聚合单元 = 每 (dataset, variant) 的 4 rts × 3 seed = 12 cell；f1_std 含 rts 轴差异（非纯 seed 方差）。",
         "",
@@ -332,10 +446,13 @@ def main():
         "|---|---|---|---|---|---|---|---|",
     ]
     for r in ov1 + t1:
-        L.append(f"| {r['dataset']} | {r['variant']} | {r['f1_mean']:.3f}±{r['f1_std']:.3f} | {r['recall_mean']:.3f} | "
-                 f"{r.get('gain_vs_baseline', 0):+.3f} | {r.get('delta_vs_full', 0):+.3f} | {r['ffr_max']:.5f} | {r['n_abstain']} |")
+        L.append(
+            f"| {r['dataset']} | {r['variant']} | {r['f1_mean']:.3f}±{r['f1_std']:.3f} | {r['recall_mean']:.3f} | "
+            f"{r.get('gain_vs_baseline', 0):+.3f} | {r.get('delta_vs_full', 0):+.3f} | {r['ffr_max']:.5f} | {r['n_abstain']} |"
+        )
     L += [
-        "", "> 读法：`Δ=Full−变体`（逐 cell 均值）。**正 = 去掉该组件 F1 掉这么多（对 F1 有正贡献）**；",
+        "",
+        "> 读法：`Δ=Full−变体`（逐 cell 均值）。**正 = 去掉该组件 F1 掉这么多（对 F1 有正贡献）**；",
         "> **负 = 去掉反而升 → 该组件价值在 FFR/安全而非 F1，须看 FFR_max**（如 −sep 升 F1 但 FFR 破 α；−τ 同理）。",
         "> A5_full 的 Δ 恒为 0（自比）；A0_baseline 的 gain vs baseline 恒为 0。",
         "",
@@ -345,12 +462,17 @@ def main():
         "|---|---|---|---|---|---|",
     ]
     for r in ov2 + t2:
-        L.append(f"| {r['dataset']} | {r['variant']} | {r['f1_mean']:.3f}±{r['f1_std']:.3f} | {r['recall_mean']:.3f} | "
-                 f"{r['ffr_max']:.5f} | {r['n_abstain']} |")
-    L += ["", "> R1_rank1 == A3_minus_adaptive_rank（去自适应=退回固定 rank=1）；R_adaptive == A5_full（交叉引用+一致性自检）。",
-          "> 看点：固定 rank=3 时 FFR_max 是否冲破 α=0.01；自适应是否在 FFR≤α 下拿到 ≥ 任何固定值的 F1。"]
+        L.append(
+            f"| {r['dataset']} | {r['variant']} | {r['f1_mean']:.3f}±{r['f1_std']:.3f} | {r['recall_mean']:.3f} | "
+            f"{r['ffr_max']:.5f} | {r['n_abstain']} |"
+        )
+    L += [
+        "",
+        "> R1_rank1 == A3_minus_adaptive_rank（去自适应=退回固定 rank=1）；R_adaptive == A5_full（交叉引用+一致性自检）。",
+        "> 看点：固定 rank=3 时 FFR_max 是否冲破 α=0.01；自适应是否在 FFR≤α 下拿到 ≥ 任何固定值的 F1。",
+    ]
     (out_dir / "ablation_log.md").write_text("\n".join(L), encoding="utf-8")
-    print(f"[saved] {out_dir/'ablation_log.md'}")
+    print(f"[saved] {out_dir / 'ablation_log.md'}")
 
 
 if __name__ == "__main__":

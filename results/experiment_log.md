@@ -1488,3 +1488,311 @@ pancreas_baron ≤5 标注（gain +0.18 但 std 0.23，G71，已记 limitation�
 - 不可写：不要说随机 split 下 no-regression；不要把该 seed=42 sensitivity 与主文三种子 batch-heldout 主结果混为一个 claim。
 - 推荐一句：`In an easier seed-42 cell-stratified sensitivity analysis, the scANVI backbone improved substantially, reducing the rescue opportunity; scRareRefine still improved scarce-regime rare-cell F1 from 0.902 to 0.974 while keeping worst-case FFR at 0.0019, but small negative cells prevent a no-regression claim under this split.`
 
+---
+
+## 第十八轮（2026-07-16）：P0 安全修复 — 无可行 rank 时严格弃权与入口统一
+
+> **层次 B（安全语义修复）**：不改变 alpha、separability、rank grid、split、seed、数据集或 scANVI 训练设置；只修复 validation 安全约束被默认 rank 绕过的代码路径，并统一遗留对比入口。
+
+### 依据、缺陷与验收线
+
+- **依据**：代码审查发现 `src/rescue.py` 的 `chosen_rank` 在搜索前被设为 `rank_grid[0]`；当 rank 1/2/3 的 validation FFR Wilson 上界均大于 alpha 时，`best` 保持 `None`，但 test 仍按 rank 1 rescue。
+- **具体缺陷**：该行为不使用 test 标签，因此不是 R1 泄漏；但它绕过了“仅允许 validation 可行 rank”的安全语义。`tools/analysis/ablation.py` 存在同类镜像风险，`tools/comparison/compare_baselines.py` 仍使用旧版固定 rank=1 路径。
+- **最低验收线**：所有 rank 不可行时返回 baseline、`abstain=True`、`reason=no_feasible_rank`、`chosen_rank=0`；正式和消融路径均有回归测试；正式 6 数据集 × 4 rts × 3 seed 缓存审计完成；不覆盖既有正式指标。
+
+### 改动
+
+- `src/rescue.py`：`chosen_rank` 初始为 `None`；搜索结束后若 `best is None`，严格弃权并返回 baseline。
+- `tools/analysis/ablation.py`：多 rank 自适应镜像逻辑同步严格弃权；单 rank 固定敏感性实验维持原有语义，不新增 Wilson 可行性筛选。
+- `tools/comparison/compare_baselines.py`、`tools/comparison/sweep_rare_train_size.py`：移除旧版固定 rank=1 rescue，统一调用 `src.rescue.conformal_rescue()`，补传 validation baseline predictions。
+- 正式缓存入口改为 fail-closed：`sweep_rare_train_size.py` 必须通过 manifest 校验才读取缓存；`run_scrarerefine_comparison.py` 遇到 manifest 缺失时拒绝运行。相关输出路径统一锚定项目根目录下的 `results/`。
+- `tests/test_conformal_rescue.py`：新增 8 个测试，覆盖低 separability、necessity、no feasible rank、消融镜像、adaptive rank、tie-break、validation-only tau 和 test-label 不进入 API。
+- `.gitignore`：取消忽略 `tests/`，使回归测试可纳入版本控制。
+- `tools/analysis/audit_no_feasible_rank.py`：新增只读缓存审计脚本；产物放在 `results/provenance/`。
+
+### 验证结果
+
+- 完整 pytest：**8 passed**（`scanvi311`, Python 3.11.15），包含外部 test-label 置换后预测、rank、tau 与弃权状态不变的行为测试。
+- Python 语法检查：修改文件全部通过。
+- 缓存审计：72/72 正式配置缓存完整；35 个执行 rescue，37 个因既有闸门弃权；**0 个配置触发新增 `no_feasible_rank` 弃权**。
+- 因此，本修复关闭潜在安全漏洞，但当前正式 6-dataset/3-seed/4-rts 主结果数值不受影响，无需重训或重算主表。
+- 审计产物：`results/provenance/no_feasible_rank_audit.csv`、`results/provenance/no_feasible_rank_audit.md`。
+
+### 决策与局限
+
+- **保留修复**：新行为与方法定义一致，且不会改变已审计正式结果。
+- **不覆盖正式结果**：审计仅重新执行 post-hoc 决策并写 provenance 文件。
+- `wilson_diagnostics.py` 是透明诊断脚本，不产生正式预测；其 `chosen_rank=None` 已能显示无可行解，未复制默认 rank 回退。
+- 本轮未修改或清理用户已有论文文件、图件与未跟踪文献。
+
+---
+
+## 第十九轮（2026-07-16）：P1 证据链修复 — 数据集级推断、指标命名与唯一主稿
+
+> **层次 A（统计与表述修复）**：不改模型、split、seed、数据集、rare class、alpha、rank grid 或任何正式预测；只基于现有真实结果重算统计派生产物、修正文稿表述并统一投稿主稿。
+
+### 依据、缺陷与验收线
+
+- **依据**：P0 后的论文审计发现，原 `significance_test.py` 将 72 个 dataset-budget-seed 配对单元视为 IID 做 bootstrap 和单侧 Wilcoxon，但同一数据集内的 seeds/budgets 相关，且部分名义预算因 5-cell floor 塌缩。独立推断单位更接近 8 个数据集。
+- **具体缺陷**：原稿的 CI 和 `P=8.82e-09` 可能过于乐观；`rare_fp_rate`（最终全部错误 rare calls）与 `rescue_ffr`（refinement 新增 false rescues）容易被未限定的 FFR 混用；旧 6-dataset 模块化稿与新 8-dataset 合并稿并行维护，存在版本漂移。
+- **最低验收线**：以 dataset 为独立推断单位重算 CI/检验；保留 72-run W/T/L 仅作描述；补 collapse-aware 与 leave-one-dataset-out 敏感性；主稿/补充/图件数字一致；完整测试与 LaTeX 编译通过；不重跑模型、不覆盖原始预测。
+
+### 改动
+
+- `tools/analysis/significance_test.py`
+  - 对每个 dataset 内的 scarce budgets × seeds 配对 Delta F1 先取均值，得到 8 个等权 dataset effects。
+  - 95% CI 改为有放回重采样 dataset effects（10,000 次 percentile bootstrap）。
+  - 主方向检验改为 dataset-level exact two-sided sign test；two-sided Wilcoxon 仅作辅助秩检验，不解释为算术均值检验。
+  - 新增 leave-one-dataset-out 范围和按 `dataset × seed × effective rare-label count` 合并的 collapse-aware sensitivity。
+  - 新增 matched grid fail-closed 校验，避免未来缺失 run 时不同数据集用不一致网格静默进入推断。
+- `results/comparison/significance_test.csv`：更新为 dataset-level inference 表。
+- `results/comparison/significance_dataset_effects.csv`：新增逐数据集 effect provenance。
+- `paper/figures/gen_fig3_scarce_benchmark.py`、`gen_fig4_paired_delta_forest.py`：CI 改为 dataset-clustered；Figure 4 明确 W/T/L 为 run-level 描述。
+- `paper/scRareRefine_bioinformatics_combined_v3.tex`：确定为唯一维护的 8-dataset 投稿主稿；标题改为 `Validation-calibrated...`；修正 no-feasible-rank 语义；区分 total false rare-call rate 与 incremental false-rescue rate；限定 conformal/exchangeability 主张。
+- `paper/scRareRefine_supplement_v3.tex`：同步统计单位、CI、sign test 和术语。
+- `paper/main.tex`：顶部标记为 archived 6-dataset draft，不再作为当前投稿入口。
+- `tools/analysis/dedup_scarce_wins.py`：扩展至 8 数据集并可重建 `scarce_region_distinct_8dataset.csv`。
+- `tests/test_significance_analysis.py`：新增 5 个统计测试。
+
+### 结果
+
+- 稀缺区 scRareRefine vs scANVI：72 个相关 matched run units 的描述性 W/T/L 仍为 **41/30/1**；8 个等权 dataset effects 的均值 Delta F1 为 **+0.1545**，dataset-clustered 95% CI **[+0.0908,+0.2259]**。
+- 7 个非零 dataset effects 全为正，1 个 dataset effect 为精确 0；exact two-sided sign-test **P=0.015625**。该 P 值只表示跨数据集方向一致性，不检验均值本身。
+- leave-one-dataset-out 均值范围 **[+0.1276,+0.1766]**，方向未改变。
+- collapse-aware sensitivity：均值 **+0.1512**，95% CI **[+0.0885,+0.2232]**，与名义预算分析一致；不声称相同 effective count 对应完全相同的 labeled-cell subset。
+- distinct scarce accounting 可复现：名义 24 格塌缩为 21 个 effective-count configurations，win-most **21/21**，single-best **20/21**。
+- `rare_fp_rate` 明确命名为 **total false rare-call rate**；`rescue_ffr` 明确命名为 **incremental false-rescue rate**。摘要中的 0.009878 属前者。
+
+### 验证
+
+- 独立 critique：**PASS，0 blocking / 0 major**；仅提出 matched-grid 校验等 minor 项，已补上校验与测试。
+- 完整 pytest（`scanvi311`, Python 3.11.15）：**13 passed**。
+- Python 语法检查：统计与去重脚本通过。
+- 主稿与补充材料：`latexmk -pdf` 均成功；主稿 12 页、补充 3 页。
+- Figure 3/4 已从真实 CSV 重绘为 PNG + PDF。
+
+### 决策与剩余 P2
+
+- **保留 P1 修复**：旧 run-level CI/P 值不再用于当前主稿；新推断更符合数据层级，且没有改变任何模型结果。
+- **当前最推荐的科学问题保持不变**：当训练集中仅有极少量已知低频目标类标签、半监督 scANVI 仍系统性漏检该类时，能否利用冻结 latent 的 train-only 原型和 validation-calibrated selective rescue 恢复 rare recall/F1，同时把新增错误 rare calls 限制在预设参考预算附近？
+- **P2（投稿完善，不阻断当前初稿）**：补最终参考文献/DOI 与数据 accession；核对 GitHub/Zenodo/作者信息占位符；统一归档旧稿与自动生成的 LaTeX 中间文件；增加 runtime/resource 正式表；在 limitations 中继续强调 8 datasets 的小样本推断、batch shift 下仅有经验安全性和 stomach 几何 recall ceiling。
+
+---
+
+## 第二十轮（2026-07-16）：P2 投稿元数据与中文优先写作路线
+
+### 层次与目标
+
+- **层次：P2 文稿完善，不改实验。**
+- 固化用户确认的作者、单位、通讯邮箱和 GitHub 仓库信息。
+- 后续初稿采用“先完成并打磨中文科学叙事，确认无误后再转英文”的单向工作流，避免中英文稿并行漂移。
+
+### 已确认信息
+
+- 必须作者与通讯作者：周佳豪（英文稿暂记为 Jiahao Zhou）。
+- 单位：新疆大学数学与系统科学学院（英文稿暂译为 School of Mathematics and System Sciences, Xinjiang University）。
+- 通讯邮箱：`jhzhou0704@163.com`。
+- GitHub：`https://github.com/RanieZhou/scRareRefine.git`。
+- 模拟合作者：Ming Li、Yuting Wang，仅作为版式占位；稿件中已明确标记为 simulated placeholders，投稿前必须确认、替换或删除。
+
+### 改动
+
+- 主稿和补充材料同步作者、单位及通讯信息。
+- 摘要页、Contact 和 Code availability 中的 GitHub 占位符替换为已确认仓库地址。
+- Zenodo DOI、软件 license、真实合作者与贡献声明继续保留为待确认项，不作编造。
+- `research-state.md` 记录中文优先写作路线及剩余开放项。
+
+### 结果与边界
+
+- 本轮不改变模型、数据、split、seed、统计分析、图件或任何正式结果。
+- 当前英文 TeX 仅作为已验证结果与投稿结构的事实载体；下一阶段正文内容优先在中文版本上打磨。
+
+## 第二十一轮（2026-07-16）：参考文献 DOI 与八数据集来源双重核验
+
+**层次**：P2 投稿材料完善；不涉及模型、数据、split、seed、指标或正式结果变更。
+
+**目标**：补齐投稿稿件的核心方法、比较方法和数据来源文献；对每个 DOI 做两条独立路径验证；为八个正式数据集建立可审计的下载来源与项目内派生关系。
+
+**改动**：
+- 重建 `paper/references.bib`，补入 scVI、scANVI、CellTypist、TOSICA、scBalance、scCAD、ProtoCloud、HiCat、conformal prediction 以及数据来源文献的正式 DOI。
+- 在主稿 related work 和 datasets 段落加入对应引用，并在手工参考文献表中写入 DOI。
+- 在补充材料新增数据来源表，记录 AIFI release/asset、GEO/BioProject/SRA、scIB Figshare DOI、Tabula Sapiens CELLxGENE UUID 与 Tabula Muris Senis GEO/CELLxGENE/Census 来源。
+- 新增 `results/provenance/doi_verification.csv` 与 `results/provenance/dataset_source_verification.csv`。
+
+**两次 DOI 验证**：
+1. 注册/索引元数据验证：使用 Crossref、OpenAlex、PubMed 或出版社记录核对题名、作者、期刊和年份。
+2. 解析验证：逐条访问 `https://doi.org/<DOI>`；15/15 均解析到出版商。Science 的两个 DOI 在到达出版商后返回 HTTP 403（反自动访问），其 DOI 注册元数据和 Science/Crossref 记录一致，因此判为有效，而非失效链接。
+
+**数据来源验证**：每个数据集均由“原始论文 + 官方数据门户/仓库 + 本地配置或提取脚本”交叉核对。`pancreas_integrated` 是 scIB 多研究整合对象的项目内整数-count 平台子集，不宣称对应单一 GEO accession。鼠 TMS 的 tissue-specific ID 是 pinned Census 中的历史来源标识，本地输出没有新注册 UUID；fallback 使用当前 all-10x UUID 加 tissue 条件。
+
+**结论**：核心参考文献已无 `[VERIFY]` 标记；15 个 DOI 全部通过双路径真实性核验；八个正式数据集均已有稳定来源、accession/UUID 和项目内派生说明。未修改任何原始数据或实验结果。
+
+## 第二十二轮（2026-07-16）：中文版论文初稿与 Overleaf 兼容编译
+
+**层次**：P2 文稿完善；仅新增中文写作入口，不涉及模型、数据、split、seed、指标、统计分析或正式结果变更。
+
+**目标**：以当前唯一维护的英文主稿为事实依据，新建一份可直接复制到 Overleaf 并使用 XeLaTeX 编译的中文论文初稿，供后续优先打磨中文科学叙事。
+
+**改动**：
+- 新建 `paper/scRareRefine_chinese_draft_v1.tex`，使用 `ctexart` 与 XeLaTeX 中文配置。
+- 完整保留英文主稿的摘要、引言、方法、公式、算法、结果、讨论、结论、数据与代码可用性声明，以及现有图表和真实数值。
+- 复用 `paper/references.bib`；Zenodo DOI、软件许可证、经费、补充材料 URL 与模拟合作者继续保留明确占位，不作编造。
+- 未覆盖或修改英文主稿、补充材料、源码、配置、数据及正式结果。
+
+**验证**：
+- 本地 XeLaTeX/BibTeX 编译成功，生成 `paper/scRareRefine_chinese_draft_v1.pdf`，共 13 页。
+- 无 LaTeX error、未定义引用或未定义文献；日志仅有摘要可用性段落产生的 2 条 `Underfull \hbox` 非阻断排版警告。
+
+**结论**：中文版初稿已成为后续中文优先写作的独立入口；英文主稿仍保持不变并继续作为已验证事实与投稿结构依据。
+
+## 第二十三轮（2026-07-17）：P0 指标术语兼容迁移（数值无操作）
+
+**层次**：P0 指标定义与报告语义修复；不改模型、数据、split、seed、rare class、阈值、rank、预测或既有正式结果。
+
+### 依据、缺陷与可证伪验收线
+
+- **依据**：现有实现中 `rare_fp_rate` 的分母是真实非目标细胞总数，表示最终预测的 total target-class FPR；`rescue_ffr` 的分母同样是真实非目标细胞总数，表示 refinement 新增错误目标调用的 incremental FPR。
+- **具体缺陷**：`rescue_ffr` 容易被误读为 rescued set 内的 false discovery proportion；若图中把 `rare_fp_rate` 标作 FFR，则把总体目标类 FPR 与增量 rescue 风险混为一谈。
+- **最低验收线**：新增规范字段 `incremental_fpr`，并保留 `rescue_ffr` 作为兼容别名；任意输入下二者必须逐值严格相等。绘图中 `rare_fp_rate` 只显示为 total target-class FPR，增量指标只显示为 incremental FPR。测试、预测、阈值及历史 CSV 数值不得改变。
+
+### 实施边界与输出策略
+
+- 本轮只修改指标生成代码、消费端标签和回归测试，不执行训练或重算正式 benchmark。
+- `results/comparison/`、`outputs/` 与既有图件不覆盖；后续确需重绘时写入版本化分析目录，再人工选择稿件副本。
+- 当前工作树中维护稿 `paper/scRareRefine_bioinformatics_combined_v3.tex` 与 `paper/scRareRefine_supplement_v3.tex` 不存在；本轮不恢复或猜测这些用户侧删除，只处理仍存在的活跃代码，文稿同步留待入口恢复后进行。
+- 验证环境优先 `scanvi311`；验收包括针对性指标测试、完整 pytest、Python 语法检查以及 git diff 审查。
+
+### 实施结果
+
+- 所有活跃 comparison 指标生成入口新增 `incremental_fpr`，并保留数值完全相同的 `rescue_ffr` 兼容列；`rare_fp_rate` 仍保持 total target-class FPR 定义。
+- `ablation.py`、`multiseed_core.py`、`weak_backbone_demo.py` 与 `split_sensitivity.py` 同步输出规范增量指标；既有 `ffr`/`rescue_ffr` 字段仅作为历史兼容别名保留。
+- `plot_main_summary.py` 与 `plot_comparison_benchmark.py` 不再把 `rare_fp_rate` 标作 FFR，而显示为 total target-class FPR。
+- rescue 专属消融和 separability 图的显示术语改为 incremental FPR；未重绘或覆盖任何既有正式图件。
+- 新增 `tests/test_error_rate_terminology.py`，覆盖新旧字段严格相等、total FPR 与 incremental FPR 分子不同以及无新增误救时 incremental FPR 为零。
+
+### 验证与裁定
+
+- `scanvi311`（Python 3.11.15）完整 pytest：**15 passed**，其中新增术语兼容测试 2 项。
+- 所有本轮修改的 Python 文件通过 `py_compile`；`git diff --check` 无补丁格式错误，仅报告工作树既有 LF/CRLF 转换提示。
+- 未运行训练、benchmark 重算或绘图脚本；因此没有产生 GPU/云成本，也没有覆盖 `results/comparison/`、`outputs/`、预测、阈值或正式图件。
+- **验收通过**：规范名称已引入，兼容字段保留且有自动化等值证明；本轮是数值无操作的术语迁移。
+- **剩余边界**：两份交接中指定的 v3 维护稿当前不在工作树中，故未做文稿同步，也未恢复用户已删除文件。待唯一投稿入口恢复后，应将 total FPR、incremental FPR 与 rescue FDP 三者在正文和补充材料中统一定义。
+
+## 第二十四轮（2026-07-17）：P1 rescue composition 缓存分析
+
+**层次**：P1 证据链补充；只读复用正式 embeddings/predictions 缓存和 `src.rescue.conformal_rescue()`，不重训、不改变阈值、rank、预测或历史正式结果。
+
+### 依据、缺陷与可证伪验收线
+
+- **依据**：现有 benchmark 只报告最终 rare F1/recall、总目标类 FPR 和新增误救数，尚未完整展示 baseline 漏判如何被分解为 true rescue 与 remaining miss，也未报告 rescued set 内的 precision/FDP。
+- **具体缺陷**：缺少逐 run 的 rescue composition 会使“提升来自真实恢复而非大量错误改判”的机制证据不完整；同时 `incremental_fpr` 不能替代 rescued-set FDP。
+- **最低验收线**：对 8 数据集 × 4 标注预算 × 3 seed 的 96 个预期配置建立闭合账本；逐 run 满足 `baseline_missed_rare = true_rescues + remaining_missed_rare`、`all_rescues = true_rescues + false_rescues`、非空 rescue 时 `RescuePrecision + RescueFDP = 1`、`incremental_fpr = false_rescues / true_nonrare`、`incremental_fpr == rescue_ffr`。
+
+### 预执行审查与实施边界
+
+- critique 预执行审查结论为 **BLOCK**，指出三个必须先修复的风险：prediction/latent 必须按唯一 cell ID 显式对齐且三路 split 不得重叠；prototype 的 `is_labeled` 必须来自缓存中的真实 `is_labeled_for_scanvi` 并核对预算；必须先生成 96 个期望键，缺失或失败配置不得静默删除。
+- 上述三项作为实现的 fail-closed 硬门槛；任何失败均保留状态与错误原因，不用长度截断、行序假设、全训练标签回退或结果推测。
+- `chosen_rank=0` 只表示弃权 sentinel；弃权时 raw candidate 数记为不可用而不是 0-rank 候选。
+- test true labels 只用于最终组成刻画，不参与 prototype、tau、rank 或任何参数选择。
+- 新产物写入 `results/rescue_composition/v1/`，日志写入 `logs/rescue_composition/`；不覆盖 `results/comparison/`、`outputs/` 或已有图件。
+
+### 实施结果
+
+- 新增 `tools/analysis/rescue_composition.py`，建立 8 数据集 × 4 预算 × 3 seed 的 96 行闭合账本，并在读取时按唯一 `cell_id` 显式对齐 prediction/latent、检查三路 split 不相交、核对 latent 有限值和维度、核对缓存 `is_labeled_for_scanvi` 与训练标签预算。
+- 85 行可由当前正式 `conformal_rescue()` 与历史 comparison 完全一致地逐细胞重放；11 行鼠胰腺历史结果与当前代码重放计数不一致。由于历史结果未保存最终逐细胞预测和决策元数据，这 11 行只使用历史 `n_rescued`、`n_false_rescue`、`rescue_ffr` 与 baseline 缓存重建可追溯组成，标记为 `historical_counts_only`，并将 rank、tau、raw candidates 与 abstention 留空，未推测缺失信息。
+- 全部 96 行状态为 `success`；逐行五项计数/比率不变量均通过。稀缺区全部成功 run 的描述性汇总为 true rescues=947、false rescues=95、pooled rescue precision=0.9088、最大 run-level incremental FPR=0.009768。该 pooled precision 只作事件级描述，不替代数据集级推断。
+- 输出包括 `run_level.csv`、`summary.csv`、弃权原因表、按预算分面的 PNG/PDF 图、`analysis_notes.md`、`manifest.json` 和 `_script_manifest.jsonl`。图脚注明绝对计数不可跨数据集直接比较，并披露鼠胰腺使用历史计数重建。
+- provenance 记录了 dirty 工作树状态、分析脚本、直接依赖、测试、八个配置的 SHA-256、输入缓存及输出哈希，固定了本轮实际执行代码。
+
+### 验证与裁定
+
+- `scanvi311`（Python 3.11.15）完整 pytest：**23 passed**；其中新增 5 个逻辑单元测试和 3 个产物级回归测试。
+- 新增脚本和测试通过 `py_compile`；`git diff --check` 无补丁格式错误，仅有工作树既有 LF/CRLF 提示。
+- post-compute critique 首轮确认 96 行账本、五项不变量、947/95/0.9088/0.009768 和 11 条历史行均可追溯，但阻断于 dirty 工作树下缺少代码内容哈希；补充 source hashes、`_script_manifest.jsonl`、unknown abstention 计数和分面图后，定向复审为 **PASS，无剩余 blocker**。
+- 本轮未训练模型、未使用 GPU/云服务、未覆盖 `outputs/`、`results/comparison/`、正式预测、阈值或历史图件。
+
+## 第二十五轮（2026-07-17）：P1 residual-signal 缓存分析
+
+**层次**：P1 机制证据补充；只读复用正式 embeddings/predictions 缓存、训练标签原型和 `src.rescue.conformal_rescue()`，不重训、不改变阈值、rank、预测或历史正式结果。
+
+### 依据、缺陷与可证伪验收线
+
+- **依据**：第二十四轮已证明 rescue composition 在 96 个配置上闭合，但计数账本本身不能说明被救回细胞为何可被识别，也不能验证“baseline 漏判细胞仍保留 target-type latent signal”这一机制链。
+- **具体缺陷**：当前缺少 baseline-correct rare、true rescued rare、unrescued rare、non-target 及最近竞争类之间的 rare-membership score、rare-prototype distance、rare rank 和 competing-prototype margin 定量对照。仅有 UMAP 个案不足以作为跨数据集机制证据。
+- **最低验收线**：对全部 96 个预期配置建立 fail-closed 账本；仅对可与历史正式结果逐细胞一致重放的运行生成 cell-level 分组，历史身份不可追溯的运行明确排除；分组互斥且覆盖全部 test cells；所有距离、score、rank 与 margin 可由训练原型和缓存 latent 重算；至少生成一张真实数据驱动 PNG/PDF 图；所有汇总数字可由 cell-level Parquet 和 run-level 表独立重建。
+
+### 预设机制假设与分析边界
+
+- **H1**：true rescued rare 的 target signal 弱于 baseline-correct rare，即 score/margin 较低、rare distance/rank 较高。
+- **H2**：true rescued rare 的 target signal 强于 unrescued rare，即 score/margin 较高、rare distance/rank 较低。
+- **H3**：true rescued rare 与 non-target，尤其训练原型定义的最近竞争类，仍在至少一项 target-signal 指标上保持方向一致的分离。
+- **H4**：通过正式 gates 与 conformal threshold 后的 false-rescue 数量保持受限；本分析只刻画机制，不重新选择 tau、rank、指标方向或任何阈值。
+- primary metrics 固定为 `rare_membership_score`、`rare_rank`、`rare_prototype_distance` 和 `prototype_margin = nearest_nonrare_distance - rare_prototype_distance`。margin 越大表示稀有原型相对最近多数原型越近。
+- 最近竞争类由训练集原型中距稀有原型最近的非稀有类定义，禁止使用 test 标签选择竞争类。test 标签只用于最终分组和经验对照。
+- 组间比较采用逐 run 的中位数差与 Cliff's delta，并汇总方向一致率；不把同一 run 内细胞当作跨数据集独立重复，不以 pooled cell-level p 值支持总体推断。
+- 11 个 `mouse_pancreas_tms_10x` 历史计数行缺少正式 cell-level rescue identity；若仍无法追溯，保留在 96 行账本中但不生成 cell-level 分组、不推测身份。
+- canonical 产物写入 `results/residual_signal/v1/`，日志写入 `logs/residual_signal/`；不覆盖 `results/comparison/`、`results/rescue_composition/`、`outputs/` 或已有图件。
+
+### 预执行状态
+
+- 环境优先 `scanvi311`；本轮为 CPU 缓存分析，无云计算、GPU 或付费 API。
+- 计划产物：`run_level.csv`、压缩 cell-level Parquet、`summary.csv`、`tables/group_contrasts.csv`、PNG/PDF 分布与 prototype-margin 图、`manifest.json`、`analysis_notes.md`。
+- 结果、验证、审查与裁定将在执行后追加；不利或不符合 H1-H3 的方向必须原样保留。
+- pre-compute critique 首轮为 **BLOCKING**：指出历史一致性判据不能以 test-label 派生的 false-rescue/FFR 决定 cell-level 纳入，且使用同一 score/rank/distance 回验 rescued cells 只能支持 selection-pathway characterization，不能称为独立机制或生物学验证。
+- 已按最小修复更新方法：全部有效缓存均生成 current-code replay identity；历史 cell identity 可用性单独记录，不以 test 指标排除；四组执行 one-hot；冻结完整 contrast×metric×方向；先在 dataset×budget 内汇总 seed，再以 dataset 为证据单位；加入未参与 rescue 选择的缓存 scANVI rare probability 作为非选择模型读出，但不把它称为生物学验证。
+- post-compute critique 首轮发现 `nearest_nonrare_distance` 的预设方向编码错误：更强 target geometry 应对应“距最近非稀有原型更远”，方向应为 `+1` 而非 `-1`。已修正源代码并要求完整重跑全部派生产物；同时将 prototype-margin 图改为每个 dataset×budget 的 seed 中位数并显式编码预算，避免视觉上混合层级。
+
+### 实施结果
+
+- 新增 `tools/analysis/residual_signal.py`，复用第二十四轮验证过的 fail-closed cache alignment，并对 8 数据集 × 4 预算 × 3 seed 的 **96/96** 配置成功执行 current-code formal replay；生成 **355,116** 行压缩 cell-level Parquet。
+- primary groups 对每个 test cell 强制 one-hot：current replay 共得到 baseline-correct rare=4,086、true rescued rare=864、unrescued rare=1,326、non-target=348,840；false rescues=83，作为 non-target 子集单独标记。
+- 11 个 `mouse_pancreas_tms_10x` 运行仍缺少 authoritative historical cell identity；`historical_cell_identity_available=false`，但 current-code replay 可用。两种 provenance 分开记录，未把 current replay 冒充为 historical reconstruction。
+- 四个预设 primary metrics 为 rare-membership score、rare rank、rare-radius-standardized distance 与 standardized prototype margin；另保存 raw distances/margin。全部 96 个缓存均含冻结的 scANVI rare probability，作为未参与 rescue 选择的模型读出。
+- H2（true rescued vs unrescued）、H3a（true rescued vs non-target）和 H3b（true rescued vs closest competitor）在所有 informative dataset×budget strata 上，对四个预设 primary metrics 的方向一致率均为 **1.0**。
+- H1（baseline-correct vs true rescued）在 rare score、standardized rare distance 和 standardized margin 上均为方向一致率 **1.0**；rare rank 不一致，各预算方向率为 0.667 / 0.400 / 0.250 / 0.000，汇总中位数 0.325。该不利结果原样保留：两组常具有相同候选 rank，rank 不能刻画二者信号强弱。
+- 缓存 scANVI rare probability 在每个 informative run-level pairwise contrast 中均呈预期方向：baseline-correct rare > true-rescued rare；true-rescued rare > unrescued rare、non-target 和 closest competitor。对应 informative runs 分别为 33、35、40、40，raw Cliff's delta 中位数为 1.000、0.778、0.998、0.997。
+- canonical 输出位于 `results/residual_signal/v1/`：`run_level.csv`、`cell_level.parquet`、`summary.csv`、三张详细表、两组 PNG/PDF 图、`analysis_notes.md`、`methodology.md`、`manifest.json` 与 `_script_manifest.jsonl`。图和表均由实际缓存数据生成。
+
+### 验证、审查与裁定
+
+- `scanvi311`（Python 3.11.15）完整 pytest：**30 passed**；新增 4 个逻辑测试和 3 个产物级测试。新增脚本及测试通过 `py_compile`；`git diff --check` 无补丁格式错误，仅有工作树既有 LF/CRLF 提示。
+- pre-compute critique 初审 BLOCK 后完成方法修订，复审 **PASS**。post-compute critique 初审仅阻断于 nearest-nonrare-distance 方向错误；修正源代码并完整重跑后复审 **PASS，无其他 blocker**。最终科学结论审查亦为 **PASS**。
+- **裁定**：本轮验收通过。结果支持“formal rescue 选中的真实稀有细胞在选择几何中位于 baseline-correct 与 unrescued/non-target 之间”的选择路径刻画；同时冻结 scANVI probability 提供了同方向的非选择模型读出。
+- **主张边界**：这些结果不是独立机制或生物学验证。prototype 指标与 rescue selection 共用结构，部分方向一致性由构造产生；scANVI probability 虽未参与 rescue 选择，也不是 marker/expression 级生物学确认。独立 marker validation 仍属于后续 P2。
+- 本轮未训练模型、未使用 GPU/云服务或付费 API，未改动 `src/rescue.py`、正式阈值、历史预测、`outputs/` 或 `results/comparison/`。
+
+## 第二十六轮（2026-07-17）：P0-P3 补充证据计划
+
+**层次**：A/B 混合的补充分析计划；不改变正式算法、默认参数、split、seed、预测或历史 benchmark。论文更新明确排除。
+
+### 依据、缺陷与可证伪验收线
+
+- **依据**：第二十四、二十五轮完成了 rescue composition 与 latent residual-signal，但 calibration rare-label 成本尚未透明计入；现有消融只覆盖六个人体数据集；缺少外部预声明 marker 的表达侧证据；参数稳健性与真正独立于 scANVI latent 的第二表示验证仍不完整。
+- **具体缺陷**：当前证据链仍可能被质疑为低估标签成本、组件叠加缺乏八数据集验证、几何证据具有选择构造性，以及方法只在 scANVI latent 上成立。
+- **最低验收线**：(1) P0 对 96/96 配置报告 train/validation/test rare support、训练 rare-label ID hash 与预算塌缩；(2) P1 对八数据集完整报告 gate/rank/tau 消融和所有 alpha 越界；(3) P2 使用计算前冻结且有文献来源的 marker panel、train-only 标准化并生成真实数据图；(4) P3 完整报告冻结参数网格、dataset-clustered separability 关联与互斥 validation 子集的 TruncatedSVD+kNN 配对验证。
+
+### 预设边界与审查修复
+
+- P0 将 count collapse 与 identity collapse 分开，只有 labeled rare-cell ID hash 一致才视为完全重复预算。
+- P1/P3 先在 dataset×effective-budget 内聚合 seed；run-level 点只作描述，避免伪重复。
+- P2 marker registry 在读取表达分组效应前冻结于 `results/supplementary_program/v1/marker_registry.csv`；test 不选 marker、权重、归一化或竞争类。
+- P3a 每个 alpha 独立用 validation 重算 tau；敏感性结果不得更改默认参数。
+- P3c 所有表达变换与 SVD 仅在 train fit；validation 确定性拆为互斥 `val_base` 与 `val_rescue`，分别用于 base 选择和 rescue 校准。
+- 计算前 critique 对初始方案给出 BLOCKING；上述最小修复已写入 `results/supplementary_program/v1/methodology.md`。后续结果、失败与裁定将在本节追加。
+
+### P0 实施结果：rare-label budget accounting
+
+- 新增 `tools/analysis/label_budget.py`，按冻结的 8 数据集 × 3 seed × 4 nominal budget 构造 **96/96** 闭合账本。每个运行显式验证 prediction cache 必需列、split 内唯一 `cell_id`、三路 split 两两不相交、manifest 配置一致性、缓存 split hash、训练 rare-label 数量与预算规则。
+- canonical labeled rare IDs 来自 `train_predictions.csv` 中 `true_label == rare_class` 且 `is_labeled_for_scanvi == True` 的唯一训练 cell ID；按词典序排序、compact UTF-8 JSON 序列化并计算完整 lowercase SHA-256。**96/96** 行身份均可验证，无 `identity_unverifiable` 或失败配置。
+- 四项冻结比例均已逐运行报告：(1) training labeled rare / train rare pool；(2) training labeled rare / all-split rare；(3) training labeled rare + validation rare / all-split rare；(4) training labeled rare / all training cells。test rare support 仅用于透明 split 成本核算，不参与训练、校准、阈值或预算折叠。
+- 96 个 nominal rows 中发现 **6 个 within-seed identity-collapse groups**，共涉及 15 行并折叠 9 个重复 nominal rows；均来自 `pancreas_baron` 与 `tabula_sapiens_stomach` 的 minimum-5 floor。未发现 count 相同但 ID identity 不同的 collision。identity collapse 后为 **87** 行，跨 seed 的 seed-count units 亦为 **87**，最终 dataset × actual-count summary 为 **29** 行。
+- 稀缺 nominal budgets（0.01/0.05/0.10）的实际 training rare-label fraction 范围为 **0.015873–0.098765**；training labeled rare 占全部训练细胞的比例为 **0.000206–0.003526**。计入 validation rare support 后，占 all-split rare 的总监督比例范围为 **0.043956–0.918388**；后者在 batch-heldout 数据集间差异很大，说明 nominal training budget 不能代表完整 calibration-label 成本。
+- canonical 输出位于 `results/label_budget/v1/`：`run_level.csv`、`summary.csv`、identity/count/seed-count 三张详细表、PNG/PDF 数据图、`analysis_notes.md`、`manifest.json` 与 `_script_manifest.jsonl`；执行日志位于 `logs/label_budget/label_budget_v1.log`。
+
+### P0 验证、审查与裁定
+
+- pre-compute critique 首轮指出 cross-seed aggregation、唯一 ID 集合分母和 96-key fail-closed 协议未完全写明；补充完整定义后，又明确同一 seed、相同 count、不同 identity runs 必须先等权平均，最终复审 **PASS**。
+- `scanvi311` 完整 pytest：**38 passed in 4.66s**；P0 定向测试为 **8 passed**。新增脚本与测试通过 `py_compile`；`git diff --check` 无补丁格式错误，仅有工作树既有 LF/CRLF 提示。
+- post-compute critique 对脚本、script manifest、96 行账本、汇总、collapse tables、manifest、notes、测试及 PNG/PDF 图执行 Checklist E/G 审查，结论为 **PASS，无 BLOCKING issue**。
+- **裁定**：P0 验收通过。结果支持透明区分 training rare-label budget 与 validation calibration support；不支持把 nominal training percentage 直接解释为方法的完整稀有标签成本。
+- 本任务为 CPU cache-only 核算，未训练模型、未使用 GPU/云服务或付费 API，未修改 `outputs/`、正式预测、阈值、benchmark 或论文文件。

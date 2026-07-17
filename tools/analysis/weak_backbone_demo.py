@@ -11,6 +11,7 @@ Outputs:
   results/weak_backbone/weak_backbone_agg.csv
   results/weak_backbone/weak_backbone_report.md
 """
+
 from __future__ import annotations
 
 import os
@@ -27,7 +28,12 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
 from src.rescue import PrototypeRescuer, conformal_rescue  # noqa: E402
-from src.utils import classification_tables, load_config, make_run_dir, parse_rare_train_size  # noqa: E402
+from src.utils import (
+    classification_tables,
+    load_config,
+    make_run_dir,
+    parse_rare_train_size,
+)  # noqa: E402
 
 CONFIGS = [
     "configs/immune_dc.yaml",
@@ -49,8 +55,12 @@ def _lat(df: pd.DataFrame) -> np.ndarray:
     return df[cols].to_numpy(np.float32)
 
 
-def _knn_predict(train_lat: np.ndarray, train_labels: np.ndarray, query_lat: np.ndarray, k: int) -> pd.Series:
-    clf = KNeighborsClassifier(n_neighbors=min(k, len(train_labels)), weights="uniform", n_jobs=1)
+def _knn_predict(
+    train_lat: np.ndarray, train_labels: np.ndarray, query_lat: np.ndarray, k: int
+) -> pd.Series:
+    clf = KNeighborsClassifier(
+        n_neighbors=min(k, len(train_labels)), weights="uniform", n_jobs=1
+    )
     clf.fit(train_lat, train_labels)
     return pd.Series(clf.predict(query_lat)).astype(str)
 
@@ -64,12 +74,14 @@ def _metrics(y_true, pred, base_pred, rare_class: str) -> dict[str, float | int]
     n_false = int(((p != b) & (p == rare_class) & (y != rare_class)).sum())
     n_rescued = int(((p != b) & (p == rare_class)).sum())
     n_fp = int(((p == rare_class) & (y != rare_class)).sum())
+    incremental_fpr = round(n_false / max(n_nonrare, 1), 6)
     return {
         "rare_f1": round(metrics["rare_f1"], 4),
         "rare_recall": round(metrics["rare_recall"], 4),
         "rare_precision": round(metrics["rare_precision"], 4),
         "rare_fp_rate": round(n_fp / max(n_nonrare, 1), 6),
-        "rescue_ffr": round(n_false / max(n_nonrare, 1), 6),
+        "incremental_fpr": incremental_fpr,
+        "rescue_ffr": incremental_fpr,
         "n_rescued": n_rescued,
         "n_false_rescue": n_false,
     }
@@ -87,7 +99,9 @@ def run() -> pd.DataFrame:
 
         for seed in SEEDS:
             for rts in RTS:
-                run_dir = make_run_dir(cfg, split_mode, seed, rare, parse_rare_train_size(rts))
+                run_dir = make_run_dir(
+                    cfg, split_mode, seed, rare, parse_rare_train_size(rts)
+                )
                 emb = run_dir / "embeddings"
                 if not (emb / "test_latent.csv").exists():
                     print(f"[skip] no cache: {dataset} seed={seed} rts={rts}")
@@ -116,7 +130,9 @@ def run() -> pd.DataFrame:
                 best_val_pred = None
                 for k in K_GRID:
                     pred_val = _knn_predict(lab_lat, lab_labels, val_lat, k)
-                    val_metrics, _ = classification_tables(y_val, pred_val, rare_class=rare)
+                    val_metrics, _ = classification_tables(
+                        y_val, pred_val, rare_class=rare
+                    )
                     if val_metrics["rare_f1"] > best_val_f1:
                         best_val_f1 = val_metrics["rare_f1"]
                         best_k = k
@@ -142,22 +158,26 @@ def run() -> pd.DataFrame:
                     "k": best_k,
                     "sep": round(proto.separability_ratio, 4),
                 }
-                rows.append({
-                    **common,
-                    "variant": "kNN",
-                    "abstain": False,
-                    "abstain_reason": "",
-                    "chosen_rank": 0,
-                    **_metrics(y_test, base_test, base_test, rare),
-                })
-                rows.append({
-                    **common,
-                    "variant": "kNN+scRareRefine",
-                    "abstain": bool(summary.get("abstain", False)),
-                    "abstain_reason": summary.get("reason", ""),
-                    "chosen_rank": int(summary.get("chosen_rank", 0)),
-                    **_metrics(y_test, rescued, base_test, rare),
-                })
+                rows.append(
+                    {
+                        **common,
+                        "variant": "kNN",
+                        "abstain": False,
+                        "abstain_reason": "",
+                        "chosen_rank": 0,
+                        **_metrics(y_test, base_test, base_test, rare),
+                    }
+                )
+                rows.append(
+                    {
+                        **common,
+                        "variant": "kNN+scRareRefine",
+                        "abstain": bool(summary.get("abstain", False)),
+                        "abstain_reason": summary.get("reason", ""),
+                        "chosen_rank": int(summary.get("chosen_rank", 0)),
+                        **_metrics(y_test, rescued, base_test, rare),
+                    }
+                )
 
     return pd.DataFrame(rows)
 
@@ -166,37 +186,45 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for region, sub in [("ALL", df), ("SCARCE", df[df["rts"].isin(SCARCE)])]:
         for variant, group in sub.groupby("variant"):
-            rows.append({
-                "region": region,
-                "variant": variant,
-                "n": len(group),
-                "f1_mean": round(group["rare_f1"].mean(), 4),
-                "recall_mean": round(group["rare_recall"].mean(), 4),
-                "precision_mean": round(group["rare_precision"].mean(), 4),
-                "rare_fp_rate_max": round(group["rare_fp_rate"].max(), 6),
-                "rescue_ffr_max": round(group["rescue_ffr"].max(), 6),
-                "n_abstain": int(group["abstain"].sum()),
-            })
+            rows.append(
+                {
+                    "region": region,
+                    "variant": variant,
+                    "n": len(group),
+                    "f1_mean": round(group["rare_f1"].mean(), 4),
+                    "recall_mean": round(group["rare_recall"].mean(), 4),
+                    "precision_mean": round(group["rare_precision"].mean(), 4),
+                    "rare_fp_rate_max": round(group["rare_fp_rate"].max(), 6),
+                    "incremental_fpr_max": round(group["incremental_fpr"].max(), 6),
+                    "rescue_ffr_max": round(group["rescue_ffr"].max(), 6),
+                    "n_abstain": int(group["abstain"].sum()),
+                }
+            )
 
-        pivot = sub.pivot_table(index=["dataset", "seed", "rts"], columns="variant", values="rare_f1")
+        pivot = sub.pivot_table(
+            index=["dataset", "seed", "rts"], columns="variant", values="rare_f1"
+        )
         if {"kNN", "kNN+scRareRefine"}.issubset(pivot.columns):
             delta = pivot["kNN+scRareRefine"] - pivot["kNN"]
-            rows.append({
-                "region": region,
-                "variant": "paired_gain",
-                "n": len(delta),
-                "f1_mean": round(delta.mean(), 4),
-                "recall_mean": np.nan,
-                "precision_mean": np.nan,
-                "rare_fp_rate_max": np.nan,
-                "rescue_ffr_max": np.nan,
-                "n_abstain": np.nan,
-                "wins": int((delta > 1e-9).sum()),
-                "ties": int((delta.abs() <= 1e-9).sum()),
-                "losses": int((delta < -1e-9).sum()),
-                "worst_delta": round(delta.min(), 4),
-                "best_delta": round(delta.max(), 4),
-            })
+            rows.append(
+                {
+                    "region": region,
+                    "variant": "paired_gain",
+                    "n": len(delta),
+                    "f1_mean": round(delta.mean(), 4),
+                    "recall_mean": np.nan,
+                    "precision_mean": np.nan,
+                    "rare_fp_rate_max": np.nan,
+                    "incremental_fpr_max": np.nan,
+                    "rescue_ffr_max": np.nan,
+                    "n_abstain": np.nan,
+                    "wins": int((delta > 1e-9).sum()),
+                    "ties": int((delta.abs() <= 1e-9).sum()),
+                    "losses": int((delta < -1e-9).sum()),
+                    "worst_delta": round(delta.min(), 4),
+                    "best_delta": round(delta.max(), 4),
+                }
+            )
     return pd.DataFrame(rows)
 
 
@@ -220,9 +248,14 @@ def write_report(df: pd.DataFrame, agg: pd.DataFrame) -> None:
     df.to_csv(OUT_DIR / "weak_backbone_summary.csv", index=False)
     agg.to_csv(OUT_DIR / "weak_backbone_agg.csv", index=False)
 
-    scarce = agg[(agg["region"] == "SCARCE") & (agg["variant"].isin(["kNN", "kNN+scRareRefine", "paired_gain"]))]
+    scarce = agg[
+        (agg["region"] == "SCARCE")
+        & (agg["variant"].isin(["kNN", "kNN+scRareRefine", "paired_gain"]))
+    ]
     paired = (
-        df.pivot_table(index=["dataset", "seed", "rts"], columns="variant", values="rare_f1")
+        df.pivot_table(
+            index=["dataset", "seed", "rts"], columns="variant", values="rare_f1"
+        )
         .assign(delta=lambda x: x["kNN+scRareRefine"] - x["kNN"])
         .reset_index()
     )
@@ -247,7 +280,9 @@ def write_report(df: pd.DataFrame, agg: pd.DataFrame) -> None:
         "",
         "Interpretation: the rescue mechanism transfers to a weaker predictor in aggregate, but this demo has one negative scarce-region cell and two negative cells overall. It should not be claimed as no-regression evidence.",
     ]
-    (OUT_DIR / "weak_backbone_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (OUT_DIR / "weak_backbone_report.md").write_text(
+        "\n".join(lines) + "\n", encoding="utf-8"
+    )
     print("\n".join(lines))
 
 

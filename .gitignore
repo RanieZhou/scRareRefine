@@ -31,7 +31,6 @@ checkpoints/
 *.tmp
 *.rar
 
-tests/
 baseline/catboost_info/
 baseline/AnnoGCD/
 baseline/HiCat/

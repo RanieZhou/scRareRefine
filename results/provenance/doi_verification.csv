@@ -1,0 +1,16 @@
+key,doi,metadata_verification,resolution_verification,status
+lopez2018scvi,10.1038/s41592-018-0229-2,Crossref and OpenAlex title/journal/year match,doi.org resolved (HTTP 302),verified
+xu2021scanvi,10.15252/msb.20209620,Crossref/OpenAlex and PubMed metadata match,doi.org resolved (HTTP 302),verified
+dominguez2022celltypist,10.1126/science.abl5197,Crossref and PubMed metadata match,doi.org reached publisher (HTTP 403 after redirect),verified
+chen2023tosica,10.1038/s41467-023-35923-4,Crossref/OpenAlex and publisher metadata match,doi.org resolved (HTTP 302),verified
+cheng2023scbalance,10.1038/s42003-023-04928-6,OpenAlex and PubMed metadata match,doi.org resolved (HTTP 302),verified
+xu2024sccad,10.1038/s41467-024-51891-9,OpenAlex and PubMed metadata match,doi.org resolved (HTTP 302),verified
+guo2026protocloud,10.1016/j.xgen.2026.101217,Crossref and PubMed metadata match,doi.org resolved (HTTP 200),verified
+bi2025hicat,10.1093/bib/bbaf428,OpenAlex and PubMed metadata match,doi.org resolved (HTTP 302),verified
+vovk2005algorithmic,10.1007/b106715,Crossref and Springer metadata match,doi.org resolved (HTTP 301),verified
+angelopoulos2023conformal,10.1561/2200000101,Crossref and publisher metadata match,doi.org resolved (HTTP 302),verified
+gong2025immuneatlas,10.1038/s41586-025-09686-5,PubMed and publisher metadata match,doi.org resolved (HTTP 302),verified
+baron2016pancreas,10.1016/j.cels.2016.08.011,GEO citation and Crossref/PubMed metadata match,doi.org resolved (HTTP 200),verified
+luecken2022scib,10.1038/s41592-021-01336-8,Crossref/OpenAlex and publisher metadata match,doi.org resolved (HTTP 302),verified
+tabulasapiens2022,10.1126/science.abl4896,Crossref and CELLxGENE source metadata match,doi.org reached publisher (HTTP 403 after redirect),verified
+tabulamurissenis2020,10.1038/s41586-020-2496-1,GEO citation and Crossref/PubMed metadata match,doi.org resolved (HTTP 302),verified

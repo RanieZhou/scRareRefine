@@ -4,6 +4,7 @@ The script compares the primary batch-heldout cache against the
 cell-stratified sensitivity cache for scANVI and scRareRefine. It is read-only
 with respect to ``outputs/`` and writes tables under ``results/split_sensitivity``.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -47,7 +48,15 @@ def _markdown_table(df: pd.DataFrame) -> str:
     return "\n".join([header, sep, *rows])
 
 
-def _metric_row(run_dir: Path, *, split_mode: str, dataset: str, seed: int, rts: str, rare_class: str) -> dict[str, Any]:
+def _metric_row(
+    run_dir: Path,
+    *,
+    split_mode: str,
+    dataset: str,
+    seed: int,
+    rts: str,
+    rare_class: str,
+) -> dict[str, Any]:
     metrics_path = run_dir / "metrics" / "final_metrics.csv"
     if not metrics_path.exists():
         return {
@@ -81,16 +90,22 @@ def _metric_row(run_dir: Path, *, split_mode: str, dataset: str, seed: int, rts:
         if path.exists():
             pred = pd.read_csv(path, usecols=["cell_id", "true_label"])
             split_counts[split] = len(pred)
-            rare_counts[split] = int((pred["true_label"].astype(str) == rare_class).sum())
+            rare_counts[split] = int(
+                (pred["true_label"].astype(str) == rare_class).sum()
+            )
         else:
             split_counts[split] = 0
             rare_counts[split] = 0
     total = sum(split_counts.values())
 
     manifest_path = run_dir / "manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
+    manifest = (
+        json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest_path.exists()
+        else {}
+    )
     sep = float(refined.get("sep", float("nan"))) if "sep" in refined else float("nan")
-    rescue_ffr = float(refined.get("major_to_rare_false_rescue_rate", 0.0))
+    incremental_fpr = float(refined.get("major_to_rare_false_rescue_rate", 0.0))
     n_rescued = int(refined.get("n_rescued", 0))
     n_false = int(refined.get("n_false_rescues", 0))
 
@@ -120,7 +135,8 @@ def _metric_row(run_dir: Path, *, split_mode: str, dataset: str, seed: int, rts:
         "scRareRefine_precision": float(refined["rare_precision"]),
         "delta_f1": float(refined["rare_f1"]) - float(baseline["rare_f1"]),
         "delta_recall": float(refined["rare_recall"]) - float(baseline["rare_recall"]),
-        "rescue_ffr": rescue_ffr,
+        "incremental_fpr": incremental_fpr,
+        "rescue_ffr": incremental_fpr,
         "n_rescued": n_rescued,
         "n_false_rescue": n_false,
         "abstained": bool(n_rescued == 0),
@@ -136,7 +152,9 @@ def collect(seed: int) -> pd.DataFrame:
         for split_mode in ["batch_heldout", "cell_stratified"]:
             for rts in RTS:
                 size = parse_rare_train_size(rts)
-                run_dir = ROOT / make_run_dir(config, split_mode, seed, rare_class, size)
+                run_dir = ROOT / make_run_dir(
+                    config, split_mode, seed, rare_class, size
+                )
                 rows.append(
                     _metric_row(
                         run_dir,
@@ -167,6 +185,7 @@ def write_report(df: pd.DataFrame, seed: int) -> None:
             "scRareRefine_f1",
             "scRareRefine_recall",
             "delta_f1",
+            "incremental_fpr",
             "rescue_ffr",
             "train_pct",
             "val_pct",
@@ -193,7 +212,7 @@ def write_report(df: pd.DataFrame, seed: int) -> None:
             scANVI_recall=("scANVI_recall", "mean"),
             scRareRefine_recall=("scRareRefine_recall", "mean"),
             delta_recall=("delta_recall", "mean"),
-            rescue_ffr_max=("rescue_ffr", "max"),
+            incremental_fpr_max=("incremental_fpr", "max"),
             n_abstain=("abstained", "sum"),
         )
         .reset_index()
@@ -222,8 +241,12 @@ def write_report(df: pd.DataFrame, seed: int) -> None:
         "## Cell-stratified paired delta vs scANVI",
         "",
         f"- scarce-region wins/ties/losses: {wins}/{ties}/{losses}",
-        f"- scarce-region mean delta F1: {cell['delta_f1'].mean():.4f}" if not cell.empty else "- no cell-stratified scarce rows",
-        f"- scarce-region max rescue FFR: {cell['rescue_ffr'].max():.6f}" if not cell.empty else "- no cell-stratified scarce rows",
+        f"- scarce-region mean delta F1: {cell['delta_f1'].mean():.4f}"
+        if not cell.empty
+        else "- no cell-stratified scarce rows",
+        f"- scarce-region max incremental FPR: {cell['incremental_fpr'].max():.6f}"
+        if not cell.empty
+        else "- no cell-stratified scarce rows",
         "",
         "## Output files",
         "",

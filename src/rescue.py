@@ -4,18 +4,22 @@ import numpy as np
 import pandas as pd
 from src.utils import classification_tables
 
+
 # ==========================================
 # 策略一：基于低维表征原型距离的候选细胞提取
 # ==========================================
 class PrototypeRescuer:
-    """ 计算训练集各细胞类型原型，度量未知细胞的原型距离与排名以筛选候选细胞 """
+    """计算训练集各细胞类型原型，度量未知细胞的原型距离与排名以筛选候选细胞"""
+
     def __init__(self, rare_class: str):
         self.rare_class = rare_class
         self.prototypes = {}
         self.classes = []
 
-    def fit(self, train_latent: np.ndarray, train_labels: pd.Series, is_labeled: np.ndarray):
-        """ 计算训练集中各已知细胞类型的潜在表示中心作为原型中心向量，并估算可分性比率 """
+    def fit(
+        self, train_latent: np.ndarray, train_labels: pd.Series, is_labeled: np.ndarray
+    ):
+        """计算训练集中各已知细胞类型的潜在表示中心作为原型中心向量，并估算可分性比率"""
         self.classes = sorted(train_labels[is_labeled].unique())
         if self.rare_class not in self.classes:
             raise ValueError(f"训练集中未发现稀有类别标签: {self.rare_class}")
@@ -40,17 +44,25 @@ class PrototypeRescuer:
         # 稀有标注 < 3 时，类内半径估计不可靠（单点=0），强制 separability=0 触发弃权安全网。
         proto_mat = np.vstack([self.prototypes[c] for c in self.classes])
         rare_i = self.classes.index(self.rare_class)
-        rare_train = train_latent[is_labeled & train_labels.eq(self.rare_class).to_numpy()]
+        rare_train = train_latent[
+            is_labeled & train_labels.eq(self.rare_class).to_numpy()
+        ]
         maj_i = [i for i, c in enumerate(self.classes) if c != self.rare_class]
-        d_to_maj = float(np.sqrt(((proto_mat[rare_i] - proto_mat[maj_i]) ** 2).sum(1)).min()) if maj_i else 0.0
+        d_to_maj = (
+            float(np.sqrt(((proto_mat[rare_i] - proto_mat[maj_i]) ** 2).sum(1)).min())
+            if maj_i
+            else 0.0
+        )
         if len(rare_train) < 3:
             self.separability_ratio = 0.0
         else:
-            intra_r = float(np.sqrt(((rare_train - proto_mat[rare_i]) ** 2).sum(1)).mean())
+            intra_r = float(
+                np.sqrt(((rare_train - proto_mat[rare_i]) ** 2).sum(1)).mean()
+            )
             self.separability_ratio = d_to_maj / max(intra_r, 1e-8)
 
     def rare_membership_score(self, query_latent: np.ndarray) -> np.ndarray:
-        """ 各向异性隶属度评分：softmax_c(-d_c / r_c) 的稀有类分量。
+        """各向异性隶属度评分：softmax_c(-d_c / r_c) 的稀有类分量。
 
         用每个类自己的类内半径 r_c 归一化距离（各向同性 Mahalanobis 近似），
         让评分对各类尺度自适应，缓解边界可分数据集中稀有类被相邻多数类「侵入」的问题。
@@ -66,15 +78,17 @@ class PrototypeRescuer:
         return p[:, classes.index(self.rare_class)]
 
     def rare_rank(self, query_latent: np.ndarray) -> np.ndarray:
-        """ 各 query 到稀有原型的各向同性欧氏距离 rank（1=所有类中最近）。 """
+        """各 query 到稀有原型的各向同性欧氏距离 rank（1=所有类中最近）。"""
         classes = self.classes
         P = np.vstack([self.prototypes[c] for c in classes])
         d = np.sqrt(((query_latent[:, None, :] - P[None]) ** 2).sum(2))
         ridx = classes.index(self.rare_class)
         return np.argsort(np.argsort(d, axis=1), axis=1)[:, ridx] + 1
 
-    def rank_candidate(self, query_latent: np.ndarray, predicted_labels: pd.Series, max_rank: int = 1) -> np.ndarray:
-        """ 候选掩膜：predicted != rare 且稀有原型距离 rank <= max_rank（各向同性欧氏）。
+    def rank_candidate(
+        self, query_latent: np.ndarray, predicted_labels: pd.Series, max_rank: int = 1
+    ) -> np.ndarray:
+        """候选掩膜：predicted != rare 且稀有原型距离 rank <= max_rank（各向同性欧氏）。
 
         max_rank=1 即 isotropic_rank1；放宽到 2 可纳入与相邻多数类几何纠缠、
         真稀有常落在 rank=2 的边界细胞（如 mast/gamma），召回上限更高。
@@ -91,13 +105,13 @@ class PrototypeRescuer:
 
 # 单一来源的 conformal 默认参数：run_pipeline.py 与 tools/comparison/run_scrarerefine_comparison.py
 # 均从此处导入，避免两处各自硬编码同一语义的常量而产生数值漂移。
-DEFAULT_CONFORMAL_ALPHA = 0.01   # 发表级 FFR 上界，跨数据集固定，非调参
-CONFORMAL_LOW_SEP = 1.3          # conformal 策略弃权下限（rank_candidate 候选比旧 gate 宽松，
-                                  # sep 1.1-1.3 区间候选精度可能很低，保守取 1.3）
+DEFAULT_CONFORMAL_ALPHA = 0.01  # 发表级 FFR 上界，跨数据集固定，非调参
+CONFORMAL_LOW_SEP = 1.3  # conformal 策略弃权下限（rank_candidate 候选比旧 gate 宽松，
+# sep 1.1-1.3 区间候选精度可能很低，保守取 1.3）
 
 
 class ConformalRescuer:
-    """ 综合稀有细胞拯救：各向同性 rank=1 定候选 + 各向异性隶属度评分 + conformal 阈值控 FFR。
+    """综合稀有细胞拯救：各向同性 rank=1 定候选 + 各向异性隶属度评分 + conformal 阈值控 FFR。
 
     设计动机（解决 gate/fusion 框架的 val/test 阈值漂移）：
     - 候选筛选 rank=1（各向同性欧氏）：对高/低可分数据集都提供强精度约束。
@@ -107,14 +121,15 @@ class ConformalRescuer:
     高可分数据集：真稀有 score 远高于 val 非稀有分位 → tau 低 → 不影响（recall 不退化）。
     边界数据集：相邻多数类细胞 score 较高 → tau 自动抬升 → 挡住假阳性。整套逻辑无数据集相关常量。
     """
+
     def __init__(self, rare_class: str, alpha: float = DEFAULT_CONFORMAL_ALPHA):
         self.rare_class = rare_class
-        self.alpha = alpha   # 目标 FFR 上界（发表标准 <=0.01），跨数据集固定，非调参
+        self.alpha = alpha  # 目标 FFR 上界（发表标准 <=0.01），跨数据集固定，非调参
         self.tau = None
 
     @staticmethod
     def _conformal_quantile(scores: np.ndarray, alpha: float) -> float:
-        """ 有限样本保守上分位：第 ceil((1-alpha)(n+1)) 个顺序统计量（n 不足以保证时返回 +inf=不拯救）。 """
+        """有限样本保守上分位：第 ceil((1-alpha)(n+1)) 个顺序统计量（n 不足以保证时返回 +inf=不拯救）。"""
         s = np.sort(np.asarray(scores, dtype=float))
         n = len(s)
         if n == 0:
@@ -123,14 +138,19 @@ class ConformalRescuer:
         return float("inf") if k > n else float(s[k - 1])
 
     def calibrate(self, val_scores: np.ndarray, val_true: pd.Series) -> float:
-        """ 在 validation 的非稀有细胞 score 上校准 conformal 阈值 tau（不接触 test）。 """
+        """在 validation 的非稀有细胞 score 上校准 conformal 阈值 tau（不接触 test）。"""
         val_true = pd.Series(val_true).astype(str).to_numpy()
         nonrare_scores = np.asarray(val_scores)[val_true != self.rare_class]
         self.tau = self._conformal_quantile(nonrare_scores, self.alpha)
         return self.tau
 
-    def relabel(self, predicted_labels: pd.Series, candidate_mask: np.ndarray, test_scores: np.ndarray) -> pd.Series:
-        """ 对候选且 score>=tau 的细胞重标注为稀有类。 """
+    def relabel(
+        self,
+        predicted_labels: pd.Series,
+        candidate_mask: np.ndarray,
+        test_scores: np.ndarray,
+    ) -> pd.Series:
+        """对候选且 score>=tau 的细胞重标注为稀有类。"""
         result = predicted_labels.astype(str).copy()
         if self.tau is None or not np.isfinite(self.tau):
             return result
@@ -169,7 +189,7 @@ def conformal_rescue(
     alpha: float = DEFAULT_CONFORMAL_ALPHA,
     rank_grid=CONFORMAL_RANK_GRID,
 ) -> tuple[pd.Series, dict]:
-    """ scRareRefine conformal 拯救（单一来源，run_pipeline 与对比脚本共用）。
+    """scRareRefine conformal 拯救（单一来源，run_pipeline 与对比脚本共用）。
 
     四道全 inductive（只用 train 拟合原型 + val 标签选参，绝不碰 test 标签）的机制：
 
@@ -181,10 +201,8 @@ def conformal_rescue(
        只会引入误判，把 baseline 已经满分的 test 拉下来）。
     3. val-自适应候选 rank：在 CONFORMAL_RANK_GRID={1,2,3} 中选「val 稀有 F1 最高且
        val FFR Wilson 95% 上界 <= alpha」的 max_rank，平手取更小 rank（更保守）。
-       Wilson 上界（非 point estimate）解决 batch_heldout 下 val/test 分布漂移：
-       小样本时 val FFR 点估计低 ≠ test FFR 低，Wilson 引入 1-δ 置信下的有限样本不确定性，
-       在 pancreas_baron rts=0.10 上自动避免 rank=3（val 点估计 0.0089 < α，但 Wilson
-       上界 0.0158 > α 触发剔除；事后看 test FFR=0.0153 也确实超 α）。
+       Wilson 上界（非 point estimate）显式计入 validation 有限样本不确定性；若所有 rank
+       都不能满足该约束，则严格弃权，不以默认 rank 绕过安全约束。
     4. conformal tau：val 非稀有 score 的 (1-alpha) 顺序统计量，应用到 test 控 FFR。
        高可分数据集（immune/endo）val 自动选 rank=1；边界/纠缠数据集（pancreas/stomach）
        选 rank=2 或 rank=3（视 val 样本量），召回上升而 FFR 仍受 tau + Wilson 双约束。
@@ -196,8 +214,14 @@ def conformal_rescue(
     val_true = pd.Series(val_true).astype(str).reset_index(drop=True)
     rare = proto.rare_class
 
-    summary = {"abstain": False, "reason": "", "chosen_rank": 0, "tau": float("inf"),
-               "n_candidate": 0, "n_rescued": 0}
+    summary = {
+        "abstain": False,
+        "reason": "",
+        "chosen_rank": 0,
+        "tau": float("inf"),
+        "n_candidate": 0,
+        "n_rescued": 0,
+    }
 
     # 道 1：separability 安全网
     if proto.separability_ratio < CONFORMAL_LOW_SEP:
@@ -208,7 +232,11 @@ def conformal_rescue(
     val_missed = int((val_true.eq(rare) & val_pred_labels.ne(rare)).sum())
     summary["val_missed"] = val_missed
     if int(val_true.eq(rare).sum()) > 0 and val_missed < MIN_VAL_MISSED:
-        reason = "val baseline 零漏判稀有" if val_missed == 0 else f"val_missed={val_missed} < MIN_VAL_MISSED={MIN_VAL_MISSED}"
+        reason = (
+            "val baseline 零漏判稀有"
+            if val_missed == 0
+            else f"val_missed={val_missed} < MIN_VAL_MISSED={MIN_VAL_MISSED}"
+        )
         summary.update(abstain=True, reason=reason)
         return base_pred_test.copy(), summary
 
@@ -223,14 +251,11 @@ def conformal_rescue(
         return base_pred_test.copy(), summary
 
     # 道 3：val-自适应候选 rank（Wilson 95% 上界控 FFR ≤ alpha 约束下最大化 val 稀有 F1）
-    # 用 Wilson 上界而非 point estimate 解决 val/test 分布漂移（batch_heldout 下尤其严重）：
-    # 仅以 val FFR 点估计 ≤ α 选 rank 会在小样本 / batch shift 时让 test FFR 超出 α
-    # （pancreas_baron rts=0.10 rank=3 点估计 v_ffr=0.0089 < α 但 test FFR=0.0153 > α）。
-    # Wilson 上界自然引入有限样本不确定性，是 1-δ 置信下对 true FFR 的保守上界。
+    # 用 Wilson 上界而非 point estimate 显式计入 validation 有限样本不确定性。
     val_ranks = proto.rare_rank(val_latent)
     n_val_nonrare = int(val_true.ne(rare).sum())
     best = None  # (val_f1, -rank)
-    chosen_rank = rank_grid[0]
+    chosen_rank = None
     z = 1.96  # 95% 单侧（=2.5% 双尾），跨数据集固定先验，非调参
     for k in rank_grid:
         v_cand = (val_ranks <= k) & val_pred_labels.ne(rare).to_numpy()
@@ -251,6 +276,10 @@ def conformal_rescue(
         if best is None or key > best:
             best = key
             chosen_rank = k
+    if best is None:
+        summary.update(abstain=True, reason="no_feasible_rank")
+        return base_pred_test.copy(), summary
+
     summary["chosen_rank"] = chosen_rank
 
     # 应用到 test
@@ -259,4 +288,3 @@ def conformal_rescue(
     summary["n_candidate"] = int(test_cand.sum())
     summary["n_rescued"] = int(final.ne(base_pred_test).sum())
     return final, summary
-

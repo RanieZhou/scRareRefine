@@ -13,10 +13,11 @@
   - 每个 (dataset, rts) 用 **3-seed 均值** 判 win-most（scRareRefine 均值胜过过半 baseline 均值）
     / best（均值第一）
   - 标注每个 (dataset) 内 rts 的塌缩情况（按各 seed 的 n_labeled_rare 是否相同）
-  - 输出 results/comparison/scarce_region_distinct.csv
+  - 输出 results/comparison/scarce_region_distinct_8dataset.csv
 
 用法：D:/setup/anaconda/envs/scanvi311/python.exe tools/analysis/dedup_scarce_wins.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -30,25 +31,42 @@ sys.path.insert(0, str(ROOT))
 from src.utils import load_config, make_run_dir, parse_rare_train_size  # noqa: E402
 
 SUMMARY_CSV = ROOT / "results" / "comparison" / "comparison_summary.csv"
-OUT_CSV = ROOT / "results" / "comparison" / "scarce_region_distinct.csv"
+OUT_CSV = ROOT / "results" / "comparison" / "scarce_region_distinct_8dataset.csv"
 SCARCE = ["0.01", "0.05", "0.10"]
 OUR = "scRareRefine"
 CONFIGS = [
-    "configs/immune_dc.yaml", "configs/pancreas_baron.yaml", "configs/tabula_lung_endo.yaml",
-    "configs/tabula_small_intestine.yaml", "configs/tabula_sapiens_stomach.yaml",
+    "configs/immune_dc.yaml",
+    "configs/pancreas_baron.yaml",
+    "configs/tabula_lung_endo.yaml",
+    "configs/tabula_small_intestine.yaml",
+    "configs/tabula_sapiens_stomach.yaml",
     "configs/pancreas_integrated.yaml",
+    "configs/mouse_lung_tms_10x.yaml",
+    "configs/mouse_pancreas_tms_10x.yaml",
 ]
 
 
 def _labeled_rare(cfg_path, seed, rts) -> int | None:
-    cfg = load_config(cfg_path); exp = cfg.get("experiment", {})
+    cfg = load_config(cfg_path)
+    exp = cfg.get("experiment", {})
     rare = exp.get("rare_class")
-    rd = make_run_dir(cfg, exp.get("split_mode", "batch_heldout"), seed, rare, parse_rare_train_size(rts))
+    rd = make_run_dir(
+        cfg,
+        exp.get("split_mode", "batch_heldout"),
+        seed,
+        rare,
+        parse_rare_train_size(rts),
+    )
     tp = rd / "embeddings" / "train_predictions.csv"
     if not tp.exists():
         return None
     df = pd.read_csv(tp, usecols=["true_label", "is_labeled_for_scanvi"])
-    return int((df["is_labeled_for_scanvi"].astype(bool) & (df["true_label"].astype(str) == str(rare))).sum())
+    return int(
+        (
+            df["is_labeled_for_scanvi"].astype(bool)
+            & (df["true_label"].astype(str) == str(rare))
+        ).sum()
+    )
 
 
 def main():
@@ -81,13 +99,21 @@ def main():
             # 各 seed 标注数（看塌缩）
             labs = {s: _labeled_rare(name2cfg[ds], s, rts) for s in seeds}
             lab_str = "/".join(str(labs[s]) for s in seeds)
-            rows.append({
-                "dataset": ds, "rts": rts, "n_seed": cell["seed"].nunique(),
-                "n_labeled_rare(by_seed)": lab_str,
-                "our_f1_mean": round(our, 4), "our_f1_std": round(our_std, 4),
-                "n_others": n_oth, "n_beat": n_beat, "n_tie": n_tie,
-                "win_most": bool(win_most), "is_best": bool(is_best),
-            })
+            rows.append(
+                {
+                    "dataset": ds,
+                    "rts": rts,
+                    "n_seed": cell["seed"].nunique(),
+                    "n_labeled_rare(by_seed)": lab_str,
+                    "our_f1_mean": round(our, 4),
+                    "our_f1_std": round(our_std, 4),
+                    "n_others": n_oth,
+                    "n_beat": n_beat,
+                    "n_tie": n_tie,
+                    "win_most": bool(win_most),
+                    "is_best": bool(is_best),
+                }
+            )
 
     out = pd.DataFrame(rows)
     # 塌缩检测：同一 dataset 内，若两 rts 在所有 seed 上 n_labeled 都相同 → 同一实验
@@ -100,7 +126,9 @@ def main():
             seen.setdefault(key, []).append(r["rts"])
         for key, rtss in seen.items():
             if len(rtss) > 1:
-                out.loc[(out["dataset"] == ds) & (out["rts"].isin(rtss)), "collapse_group"] = "|".join(rtss)
+                out.loc[
+                    (out["dataset"] == ds) & (out["rts"].isin(rtss)), "collapse_group"
+                ] = "|".join(rtss)
 
     OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(OUT_CSV, index=False)
@@ -123,7 +151,9 @@ def main():
     print(f"distinct 实验（按 by-seed 标注模式去重） : {nd}")
     print(f"  win-most（3-seed 均值胜过过半 baseline）: {nd_win}/{nd}")
     print(f"  best（3-seed 均值第一）                 : {nd_best}/{nd}")
-    coll = out[out["collapse_group"] != ""][["dataset", "rts", "n_labeled_rare(by_seed)", "collapse_group"]].drop_duplicates()
+    coll = out[out["collapse_group"] != ""][
+        ["dataset", "rts", "n_labeled_rare(by_seed)", "collapse_group"]
+    ].drop_duplicates()
     print("\n塌缩格（同 dataset 内 rts 在所有 seed 标注数都相同 → 同一实验）：")
     print(coll.to_string(index=False) if len(coll) else "  无")
     print(f"\n[saved] {OUT_CSV}")

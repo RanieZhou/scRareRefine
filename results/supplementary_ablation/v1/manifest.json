@@ -1,0 +1,1254 @@
+{
+  "analysis": "supplementary_ablation",
+  "version": "v1",
+  "created_at_utc": "2026-07-17T06:36:16.880830+00:00",
+  "command": "python tools/analysis/supplementary_ablation.py",
+  "environment": {
+    "python": "3.11.15 | packaged by conda-forge | (main, Mar  5 2026, 16:36:00) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "packages": {
+      "numpy": "1.26.4",
+      "pandas": "2.3.3",
+      "matplotlib": "3.10.8",
+      "scipy": "1.17.1",
+      "scikit-learn": "1.8.0"
+    }
+  },
+  "git": {
+    "sha": "d315b8d",
+    "dirty": true
+  },
+  "source_hashes": {
+    "tools\\analysis\\supplementary_ablation.py": "64a9664d5eb88cd07c1a02a8cc5637da9c948aac6a5b3b5ecc68e65ee0a96024",
+    "tools\\analysis\\ablation.py": "9df61b9bdaf5e18d4ebe68df5739f6252f7352de13c6adb16889537d8871abcf",
+    "src\\rescue.py": "4af0f0d077a4ef440dada000def50dc7add75de2a6909620d852a423af4e7d47",
+    "results\\supplementary_program\\v1\\methodology.md": "eb8c16c50e38c81a304bb07227d54fc4e2d6000dc2b2b51c33e49ac2e2e7c40b",
+    "results\\label_budget\\v1\\run_level.csv": "227dd94a6b1ac67cc4e1e487e497d34dcd8c7b29906d25071fa1accea5e26cec",
+    "configs\\immune_dc.yaml": "93db4f77b7d3163ca9b5e4d023b59ffe206f77fdc1bf98c71e574bc5b8e135e9",
+    "configs\\pancreas_baron.yaml": "cc73e4271ffa2c387f26094d33017862202af4599f8644ce310ba862cb734138",
+    "configs\\pancreas_integrated.yaml": "a9a082a49f7587fe9cc9f738e1673df2db8d9ba5d975348f162f560f5ebbca07",
+    "configs\\tabula_lung_endo.yaml": "e039ea85d2b7ac13d119183696b8d58ac0940e9f258cd148161319003bc888a5",
+    "configs\\tabula_sapiens_stomach.yaml": "bfdfd4567dd30da8997d0f34a53df03af1848234f865f05cdd56d4f5005c0b0c",
+    "configs\\tabula_small_intestine.yaml": "95e360815dc18713b6d3f81ce75a9a77428894df2adccdd112efe3c571533cf1",
+    "configs\\mouse_lung_tms_10x.yaml": "0ee6f0c30ac3cf979e39b11b60297f989734e6c45cd09b0361f844936dc3e420",
+    "configs\\mouse_pancreas_tms_10x.yaml": "efa2b7c16c695464cf20b4d1677c0614f6706b283e20c9c9e30a44522b889498"
+  },
+  "parameters": {
+    "configs": [
+      "configs/immune_dc.yaml",
+      "configs/pancreas_baron.yaml",
+      "configs/pancreas_integrated.yaml",
+      "configs/tabula_lung_endo.yaml",
+      "configs/tabula_sapiens_stomach.yaml",
+      "configs/tabula_small_intestine.yaml",
+      "configs/mouse_lung_tms_10x.yaml",
+      "configs/mouse_pancreas_tms_10x.yaml"
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "rare_train_sizes": [
+      "0.01",
+      "0.05",
+      "0.10",
+      "all"
+    ],
+    "alpha": 0.01,
+    "low_sep": 1.3,
+    "rank_grid": [
+      1,
+      2,
+      3
+    ],
+    "min_val_missed": 3,
+    "variants": [
+      "baseline",
+      "minus_separability_gate",
+      "minus_necessity_gate",
+      "fixed_rank_1",
+      "minus_conformal_tau",
+      "full_method",
+      "rank_1",
+      "rank_2",
+      "rank_3",
+      "adaptive_rank"
+    ]
+  },
+  "test_label_usage": "final rare metrics, rescue composition, and empirical alpha violation only; never gates, rank, tau, or parameter selection",
+  "overwrite_status": "versioned P1 outputs only; caches and historical ablation outputs untouched",
+  "expected_run_variant_rows": 960,
+  "status_counts": {
+    "success": 960
+  },
+  "inputs": {
+    "runs": [
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\train_predictions.csv": "9da70edee89f9077f6c51bc5795bbc8dd5817278d9abfd54883e1d94fb3f3c9f",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\train_latent.csv": "0ffe99c752c4ef9b7807a56a892865af56b382c9e64c77cb3d7b5ca04dce5330",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\validation_predictions.csv": "dea7bbad4119a5b160046cc3a02e4e44c148923ecd0b5cfa35bfc2c71db73ca8",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\validation_latent.csv": "be18881ee4ef4a83c86d0662955cda0fa9e2c31e4686c2dd45a8d28a62bbe36c",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\test_predictions.csv": "7c18aa14aed05c474aaadf79cd1b206ed4307aa8d35f5847a4f7929617da3285",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\test_latent.csv": "571e5343007fa7059d82e422de7f71c2220d0beb9cc12e388530e3924f81e2e4",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\manifest.json": "4555b6f3cb41de92a51a1bdcbb8dc2e6a1c3f328eb2c508426dcace0fe0fd1ca"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\train_predictions.csv": "9aaca8828e7b0b175540034de22e7291ebf7bfa4f4de53eb687e7911ccec6c1a",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\train_latent.csv": "496b6f81fda028d74d6ac72f3f6e4be2cb077551b578d0ef1bf5f0cc2987dc7c",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\validation_predictions.csv": "124a97cda9fd5dcf853c1fd5676609519d4d1908becb17db8aad07378a509979",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\validation_latent.csv": "45597248768e483c7448d111bd7b44f34947e4f61a1aef626bb56747396c5635",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\test_predictions.csv": "a5784b208744c50ff64e84085f8366cf6a2581c697d8298df62f3e807ac966c2",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\test_latent.csv": "0cd9d524135ed1ec59185b164d35d3e0dfd669fe712d00b60cd102ed29fb5792",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\manifest.json": "f27d267ce03a38f3d43f33c2cde7aba906fe3d69d256bd602766b17b3d1d6022"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\train_predictions.csv": "542deaca0dcdbfd491ba1ed2456de87f2332506865fdaa4acde6dfa8c7241e6f",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\train_latent.csv": "c670c34f1803e7be13978800c716c1cb2c572eeecc2fcd1eea2ead808d06f466",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\validation_predictions.csv": "2edc04e27e70dd02c47cbfcc27595d3cea8483e890ecc9d097f868cd101df5c4",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\validation_latent.csv": "8e69a909bb0766a9e129ae0f45a701d457e135f784fbccb32c23d84f8ee41f0b",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\test_predictions.csv": "fa02ce7cfe0460fe28fbea204219cc2b20962aba7f6e32d5a6d8b01338f3ac50",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\test_latent.csv": "4720f5fe340297dc62cfe44a3025b3de5ecb5e5e7e465b82d33b08aaae95af5d",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\manifest.json": "8e2a707b39b043b4c59442b84aa4b0f40a89a2860ec2c63868a44e26d96b9325"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\train_predictions.csv": "3703ff28a775e6d2bc4fec3996b19e8d1dba7846502f267a853c4d3aa7861048",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\train_latent.csv": "b6a2e3d8a3ef1b5a525696db49d27ae9211bc0da2cab72b18a50550e67f64f2d",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\validation_predictions.csv": "b4b8f570293c0c245eece402b7ed7e83f619a28f853aa0ee7fa3a7a0cb16d560",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\validation_latent.csv": "198f4408237a0551c15ccc9db8681c3b7efec1d3629c7499169dc4b115fe84c6",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\test_predictions.csv": "d6012dddd2efc6bac3050db42e3979344b7c259a0818dda7234b3f3955e11c62",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\test_latent.csv": "e8223a10d6ba2ec8f07242d7041c22d7f07b5e3e4a477e5584348e550ac6e000",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\manifest.json": "f5f1369522b1db976bc68cd9537e64799d4ff243b47993e88c08d6480ab030f0"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare1pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare1pct\\embeddings\\train_predictions.csv": "faba32c8e83c528a9f1fab361057cd3bfd7dbcd78032d47504682e420d1ea348",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare1pct\\embeddings\\train_latent.csv": "7d2fead10a0407965e4bfba2620d15646b2e30d1c4d40cc196657ee50523bd57",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare1pct\\embeddings\\validation_predictions.csv": "84f06e0c4d60e7c9ae16235db3a8772e1fe7a8407a86520af12a6a543c8d54cc",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare1pct\\embeddings\\validation_latent.csv": "c999ee4efa94c3b549f2b2d686deb5676d230b7ec72c200ce1fe551d04c98fdc",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare1pct\\embeddings\\test_predictions.csv": "aab5eabe0f490558025e95faa727512aac86e4ef0bed5de35ced4da70e0a3989",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare1pct\\embeddings\\test_latent.csv": "8fc5a6d5bdd7edc3752d3c3688ca0d56b1c71a7c7cdc827a2aeb3b5c291ebdb5",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare1pct\\manifest.json": "9a2f15b8c3513bf2cfc61ddb0df00f73c52ff1eb0feb6922db106d05319581ba"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare5pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare5pct\\embeddings\\train_predictions.csv": "f0a43f8e7dab5c22ac1ba1134593747c03ab238b98d69c39df6d533f652cbc38",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare5pct\\embeddings\\train_latent.csv": "ab8cca5805b8d074b8a6cee57b19c91c43c67c5d0de81c8a01a0aaecd69efcb2",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare5pct\\embeddings\\validation_predictions.csv": "6cdeab7dc21dfe81a301c45cc8051116823b6bb27eef764200f0e47efd724764",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare5pct\\embeddings\\validation_latent.csv": "70693dc071d05c56d24ca386dbcb023e52404fad69c95b1e735254fa151c1e29",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare5pct\\embeddings\\test_predictions.csv": "5d4b67df7b631ee56e80772f5555d1b9da5e7ff1d0b9da6afceba6977bee1b13",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare5pct\\embeddings\\test_latent.csv": "a22e2a172a5688e0a12416a16cdcac478b3dc29e8fe1a9a4df5902e8ae4028b7",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare5pct\\manifest.json": "3665475f3216680060847b1249173b7468a037ecb55b4fd87329af5a2fbe4777"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare10pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare10pct\\embeddings\\train_predictions.csv": "823a7a4a7afa1c896515ac2626383a0cbb29648d9ec5be6eb5d4ff6a47a75eed",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare10pct\\embeddings\\train_latent.csv": "c8b5e9c68d24601b5cc88528c9d8dc52dc71ed077e1fa8a4f40c3b1360f09370",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare10pct\\embeddings\\validation_predictions.csv": "91ffddd3c0df546c8fe7d9907ef355cec4e532c53d563d0ef5b88def0ce314c8",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare10pct\\embeddings\\validation_latent.csv": "43516370845eda3beaf109c32495522db238b252ea26190d3c131d6bf3f05430",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare10pct\\embeddings\\test_predictions.csv": "1cfdb0be10c64db69358c190f47c6252a1d107394b59c43e255611d9f34a8a2c",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare10pct\\embeddings\\test_latent.csv": "cbb4646c46fef0d52064db909df52e1e2da83f78477454e06fbd32c96e8fcc9d",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rare10pct\\manifest.json": "350fc15ab49ef689e0794577ff13dbb2db8ff9ae10626dab33b0b9e3f6e6b80c"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed43_asdc_rareall",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rareall\\embeddings\\train_predictions.csv": "180d20ac84a48d2defee5b72884d1c9bb58652031471bc2ce0d1bb8b1e6d0808",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rareall\\embeddings\\train_latent.csv": "8b1f3add9de05e8764aff2a1520165cb16a11f64002cb783b2acec277c8494f7",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rareall\\embeddings\\validation_predictions.csv": "d3445c0a430109e6b10332689cf7dc4798a81bef4803532e66e1d0edb98f0814",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rareall\\embeddings\\validation_latent.csv": "69387b4cc7986e3168baa9b77ac05abd8fe4b085f2d28db140ff30bcb2443546",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rareall\\embeddings\\test_predictions.csv": "62354160906233c6885bb4cd6c1a29c0d6e4b3fffd7a740c68b4f9d9bd745ea8",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rareall\\embeddings\\test_latent.csv": "2e9d0a6927f07f8fb67d2ce9ea278efb879875d2b7580ec77df7ea523472d916",
+          "outputs\\immune_dc\\batch_heldout_seed43_asdc_rareall\\manifest.json": "5568739f35fb56fec1a5e800f2322f2862cd1dfe54f3a01f694a7975f43a270a"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare1pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare1pct\\embeddings\\train_predictions.csv": "fc6a70dbe3af3b811e41a645170396a4e0021dbef6a6c46f8a03a10116a41f1c",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare1pct\\embeddings\\train_latent.csv": "cc49b04da14d4804e4e4ca886cbc03787a5561f59852cbec5169301058833dc4",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare1pct\\embeddings\\validation_predictions.csv": "404d7962df0b81c231a8aa8b477b04a0f1bce84b478a3174865cda49806d91e6",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare1pct\\embeddings\\validation_latent.csv": "e59770d90d2f735c422be9f77b01ee4fa245ce6b361b80472a25bdd5c26f8485",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare1pct\\embeddings\\test_predictions.csv": "6555493eeeb1a1edb3c01983f4b846520b85d2ee46953640bb9a35269f1aca20",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare1pct\\embeddings\\test_latent.csv": "a1616c390edec5cc2d73ed908ea20dfac4093180429e7c8afaf61b3a44747232",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare1pct\\manifest.json": "174fed8437932ed0ce8c28b12517cda5a3d84fb599b7cbb34b74de4fb22e7232"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare5pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare5pct\\embeddings\\train_predictions.csv": "6ab4914ca8b804662b3c951f25ec23bf0cbb9c6d24a45c87e2ec8dae2c271106",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare5pct\\embeddings\\train_latent.csv": "fae1892ddef196c3a0bd43dc35e4397105c9228d92a615134f174c61bb508d75",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare5pct\\embeddings\\validation_predictions.csv": "1ed8cffeb5d8006f3f4c5e27598edac6b66417904dce4eb24f997805e53b56a7",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare5pct\\embeddings\\validation_latent.csv": "f2a89d563f6e0f8f8b15a492d75eab32d6ee665f1fc78563bd8746497674c09d",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare5pct\\embeddings\\test_predictions.csv": "8fa4d975d0af18d2783cea7f86c0957e3bbea9439bea1b8cc6992555864ea7ae",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare5pct\\embeddings\\test_latent.csv": "86c61c65ebdd78ce26db78a6a06ff47c0710cb97024c9bf3f10566221e3d59db",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare5pct\\manifest.json": "bc040d60740ce70e76fa0e560ec33fd3f93aeb51607cbe4d23f36c325a8a247e"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare10pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare10pct\\embeddings\\train_predictions.csv": "35953e270fcbf66802da9e2d53623aa535cac0ba6ea0a7a38ea7d54fe9dfa78c",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare10pct\\embeddings\\train_latent.csv": "eb8381d161943252af2572259f94bc7f001c6769616fa1e6d9c5afa54ee6b9f0",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare10pct\\embeddings\\validation_predictions.csv": "9dc9036d8ac9e5318c2982e6436069523389bd10f5a18f05ce75f987eda28505",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare10pct\\embeddings\\validation_latent.csv": "bd73230f3a85b497ed029992c9e1164f0c73f22a4e4bbd5e9ad52e29f0fcd68d",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare10pct\\embeddings\\test_predictions.csv": "75c8b3110533770dad7c3c4e099f459c919d8e5621a4552b4d337b1a71ce03da",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare10pct\\embeddings\\test_latent.csv": "83fc851b4e3a92eb2b2e5c43f85140ad3d120099d50e7e92335fe618888e80a2",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rare10pct\\manifest.json": "63511736e36646c83f170b8ca70eabbc324b0636ef18345c399cbd6080732eb5"
+        }
+      },
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed44_asdc_rareall",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rareall\\embeddings\\train_predictions.csv": "6e70c9b6c598a8dd08de9e90aa0262f44bd1ebae21f4daa4e0c731c66672e51b",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rareall\\embeddings\\train_latent.csv": "ca62d7e628b25adbb336d151a2d9e7889d0b45493852edeb6ec7034f161a8d1a",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rareall\\embeddings\\validation_predictions.csv": "3afe94721070a57085ecfdde9ee5cf1b9082187dfa5feea39c8edf3e1a0ba1aa",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rareall\\embeddings\\validation_latent.csv": "d63bafd976a95e3587beadce2655c16f127256ed56be4432c919ca4d2f4d11dc",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rareall\\embeddings\\test_predictions.csv": "3dff7062fcfd30e2e62954e7ed3d555e1692be8d8498befb50e31ca5c1c122c1",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rareall\\embeddings\\test_latent.csv": "ca9f294704c5b3f29e9037146102757ab2f1d2fb749c1384387c7cba971720a9",
+          "outputs\\immune_dc\\batch_heldout_seed44_asdc_rareall\\manifest.json": "31b3f903ffbf2370238dd697857aa832662460ab28716b1bbba706c4ad038f41"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\train_predictions.csv": "1fd7615683cfcadaa6f4e15b50b8aa65375aaef3eab2fc044c810d9e180a9df5",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\train_latent.csv": "43b356df7114884ead7751d1245cbccb0301e52c38153973085147f697aba05e",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\validation_predictions.csv": "e88ed1efd76e11356583373f0a9cf68844c0ebc7fb35e890b1d32bb5c5abbd7b",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\validation_latent.csv": "24d12e3d183a1a2930664be8dd3bf4a3b47eab1ed64b4d5b88a49a8070a63eb3",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\test_predictions.csv": "f7d36de1c1d79ad502b44da0dfbe7e069d931519bf300e4a7c878883fe38a585",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\test_latent.csv": "906a6c9b7e10ac77face0905ff5f8068622a308f601e6cd5dd112a5c142253ab",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\manifest.json": "39a2023cd01dc895af30b214c8b8c3c57e8f7db44f2c3a4ff0210c4767c72bff"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\train_predictions.csv": "1fd7615683cfcadaa6f4e15b50b8aa65375aaef3eab2fc044c810d9e180a9df5",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\train_latent.csv": "43b356df7114884ead7751d1245cbccb0301e52c38153973085147f697aba05e",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\validation_predictions.csv": "e88ed1efd76e11356583373f0a9cf68844c0ebc7fb35e890b1d32bb5c5abbd7b",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\validation_latent.csv": "24d12e3d183a1a2930664be8dd3bf4a3b47eab1ed64b4d5b88a49a8070a63eb3",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\test_predictions.csv": "f7d36de1c1d79ad502b44da0dfbe7e069d931519bf300e4a7c878883fe38a585",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\test_latent.csv": "906a6c9b7e10ac77face0905ff5f8068622a308f601e6cd5dd112a5c142253ab",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\manifest.json": "054b5fe114e1e4343412ed0d0753dca795f5ae48b2b5194b0dd306f5d6f55daf"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\train_predictions.csv": "e8b32b7b0e98f55c97b48798aac7e8fc58acbd637d3c0c9fe730b9fbb3495d33",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\train_latent.csv": "f11ad6c8ffec41d42ad78a44be5f08034712ce204e6009ef9b28c03b3dfd0576",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\validation_predictions.csv": "c5b09989a19a2e0f49080b9bb679a0e08b75df552ada58d496885059cb98465d",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\validation_latent.csv": "16952ad5e8531c984a8a5dfd9ffc87c0e8c4f00f44cdedbbce26a48af19501b6",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\test_predictions.csv": "8da9dc63907cfcf23daaa6fad2b53897e85d7add8dd4ba386852767d2c75a5a8",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\test_latent.csv": "5011edfd01c760b2a8211cb4bdec4096f9779cfe45b6820effaa70a427f7e7a5",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\manifest.json": "c2666c75bcf7f9706de179f55dd389534faa58fba0635ecc7b70d8d1a1787ae4"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\train_predictions.csv": "adc9e336b7438b88b0781e952de87866388d9cbd11c662d6ed5d8743878428f4",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\train_latent.csv": "a7262cf528b2fc83cf39d8d23d8f8786212159efb0e888715739daa33c6dd6ad",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\validation_predictions.csv": "8b2b6d3149f745ae3dd72f09a881271c4b8b013ec9a07fffdee5fd5ee6e5db60",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\validation_latent.csv": "00d3971f24632e26d8f7efd43164fe4027a9ae90d97359b603dc9e5506d0b6c9",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\test_predictions.csv": "46c78c62d94151568be5cd084105cc52652ac2b53887de5791c54b53005afe53",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\test_latent.csv": "b38d2facf00aa47dbe2a39ccd105a219379d143ad12f9f863cf248811362d466",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\manifest.json": "4f3da793795f9d05775fb7663469778f19225a34c02e2ae67732c960488b77e2"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare1pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare1pct\\embeddings\\train_predictions.csv": "cc99f1de3a7b8b5b0bd293b7c7ac447dc3d303b6f9d034e812e6f79b29edd030",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare1pct\\embeddings\\train_latent.csv": "3c3c854cf534e19049a025754cbb85afcd70e1e51fef2a34b6e284a1a3a168bf",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare1pct\\embeddings\\validation_predictions.csv": "c938d59853905af976f6c1c5a60fd7658f5d78e62b27f14b09d087e88376b948",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare1pct\\embeddings\\validation_latent.csv": "c3da1531e929f7deeccc1a3957fe450e5ea036d3aa878f0a882d865ea4b49157",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare1pct\\embeddings\\test_predictions.csv": "484932bd9acc2cb41ffe27660bd501726d3ccdfcd9013d13edff657ad31b7f31",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare1pct\\embeddings\\test_latent.csv": "05839b38cdb957bfd98f0507fdb0815529e372f0ad2f2eace4c88830ed634fae",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare1pct\\manifest.json": "966d93f173bb74a433a4a25162124505104aeb66b1fd8bfd526131671793d423"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare5pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare5pct\\embeddings\\train_predictions.csv": "cc99f1de3a7b8b5b0bd293b7c7ac447dc3d303b6f9d034e812e6f79b29edd030",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare5pct\\embeddings\\train_latent.csv": "3c3c854cf534e19049a025754cbb85afcd70e1e51fef2a34b6e284a1a3a168bf",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare5pct\\embeddings\\validation_predictions.csv": "c938d59853905af976f6c1c5a60fd7658f5d78e62b27f14b09d087e88376b948",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare5pct\\embeddings\\validation_latent.csv": "c3da1531e929f7deeccc1a3957fe450e5ea036d3aa878f0a882d865ea4b49157",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare5pct\\embeddings\\test_predictions.csv": "484932bd9acc2cb41ffe27660bd501726d3ccdfcd9013d13edff657ad31b7f31",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare5pct\\embeddings\\test_latent.csv": "05839b38cdb957bfd98f0507fdb0815529e372f0ad2f2eace4c88830ed634fae",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare5pct\\manifest.json": "7e1df64ea158143df93d1d10f38fdee76d2f60aae237d9aa1dd7f1f780006850"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare10pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare10pct\\embeddings\\train_predictions.csv": "27f26bef1078ecb9d644f2d37649530adb553de2070f12bc98fed08ab6d5f921",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare10pct\\embeddings\\train_latent.csv": "bf85b6cb813c6cdedad818d1a3cfe69f51dcb6af72966a576b6cd86f27f1c681",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare10pct\\embeddings\\validation_predictions.csv": "7a82c5f7624a4edf5a81d2120a8acef93551dd771f05372d191f11d527612991",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare10pct\\embeddings\\validation_latent.csv": "022b3bcafabc951037f12a0c57ea20fc37349570b2f72aff8df5b1c2df2350ce",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare10pct\\embeddings\\test_predictions.csv": "8ca35dbb6faca84667ec66e5f0dcda52849adf6b49ff0fcc6a3249ec64940b7e",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare10pct\\embeddings\\test_latent.csv": "87dd6a6b5bce434d17f6a68cbc98c0a87397a8cbd239d6dad034db56c7698277",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rare10pct\\manifest.json": "915d4d1a91ba2ec5202d2627c39651f020be0ede953c386f5aaadd29be89190d"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rareall",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rareall\\embeddings\\train_predictions.csv": "093659edd09e0297f84d5b944440810c867a79ed06ba3220c3141c56608ff8e8",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rareall\\embeddings\\train_latent.csv": "2403b396bbeddf97c950098d7537566903b86a9429d4f372efca888de1aa08ac",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rareall\\embeddings\\validation_predictions.csv": "e3a8d9e0c0fd6620a4351f2dca9527f4bfc9804a37eb7ab037362485d94bd10c",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rareall\\embeddings\\validation_latent.csv": "a4057b955c0df1d5a9f7462fad28bac0af4d2fc22177a36c9c8b1de242a989bd",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rareall\\embeddings\\test_predictions.csv": "4790ebac79071cac6d7ff0bfb36e40931b8c2c4ee951adffd880b0ed3e0dd833",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rareall\\embeddings\\test_latent.csv": "28dddc924460f927951fca3d495b0b342aa90a76f93308308d18ddab8e615970",
+          "outputs\\pancreas_baron\\batch_heldout_seed43_gamma_rareall\\manifest.json": "2a13f2bcc5e16e08dd1d1ac354d5fd94654df9c9808daa6785eb886b26cb54cd"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare1pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare1pct\\embeddings\\train_predictions.csv": "1e874155f07ffab5313ec75c4d53ad878bf797a47c8e0fac01da3e6ca41c3472",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare1pct\\embeddings\\train_latent.csv": "b74d69a52acc2eb700bb733024c9fca72166a9944713c60397795771489191ba",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare1pct\\embeddings\\validation_predictions.csv": "5b442e2db235dbbeab2e9f6b0035a41d69b020c71b431b5ecb717f2152444015",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare1pct\\embeddings\\validation_latent.csv": "1f555dbd2a089efc314f24391d5c471368e6017e5685d46d0dedef2ce0911894",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare1pct\\embeddings\\test_predictions.csv": "42a79d8e4e1c3a0744d68ce56c1a301c8fd1caec79533ffef6cccf10ef25bf93",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare1pct\\embeddings\\test_latent.csv": "60f9a381fd658d70c77f0ff4ea5ca28271644dba1f3929630ca9755a52d76a22",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare1pct\\manifest.json": "8f8327524c8a2dd6a0d2eb0367215d75e687bb56e1f7defc176b99ccbcabacdb"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare5pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare5pct\\embeddings\\train_predictions.csv": "1e874155f07ffab5313ec75c4d53ad878bf797a47c8e0fac01da3e6ca41c3472",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare5pct\\embeddings\\train_latent.csv": "b74d69a52acc2eb700bb733024c9fca72166a9944713c60397795771489191ba",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare5pct\\embeddings\\validation_predictions.csv": "5b442e2db235dbbeab2e9f6b0035a41d69b020c71b431b5ecb717f2152444015",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare5pct\\embeddings\\validation_latent.csv": "1f555dbd2a089efc314f24391d5c471368e6017e5685d46d0dedef2ce0911894",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare5pct\\embeddings\\test_predictions.csv": "42a79d8e4e1c3a0744d68ce56c1a301c8fd1caec79533ffef6cccf10ef25bf93",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare5pct\\embeddings\\test_latent.csv": "60f9a381fd658d70c77f0ff4ea5ca28271644dba1f3929630ca9755a52d76a22",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare5pct\\manifest.json": "cc96719b5f7c3b4d263ee079fa0a3490ea5125a52aac7eeb30d848677ea1e189"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare10pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare10pct\\embeddings\\train_predictions.csv": "7157659c2a53dd99c088cf453c64256a37ccf0847ebcbc21b1c375dc13ab3565",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare10pct\\embeddings\\train_latent.csv": "db805c0044da34e69ceebf4d9eab4aa9a582fb2abf21a05570da89a55b8f1b26",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare10pct\\embeddings\\validation_predictions.csv": "6bacf1beff1866461744201a9b3e1a71d2478031da3b0dade7268fa5f749bf00",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare10pct\\embeddings\\validation_latent.csv": "b1349bf155eb8ddd797e2ed2e92014b9f28ccc68949972f035e7e678ea1d299b",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare10pct\\embeddings\\test_predictions.csv": "c80f8fa35afde15c1f755e33e267f85d6b62f09483f5f701239dbe2a2334b3cb",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare10pct\\embeddings\\test_latent.csv": "6f9280f8c618b588661d819b9d24e9868b9aadd2dcdcfc9e41e735722114d3a3",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rare10pct\\manifest.json": "d99ed165ad75c2ed3d799852b95c3d6c04e95fd49e852c161f1a00c5506080a5"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rareall",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rareall\\embeddings\\train_predictions.csv": "1480155663ae82c3dee7df42bff9012f5c413948b57b73cf8c7ae82a1e227619",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rareall\\embeddings\\train_latent.csv": "ae65a5890677b100f0a537579e576d38e9772c052b44d796e65e33acd1783d8f",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rareall\\embeddings\\validation_predictions.csv": "5310e5c87ee2b5539333d9a24ac2db7e30f6733316bc1098b938cc6694ee62c2",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rareall\\embeddings\\validation_latent.csv": "b05f544e140b0acab024fde5de3f08959a9b4cce5ce11fc9d88f7bb733049dcd",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rareall\\embeddings\\test_predictions.csv": "76b2885cd1e85a74b2ca5b6c8b52296adc67983192a93ccdd18f6771941bb8c5",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rareall\\embeddings\\test_latent.csv": "535c26080801bff3f667c61fb0157034b238cbdd9f07269e9b9f6c8ab68c2e98",
+          "outputs\\pancreas_baron\\batch_heldout_seed44_gamma_rareall\\manifest.json": "9bd603e5b2533d49937ac484ff1201c576b316a5a739208a471ddedc97405e03"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\train_predictions.csv": "477bbe547f2ad53c3bb4adf9f271d5afc4a3a649c08087506ad54036300d4b35",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\train_latent.csv": "4f23853109ef18cf7617d2503d8976e4cfbdf3aba5b8b0d134f2c2dee540e9ba",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\validation_predictions.csv": "15a3ea5ba9ede5b5eba0535d0c7c2dceb7486c9d702821d9ae213b911b37f3a9",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\validation_latent.csv": "1360fdd452a8e95ced606ea47e498578590a138551e26486115c92513718771a",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\test_predictions.csv": "cc30bd5f1620a3408f922012a929ffa5f67cd5990056829a9fe6924fe9beb3c9",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\test_latent.csv": "71665b8785cd862bdb79d1ed671270ec0661c8e3003105fea86efa778ce718ae",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\manifest.json": "7d937dd9f7e22e73cb229e11bde6f0c41eaa98b9d244c3d8e6b7ef208258ea3c"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\train_predictions.csv": "19116ff99e2b7dff35a9f42e493a5f3918288eeb2ac133a470b0b772154fed6b",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\train_latent.csv": "a77762bb3c94387131dc254f554547a17575494872cb050a5d53a1b97ff53af2",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\validation_predictions.csv": "97b0b12db2135c8131ee14e9f2cd9b0161952d014feea0d6028c8c043f8e6cce",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\validation_latent.csv": "b76321c35605678f996668db373d2a8af7c03e0d4663840411c764c69bda4ea1",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\test_predictions.csv": "432a653c4992fcc461b27294b45fb41c3a7283145049ffcdd6fd26413f068f87",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\test_latent.csv": "4aeffca1f44d8de5bf0f7f973ef1c241d701b876b19c4ff5010eeee8923ef544",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\manifest.json": "7e779e1d52e41577444c28966cea95528f86fc8b08c17139452552c12648694a"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\train_predictions.csv": "1860e61adba0a83e2a57dee7db8baa830be329180f3fd5f33788c68bd8e9e49c",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\train_latent.csv": "b7177627d6b691d88701626ef48d37567cc8dcb89e1327d961ba893f0b0ce200",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\validation_predictions.csv": "a923d43765fe1db5d035d207de552dd43bd77e79765e779ae469367bbe2311b6",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\validation_latent.csv": "e02f4173f0f4b50cedba19100dc74ef39eb3ebbef031ab88affb7278c030cd79",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\test_predictions.csv": "b8c5888078feb9cea5f2bc109da35f677431f82368e2d84b06d7c1072b898507",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\test_latent.csv": "7c7305dc8936aa947f60131e53a4d95e2c1e2c848ac559c0fae74b53f56159c4",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\manifest.json": "b4a2d4e101ce804cfa68ba548dafba5bfbd04bebbaa702f50b79ccb70ca159b0"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\train_predictions.csv": "51114e5d35a7478705583acbc6a45c5940a78ee69e1da7d2ad123461793c94b2",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\train_latent.csv": "54ecfc358fb7ebb7c098307cb42d92f9feab2df8832b2d4a872ae85d3824edb4",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\validation_predictions.csv": "0855ca01dfef590a1dcd1581b167e7dac2e3b7eac472d67139eae22116e68b27",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\validation_latent.csv": "65d244c4901e9ef89fce85a582e22be4ba269481288428e0d1760927ff771066",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\test_predictions.csv": "2fcdd59f85e1cad0323c2ebda696b5ccde78ebd78f262785d8f836d4a93c2e7a",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\test_latent.csv": "f83c773a26fe3870d98796a81376ba7ffa470bcdf29c83000ffc265e3308e96a",
+          "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\manifest.json": "42916bd83174318fecd8360f537299f63418a9be638eaa4a93a934f3b54dfba4"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare1pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare1pct\\embeddings\\train_predictions.csv": "62f38bceee32dd711cc402dde2953c9b3d47f4e69f41d169c12b3e2fc54aa073",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare1pct\\embeddings\\train_latent.csv": "df624b65962bfcc15f9e5be7d76911c0639569a5f1af592306743077cd144f28",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare1pct\\embeddings\\validation_predictions.csv": "c2d4068cb63e320a046a051baf8214256eadd77bc87cdcadfd96d95bef0077b2",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare1pct\\embeddings\\validation_latent.csv": "3b2ff803177b4bac905e322bd855a2ff31e2a4f570e33c9634fc5f2376050433",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare1pct\\embeddings\\test_predictions.csv": "9ccf25979ebf2a614432f3ff71969ef600333c2261fb32f4c0c4bf9a6c1f301e",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare1pct\\embeddings\\test_latent.csv": "d264ccf891aa0d40799022e761e4dc340d73df556565bac64835b7a9367dbe25",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare1pct\\manifest.json": "0b26777970659ddc587569323e6f9323777bfc6d96f311c78ec8ce2c5aa0109d"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare5pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare5pct\\embeddings\\train_predictions.csv": "c4c93079336417ef88f00bc51da3231b5463be803460c36c017dd63aa32c8585",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare5pct\\embeddings\\train_latent.csv": "fdb919fe8abc6ca407007fe33301bc3f08099b907522bff0b8eb11c0a0135e21",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare5pct\\embeddings\\validation_predictions.csv": "cb5d0ad7ddc4b595205cd8582527cd884e556e3849ef46ff32e069235f729f59",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare5pct\\embeddings\\validation_latent.csv": "771da5e876904afe79a2e99824d35989c51c2623a81d0f082e68255fc5a6418e",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare5pct\\embeddings\\test_predictions.csv": "cf55f64c868f24c1e95d625d944b2dc36c76db86a26dfac55fc41b6d7d95234c",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare5pct\\embeddings\\test_latent.csv": "09df060e6766cca2ea43e74c46d2e24c0b159582baa9c840d06b05e65b5231c0",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare5pct\\manifest.json": "ef85dfdd8c2daf1de034242a0d120af40b84be85e8573daac73824bf5c9ed7fe"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare10pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare10pct\\embeddings\\train_predictions.csv": "39d9d1a46c1ce96fd5839f04f06d4518f0b573308f2bff5d1daac8296fe34565",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare10pct\\embeddings\\train_latent.csv": "09e2ee456d1ba86a983486cf68115433f4f02c9f1cc4de4c05f42aa1591c5fd8",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare10pct\\embeddings\\validation_predictions.csv": "0f2a912abc8acd131d95547dd6b17412cba991f00f2bdfc56c49b14ed03ee676",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare10pct\\embeddings\\validation_latent.csv": "5bbeae9564f7da70e2d5cb9af81e551e40236271cf0d84c7cb84d4523c45ccf4",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare10pct\\embeddings\\test_predictions.csv": "c37580adbd6b6cd7defa76fdc6910a6116be3005879672f9b86a7c71cfb2e105",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare10pct\\embeddings\\test_latent.csv": "b7c5151b2c5c78b6bec9078adb53c8a77c237c1b4815b501d75c801fc45ce885",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rare10pct\\manifest.json": "6a017f07063410a58cf1a7e4fe359eb26fc1d268ca0d36ccf2664985ee140189"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rareall",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rareall\\embeddings\\train_predictions.csv": "999b5bbb74dffb1cfe8dca58009e0a8685324a51d3e8c4f693f0398579a2af42",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rareall\\embeddings\\train_latent.csv": "42eef322b4b41e5e6ade111f62d15f700e518f0fe666f2aacb5a38328021610d",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rareall\\embeddings\\validation_predictions.csv": "f17c70410b6574cb1b28c648d0cb50a6b76ca1230f5adde7be4f0b6936ba51dd",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rareall\\embeddings\\validation_latent.csv": "0710649daa0347baaba96331f2f03808cdff2400e5b06c7d548fafcd1fe7cbf6",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rareall\\embeddings\\test_predictions.csv": "42f684231c4621cb3744523cc79bb56ffab385768eea4192b9f1af323f14b6a2",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rareall\\embeddings\\test_latent.csv": "845fd8d1c99a5adfc4cf8c9e71965581d1445b17a937146c7ad60832d2ff17ee",
+          "outputs\\pancreas_integrated\\batch_heldout_seed43_endothelial_rareall\\manifest.json": "7f72f877b97ccbeee2d9c3dba07390b877a3f6b9e364d88b8ef6390afb92e63c"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare1pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare1pct\\embeddings\\train_predictions.csv": "1207dc11feed398e6ccf016dcfdab0ebb67951bd921406f78004ddf63c7a831b",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare1pct\\embeddings\\train_latent.csv": "28ff08223cee3207892792d6fc45772ff6afd0daa58a49df75864552d1cf6299",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare1pct\\embeddings\\validation_predictions.csv": "0ac190a080128b0f2369d0da93d139a84a393d75add6a48536f88100745aec97",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare1pct\\embeddings\\validation_latent.csv": "4627adbc7db4577587ca0d91b68e50f1524427582da596508a8c7141181c78e9",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare1pct\\embeddings\\test_predictions.csv": "7e513ab7251f6493b504a384369401d28f718c52b762b6bfee464e14cd219a71",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare1pct\\embeddings\\test_latent.csv": "d6c8ccd2c52f351d9470e2f26d92fa16f067b2f32a40d4e3be8321caca2b605a",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare1pct\\manifest.json": "6e67cc3ab990e537f5c1b559d4238ec45b3539fe39e6c4a62d982786db565de2"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare5pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare5pct\\embeddings\\train_predictions.csv": "3305fb221d3164d25dfc62a52b7452f54fef7207dee4a68a5ce701467a2edf8d",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare5pct\\embeddings\\train_latent.csv": "8ea1709b888d0b188d7d4a3d802eb06cb206df12d8be025c95de47a086f911e2",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare5pct\\embeddings\\validation_predictions.csv": "83768de1310a96ec06d57ff51686395a63f5a533e0b8774805c438f6328598fa",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare5pct\\embeddings\\validation_latent.csv": "f3f794e7ca2e0a232d70180ea0e1d6a9eb750d84081d17a526169ca41c189671",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare5pct\\embeddings\\test_predictions.csv": "bff3c52e4d38ac42f87f45030f342507cf9751235cd1b4df6a90d3a937a79d86",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare5pct\\embeddings\\test_latent.csv": "5309b89e25de0c694d607dccf1ab6b7bc2b85c759af286d0a399203eb0d212cd",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare5pct\\manifest.json": "6870fa610fa7f3108640d2b9e197496d4a0dfded21201360ef629a6becd61de7"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare10pct",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare10pct\\embeddings\\train_predictions.csv": "976ff43e4ea0644617149b81e70a7babca22ef0d4da5ff03285893128b1a0e6d",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare10pct\\embeddings\\train_latent.csv": "da5ed9b917c18c42bb996be4ea5a02963ca3bde88d5daafff407319f508bb7ef",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare10pct\\embeddings\\validation_predictions.csv": "fa25dd2f30bf19ecbd12a27e8b7614bbfc8e11f945b1f1251eb84b6a7b4452bb",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare10pct\\embeddings\\validation_latent.csv": "781297a01ebb84d2e66a9b9f29bed534abbf9629221b3ed31d7732ba28260215",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare10pct\\embeddings\\test_predictions.csv": "230fa3e317bdc162a9e7504b35ba56f0798ff86b7cebaf54c06d65313ea160c7",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare10pct\\embeddings\\test_latent.csv": "491868727c6ca52b4834d4f9c5dbbe2886bba880a5a729887fc8af19de4c1e28",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rare10pct\\manifest.json": "c99c431ca0a541791d68e271242090735dccfcab813111275dc4b2897f264627"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rareall",
+        "files": {
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rareall\\embeddings\\train_predictions.csv": "7b2d01df2cb2d8271f29eb1a436f7c70e2ba0e1b6d49a47be5168fa59899ce86",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rareall\\embeddings\\train_latent.csv": "cae977f250aa4ee8e0b583956481e37b3bd24d0e1591fbe9ced304af3ef16c37",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rareall\\embeddings\\validation_predictions.csv": "d60135a274b3f09f46924947f2329d01b030f967c62f6601c108cf7eec126b83",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rareall\\embeddings\\validation_latent.csv": "f7b82fb9d54ece0b449af7840f314a937eb2ce6b9545aa42672d756acd6dbca3",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rareall\\embeddings\\test_predictions.csv": "d27fbd03b9ab00a7c79001bbd0733671bda2dee8593dc3cf4c5e2457cba6a0bb",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rareall\\embeddings\\test_latent.csv": "4cca34f8456a29c5fff3d1b426468d40b1b2b8e67870831c7f7f7741de5629aa",
+          "outputs\\pancreas_integrated\\batch_heldout_seed44_endothelial_rareall\\manifest.json": "e6b0c3653d85e75ff10ba34160322cbb7719b0d002d086b79d32df9a00d7eaeb"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\train_predictions.csv": "23cb397b933621f18aa16d800358993d7e6980e9b8c22f635d7add715ebd6f4c",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\train_latent.csv": "077073d71cd902f54784ac1c5de7ae49d9fa7a419ae4ba6b385637322ed44551",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\validation_predictions.csv": "6a07f0a0a1e4ea96c60e6cb376742e9ba5852900324ca9fcf0c01b645c88bb3a",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\validation_latent.csv": "0e254afbe48df5e629676b7ec7f4f14d76b2cc77007fd1bfbc76476d480dbfb1",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\test_predictions.csv": "7be8bee1cbdead0fa5e2b71a9f3f8d7c1f638a984db6306e20cb92e3adbb4964",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\test_latent.csv": "53cd17cf1844206394d3f169846303afeb3bcbbe87ecfb708b43d509d63b2b45",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\manifest.json": "6a6c5c731ed3955aa7fec2c9af4969bcdd55474cf3f0aeda8c3b217d6f1fa9b3"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\train_predictions.csv": "175ec333f193cab702fe9965448f1f223bcdfcf5fdfee1332f3004d0b76dbe39",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\train_latent.csv": "a782883503391e79160355adab1c9d5b5436cde724d8cfad4f522bc908191b07",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\validation_predictions.csv": "dafa116ed3e6e629c45397d98baffa91359c6939d1a0e05cb852bdd4161e5bbd",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\validation_latent.csv": "726e031acfa21fa3fabd53790b44382aec02b34d01fbe5c3e93b25900fb443da",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\test_predictions.csv": "d6aa66192977f08a601528bf0d1cc2273460c54dada72f99435e03b64126bb1f",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\test_latent.csv": "e6e733fe072bce7e743501d0bcff68c601d5302fc3d4d05cbdc76dfbcbb6f79d",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\manifest.json": "437769c7190746692a9127eef43e92500c2a7877e10c4d4124c123537055c731"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\train_predictions.csv": "3f710330ce1b59014376a772f2355f05ccd1cc44c90b42ce203a3ef4804a2fb0",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\train_latent.csv": "cea21070921195d3f2db32d58b82ec9fcb0559c0e3104e3f67a59366512ac8ee",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\validation_predictions.csv": "af7d49d99189717d474ab2e63a655c1186dc8a3f6122e2d7626cce985a4492b3",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\validation_latent.csv": "421f3ed365ee94aeb1d32a2820abe52ccfe4fa62f018bfcdf1ce17c9726ca890",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\test_predictions.csv": "9a78e6d8f949be370f15c364f4aa818d659d218b5a65a3be019bd268ce410ecb",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\test_latent.csv": "85dae5a5e59e769442ad1cbb3ea5305d6a761adb3af5d4f367bafd4dccf5abe3",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\manifest.json": "33d8f3647e692d0d67d13146aa26cf19d3c6b083a7d97257164ef583eab1d0d0"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\train_predictions.csv": "e33854f9de1b38c750ab8f8ebd108802febd7f62da15460bdffe2c495db08534",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\train_latent.csv": "45128daf04b6c065d93ac1f022dc29afaa7912863d5083fff120ac08727ee224",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\validation_predictions.csv": "3a41153478ea40bb9cc8df472f66585550815e93155203ed19f91bc28da3dc54",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\validation_latent.csv": "a4ca4a868839379334c84c5700f3e6a43c97fd5d6c4133d512c4d5e244ef5d6b",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\test_predictions.csv": "ff28d0d5ea4513c8727f0e87b3052b9f0127a6863b38205186e8d9aaf90e7a8e",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\test_latent.csv": "8d6a90a3481973f2316dc1d92cd3f35b32be0e18778eb6cf6fb1b395161c02b2",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\manifest.json": "ec2d1ca7439467cf950df96d93429eb6f342f3c15238db25d537315e58ccc38f"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare1pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\train_predictions.csv": "00c03ea74ede1baa411d2ce3421c8ef9f8c5503a85592efefaa300d98643749e",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\train_latent.csv": "e1933d5f83da2e10ea98d0fc2f5dad5b3422efa1ea641288317136ee40662b06",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\validation_predictions.csv": "2317325dbf3a4e3ac7740b0abced57ed846a76694f1177286d7e2f0473878a20",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\validation_latent.csv": "c64c4aff8b478ece6c83b98f6a96540fd668a3133f7bc0a6e621fdacbb9710dc",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\test_predictions.csv": "50479ee04ce4c32a1a7b0b2240f8b58545e5170dfc257daec472fec404f41869",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\test_latent.csv": "dafadc8f1b908cb557baba144bc20a905c9dd696fd70c0e50699fb5dfeff9ea8",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare1pct\\manifest.json": "f701a8d445ce67e01ed123c7a08c73ed1bc9966ec84d4ae7831a0b5893d4465e"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare5pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\train_predictions.csv": "4a05c5acfedcbe905ce6d1e259ccaa4913e9e7856a42bc6089a841ed7d838057",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\train_latent.csv": "d10e0f166a8cfeafa9e6d530139d654a24fdf366a24afe95c403310401abcfab",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\validation_predictions.csv": "28ced258187df8f52b4121f39087e1b73ede7886d92e395beaa58370a5da8d14",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\validation_latent.csv": "1432a45148699001d00e9757cd06b396413e59c8924fcff816bf327ccba5a335",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\test_predictions.csv": "656b7568f89198b7f7c0dc21d4123e65ccf23b83d5bb647bb1b4a336aa2e08e4",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\test_latent.csv": "f55567ed753867f0c7aae9f184cd6e4001788bfd4511b55d153fa1ec3bde9627",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare5pct\\manifest.json": "8ef623a7826f58ae05eeea8792a33b9f88139c3b484bf12ee28fda91101090a9"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare10pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\train_predictions.csv": "70de80bfa30da2edd4914f6511a656406d1971bb371f69b3c5fc46c58c2de821",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\train_latent.csv": "ba0c9d9f69d35917244809e4b0ecc568f3a461488abf51774febb8df167296cc",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\validation_predictions.csv": "c26f8dbc2c12b1b0d4ca2bc368b3dfba5641990b058badd49acdf45277fee057",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\validation_latent.csv": "22ad27402fef759e3cef44a0e75ac57e31c95030ddfde686e3d0ad3e9c6abd6a",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\test_predictions.csv": "93686f059e1561cdccdc29a51d184b6d6855768ed79eb0000749741c29c717a6",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\test_latent.csv": "7525b594d25b69314ba75ebcbf3c7e887c08448c5226d686134d0fcf275750ef",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rare10pct\\manifest.json": "bac29bc3d3deb1fa5a4b27e7b7931bfba2ceadfa32da819ad5f706e801e569e7"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rareall",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\train_predictions.csv": "990afce1216ba51df0f5f18646e816c1759f89f3eb2614a4de84c39434030f4f",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\train_latent.csv": "447370ff8e64a2d18900d7531f5d5b3bbf3ba220fcbd7389e90021048334465c",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\validation_predictions.csv": "916f90c0e932815603128e9a48079c6e0084baa2cc82f2e680d7e6104cd5b7fb",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\validation_latent.csv": "b6c3f56e0d10eb25e814360c603d674b366a2510f750f49f15b20de82ad129bc",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\test_predictions.csv": "1859433d6ba58362bd3e32abe32ee94a0571c3ea23a22c1f4e34f650610e5c08",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\test_latent.csv": "280146c30f268bbc5f1fb474466bb603b236904ff9ee3cf8f365e26d53bd1468",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed43_endothelial_cell_of_lymphatic_vessel_rareall\\manifest.json": "a95f795cbef8f366df62284d52c0bfdedb1a84726d01f8f279824f1d2c93e658"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare1pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\train_predictions.csv": "4a36d98f56051a8afc2411d64f2c45dbc5a217bb377288158c5d67e5dc59776e",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\train_latent.csv": "19df9c4aa8d417ffb140c38998ba6e9131cc38cee225cd9e6562cd620a9d0c90",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\validation_predictions.csv": "e2b26097388cf9fa1710e304955ce2b9769ad572b91ba01449718e05286a5426",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\validation_latent.csv": "23546acabe53366d7d1380241037c55fefca18ac0b1af29a289de325f81d82fd",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\test_predictions.csv": "f1ea636d6c2f1efb19873ec9bd766e70e3d2e839026ff3283e3c7bdea81d89a5",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\test_latent.csv": "aeb0a2b0d3c14ed5b27f8ce4c0560f9ff01e5c46bd81952b4403f72503366ed8",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare1pct\\manifest.json": "2c18939e4e4b203a40e3da2becc0c9abf488d9da89a572506b129c84fb89d42d"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare5pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\train_predictions.csv": "9c71ac1a2bf0c6879cfbc882d44dc8f2061d2f4489a2371e8557f4f8126565a4",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\train_latent.csv": "5630897420e0da326ac69bbfc20263144531b90e9caaa58419656ebfc62bcfcc",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\validation_predictions.csv": "9798ffe2d60a8a9c8766982c206a08c662a698615b83ab8292fd49cbe5020ae9",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\validation_latent.csv": "869adb426125bb029871f116fef40d594d1cb32fc05e2aa7de72417c436feb73",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\test_predictions.csv": "7b5bd47c32d7bab34a363ecac28431da09b3d7b8826969f83bc6707674dfe4e4",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\test_latent.csv": "57199946b68cd8c0c80a7f751bfb494b1ab16fbbf8237f23f7292c6a3d19b9a9",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare5pct\\manifest.json": "1764eae4a085ebd2b92106edecead988696a32179036ebaf78471d8f4a44f3f2"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare10pct",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\train_predictions.csv": "5b92f28aad199fba5ebd043dd1afd26fdd854e1ab72031f57a1b05655ecd24ae",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\train_latent.csv": "9ef5cd1939447ebc5e7a0b0a0fcd9e610eefc751fd6b85c13f8dd674755f58d4",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\validation_predictions.csv": "965e2c665b5f362bcda96372021402aae27e1e4cd8aa2c628b3bb5a3c8dc85a5",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\validation_latent.csv": "7f619d184fe5041011f719f3b8168eac624c3971e5b779f54279e7aa6548f4d4",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\test_predictions.csv": "06adce91053ed0aef3e71e71abf2889b6becc3d3d20d1c525c279957930da2a4",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\test_latent.csv": "06814c7fe5c2edc32025033ee91a2067063c7d0081344c7ce8b41ed943a6f1f8",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rare10pct\\manifest.json": "c0282a0f407bf06dd183c8794ad8e8702fca34ec1ce88e76d8a8f19e0255ae26"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rareall",
+        "files": {
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\train_predictions.csv": "a6b2d51add32512aa811a2ad9965b570131f6d19c3fa0eedf267863313a27691",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\train_latent.csv": "354109dd443d2127768f3504b2c57d83bb5ece9ffa4371638b0a14f1c18480c5",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\validation_predictions.csv": "6b19ee738656d4e4c8339a19f4067642fc00837d6063a9fbfbd001e6e944cd3c",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\validation_latent.csv": "5efb8487525d9d766de2ec5e57552bb775d610bbe8d5612c4fee782be3ba0289",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\test_predictions.csv": "e68e2b961b642a02f7b98274eb97f31f7763fedac04be9a9c2ad500b0a7161aa",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\test_latent.csv": "09f6701a07e360ad6e735cfc2cb37c9a899593a09fe8b442e9610d3ec0938589",
+          "outputs\\tabula_lung_endo\\batch_heldout_seed44_endothelial_cell_of_lymphatic_vessel_rareall\\manifest.json": "a7eb3e6ebaf75139b528da539ca86d8b8fd3ac79a62eefba15c71d81cb476c0e"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\train_latent.csv": "61800a4a7990908015624ab695bd4b0dc15142c938df599e4063bba45556012b",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\validation_latent.csv": "219577ac2e3e68c1aadc1568587a96b83244578099c26063b3b5b6bbdd82072b",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\test_latent.csv": "6cdecccb9da4892c4acf05c5680cfd80978c1f13c2c539ffe327a8aedda19d63",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\manifest.json": "ba08f4172d5f2117f0e81a98ca2db5b4df42d261a1d68038a44d59fac9eae243"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\train_latent.csv": "61800a4a7990908015624ab695bd4b0dc15142c938df599e4063bba45556012b",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\validation_latent.csv": "219577ac2e3e68c1aadc1568587a96b83244578099c26063b3b5b6bbdd82072b",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\test_latent.csv": "6cdecccb9da4892c4acf05c5680cfd80978c1f13c2c539ffe327a8aedda19d63",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\manifest.json": "d70e94382fbe206e47bb7a47bac369a4ee0ca757839243b942908cc6686ebcb9"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\train_latent.csv": "61800a4a7990908015624ab695bd4b0dc15142c938df599e4063bba45556012b",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\validation_latent.csv": "219577ac2e3e68c1aadc1568587a96b83244578099c26063b3b5b6bbdd82072b",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\test_latent.csv": "6cdecccb9da4892c4acf05c5680cfd80978c1f13c2c539ffe327a8aedda19d63",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\manifest.json": "af02e4537494768d54bbb79b26a5a201bd88c232b6f401260956befbf79427dd"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\train_predictions.csv": "529e995b98daab589abe07f1fcfe46fc7235b0e04914abd37d56db1eb1f014eb",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\train_latent.csv": "bbe06994c823dfa1f27ebba675cd338a822272500e4c07b0224bcda50f92f912",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\validation_predictions.csv": "21efa70fd7f0eb36cfb8627dc400e98a5341a48c275aab1945418ec4124631db",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\validation_latent.csv": "35f3203ac671ab6e3ac5ae305a65d10140268b7e41de96a3e014e6faba88c969",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\test_predictions.csv": "9de4b2398ccbdf469243431e355280f914c60e295752133241b6ae6c8a95ab00",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\test_latent.csv": "826663f3c0f2e8d78c7f8ae193e705437bbe967b572dd7c84a190a5405e1b2ec",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\manifest.json": "9668861135b79b7cfdb4765dfc329e123babf5f2b3a3f7bf58fea5970f249b8b"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare1pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare1pct\\embeddings\\train_predictions.csv": "5ffea1a187b52e13b58bf8a3041d4223ca1bfebd277d7a2e93e2c41134d1b3c0",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare1pct\\embeddings\\train_latent.csv": "2eb2112d37d154f6b84cfb42b3ae399bc3f4aac36b80beb7748aeac8c5bf11ff",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare1pct\\embeddings\\validation_predictions.csv": "ece6838bb9a96e40521aeabfdd2c82064651c2dd277ce243cb107546f968e26e",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare1pct\\embeddings\\validation_latent.csv": "5c7c30591117ffd2f4dfc740c9f78fde7122decff1edf95b4b2c03ac75c70e06",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare1pct\\embeddings\\test_predictions.csv": "1eb296e6aabfdf3cc99a3c94f5e5491ed4f3ba9e33f5aea79f639198ed0f6011",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare1pct\\embeddings\\test_latent.csv": "1c642d762487435f0539950e8d93d7506d7d1f2708d006ca4a5ede8871693295",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare1pct\\manifest.json": "7d2a800bb42c11b4e33a94778ab8f2f41f95e9f31d97d2646aac7de63c08bb54"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare5pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare5pct\\embeddings\\train_predictions.csv": "5ffea1a187b52e13b58bf8a3041d4223ca1bfebd277d7a2e93e2c41134d1b3c0",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare5pct\\embeddings\\train_latent.csv": "2eb2112d37d154f6b84cfb42b3ae399bc3f4aac36b80beb7748aeac8c5bf11ff",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare5pct\\embeddings\\validation_predictions.csv": "ece6838bb9a96e40521aeabfdd2c82064651c2dd277ce243cb107546f968e26e",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare5pct\\embeddings\\validation_latent.csv": "5c7c30591117ffd2f4dfc740c9f78fde7122decff1edf95b4b2c03ac75c70e06",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare5pct\\embeddings\\test_predictions.csv": "1eb296e6aabfdf3cc99a3c94f5e5491ed4f3ba9e33f5aea79f639198ed0f6011",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare5pct\\embeddings\\test_latent.csv": "1c642d762487435f0539950e8d93d7506d7d1f2708d006ca4a5ede8871693295",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare5pct\\manifest.json": "2c2078649b1e1614962fae891de30b30e7154976aebca0a004c01c8919528e9e"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare10pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare10pct\\embeddings\\train_predictions.csv": "5ffea1a187b52e13b58bf8a3041d4223ca1bfebd277d7a2e93e2c41134d1b3c0",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare10pct\\embeddings\\train_latent.csv": "2eb2112d37d154f6b84cfb42b3ae399bc3f4aac36b80beb7748aeac8c5bf11ff",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare10pct\\embeddings\\validation_predictions.csv": "ece6838bb9a96e40521aeabfdd2c82064651c2dd277ce243cb107546f968e26e",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare10pct\\embeddings\\validation_latent.csv": "5c7c30591117ffd2f4dfc740c9f78fde7122decff1edf95b4b2c03ac75c70e06",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare10pct\\embeddings\\test_predictions.csv": "1eb296e6aabfdf3cc99a3c94f5e5491ed4f3ba9e33f5aea79f639198ed0f6011",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare10pct\\embeddings\\test_latent.csv": "1c642d762487435f0539950e8d93d7506d7d1f2708d006ca4a5ede8871693295",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rare10pct\\manifest.json": "12100f2984c41c2a71b9ad00cd96e7f7be192f5f265d14e0474459cd175ab394"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rareall",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rareall\\embeddings\\train_predictions.csv": "c15bc8af9ed23209ad5268799057b122347442e94cc959d3001c44c0e9baf270",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rareall\\embeddings\\train_latent.csv": "43cc487cedbbd38a50d31cacd799df084908ec4231664ee611f111f664327245",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rareall\\embeddings\\validation_predictions.csv": "9a8720d71dfc0054c2b9d71178f673f1a4209257eea739c61dd8de82e2a042f4",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rareall\\embeddings\\validation_latent.csv": "892d55ed2f61cb0f6f13578ab8ad9866fd55ed01d156b5e9c5184fe1e2eac69e",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rareall\\embeddings\\test_predictions.csv": "c7b681d6c5f31652b2dbe89554b5ee98805aaacfaebb961c638d84f0f5f625f2",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rareall\\embeddings\\test_latent.csv": "c85c60e7f2042c7a739add2f32453d3f9e7f6cbfd706746064bcae1febc3b76a",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed43_mast_cell_rareall\\manifest.json": "d9a542cfbf20987640107192bf5dc3b01656512860b6df2f4d4434a40d0068d2"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare1pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare1pct\\embeddings\\train_predictions.csv": "7e7a7e7d3d0444c42c2e60dfb9cb54f18dd940edc908237d0abc04642269fab3",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare1pct\\embeddings\\train_latent.csv": "b6d8a3857221490e5965015581e7f5c09a68eead3f4fae0c3cb601794d06f552",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare1pct\\embeddings\\validation_predictions.csv": "1f12c9e6294c2d0be527e25b2d434a806fbf779b98bfb04ffbad764ad7f42840",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare1pct\\embeddings\\validation_latent.csv": "826f3b50877a08f8125f6fc09c2e9b33f41fc6ddb281529c95b181a69d5b8c5c",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare1pct\\embeddings\\test_predictions.csv": "974a805a2929da07b4bcda717078107801166e53e0efa249473ad48bce65c1c8",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare1pct\\embeddings\\test_latent.csv": "dbc9eca8c635848a242b0405d135d798a7d6934f8b64625f38142aba048d1b01",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare1pct\\manifest.json": "e49dfa49662a31efae4d527687ad6bae0c555cdf82c545fbda3461933087c34f"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare5pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare5pct\\embeddings\\train_predictions.csv": "7e7a7e7d3d0444c42c2e60dfb9cb54f18dd940edc908237d0abc04642269fab3",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare5pct\\embeddings\\train_latent.csv": "b6d8a3857221490e5965015581e7f5c09a68eead3f4fae0c3cb601794d06f552",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare5pct\\embeddings\\validation_predictions.csv": "1f12c9e6294c2d0be527e25b2d434a806fbf779b98bfb04ffbad764ad7f42840",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare5pct\\embeddings\\validation_latent.csv": "826f3b50877a08f8125f6fc09c2e9b33f41fc6ddb281529c95b181a69d5b8c5c",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare5pct\\embeddings\\test_predictions.csv": "974a805a2929da07b4bcda717078107801166e53e0efa249473ad48bce65c1c8",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare5pct\\embeddings\\test_latent.csv": "dbc9eca8c635848a242b0405d135d798a7d6934f8b64625f38142aba048d1b01",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare5pct\\manifest.json": "184307a20c81f2e651f56eecaf5730365cc19597e4043b47d0189ef7c7b233ef"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare10pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare10pct\\embeddings\\train_predictions.csv": "7e7a7e7d3d0444c42c2e60dfb9cb54f18dd940edc908237d0abc04642269fab3",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare10pct\\embeddings\\train_latent.csv": "b6d8a3857221490e5965015581e7f5c09a68eead3f4fae0c3cb601794d06f552",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare10pct\\embeddings\\validation_predictions.csv": "1f12c9e6294c2d0be527e25b2d434a806fbf779b98bfb04ffbad764ad7f42840",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare10pct\\embeddings\\validation_latent.csv": "826f3b50877a08f8125f6fc09c2e9b33f41fc6ddb281529c95b181a69d5b8c5c",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare10pct\\embeddings\\test_predictions.csv": "974a805a2929da07b4bcda717078107801166e53e0efa249473ad48bce65c1c8",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare10pct\\embeddings\\test_latent.csv": "dbc9eca8c635848a242b0405d135d798a7d6934f8b64625f38142aba048d1b01",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rare10pct\\manifest.json": "1612e9147ccdeadbfde043e8abe35a8196950df3d0bd6782b0e3efefd7bc6355"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rareall",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rareall\\embeddings\\train_predictions.csv": "26402a1f1ed0e104d668f487bac7d76968995a39deced47209e365c86db7cac1",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rareall\\embeddings\\train_latent.csv": "7c35185f22bf328523aec28c1b1af5cc797d75d32e4b9857b91e606ab831caf8",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rareall\\embeddings\\validation_predictions.csv": "1ff1675375a8fb862e6f38d5d2caa0972b6f9c522a42fb3ca2c7ccb1a44484cd",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rareall\\embeddings\\validation_latent.csv": "8283e165a31ede79e5f8577395260e5b8ddf86f590f2b8d34e29e854c76e68c1",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rareall\\embeddings\\test_predictions.csv": "0c4654cace0f0f5b8523fcda80cd93bd8da2e0cb32c4de93175099e8c4722126",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rareall\\embeddings\\test_latent.csv": "37faa32c1cdc96282cd3d35787366ba48cee6da1bd03fce64a4da93aa59a2a6c",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed44_mast_cell_rareall\\manifest.json": "2b13c012694bd7590c7bf4c7efc11eaf77db6a469f97cc3b0e4f5a2abb3b080e"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\train_predictions.csv": "7cb0920e1d40a0e1ce9bee705ea50c9374173a0ceb417e8b0a4a21f09c3c81bc",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\train_latent.csv": "b2c832d0aaa4260add5f4aa18efddf0a1a39564ba68076dd5eb2b2c378c5bf1f",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\validation_predictions.csv": "60f5dbc562709a4d0a9e346f3dfff3e463c0f17a789c18a459e6842eed73c883",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\validation_latent.csv": "8abb3a3a1ca77b0ed9d2628af50210492a8d2d3b501f1ab3688a51b8c08d36cb",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\test_predictions.csv": "ed987afd71d6f57a3ad0ff21e956c99007482688ea05807b9d887a0fa9126812",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\test_latent.csv": "c1750ad28478249f0265fd1c257cc0e46e179649f61f8574c6b56e8652764419",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\manifest.json": "561b6a0c95d3d0c03eb08abfb36d9914fae489ef65324b35f803a3309cf2eadc"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\train_predictions.csv": "1c546d873e5d513420107646db1da67d08248d6a8ae30eb9903743fa3ae96afe",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\train_latent.csv": "56c9eb12bd68cd00a9da0f93df7695a18652c1113113c69d443bf2274cb26f12",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\validation_predictions.csv": "fd259e82efda3c66d77a886ed9d3a8bb01cd991f8ac47d4c571345918707786d",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\validation_latent.csv": "3e9b49fa4f1dbaecacced347366d4be2e38210791a527021343072642d598235",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\test_predictions.csv": "ef82e9df8b31afd7926d7177e63397aba41d16bebc4733d6dddef3a6a1591165",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\test_latent.csv": "9085065c89839d22ba931771d6e7aa0b1ac0bffecf0cd1ab5578ad243075284c",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\manifest.json": "be9e492cb2d87dffe3402dd6ff3f143314c54924580bed7a06b9b4e263e32aac"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\train_predictions.csv": "1ff5d33bb1089bc3f3ae8f71d99311fc506bfa776940d671d007c76e63a8ebe0",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\train_latent.csv": "f64b17e85a44f6a40f0f66f5a69765e89938819d6c611d84536902f7af9cbe10",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\validation_predictions.csv": "c98208c3187723a49f03afe92cc603aa617c76982f2d7f276bbe22b76550958d",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\validation_latent.csv": "65d90a276585f5e498303e454b9717f8eae06fd280c21ba6581e4e48c9ce24c8",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\test_predictions.csv": "f35b690ab8f4f721c74659fc2a31446485bb040fe0046086dee8c37b80e0c08e",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\test_latent.csv": "16e7afa11fbae6f84edbce8c52d0520cc98baeb7dd5160860282e8e2e845b289",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\manifest.json": "b847254cce748bd6f1a32921f44a66d61b03835f08251a83069d06a45ad08bf0"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\train_predictions.csv": "80b327c2ee28831dc75eef0496e28e8e19c09317fa45c6e2f869472a43d04eeb",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\train_latent.csv": "58d542bc018b970187de366d234b30327ae4f312532489a3ea0990a60a2061be",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\validation_predictions.csv": "4dbe57cffe11d8d0db21957974240a9aad1f8609de12a5ddc744846c3196defa",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\validation_latent.csv": "36f4d158dd68bd795b34c3346f4dd677124194ec6702d85a708657a21516075a",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\test_predictions.csv": "a5d9fc35ebc1cd710a486510c23b8e95e90a2a47599f1c4f25a7b38dd0fc26a1",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\test_latent.csv": "60de1c75d1a1ab35163bc57fbffd05dbba208533fd3076675ec6bd052af71242",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\manifest.json": "22ac0fc0094921f1f625fdd18aaacb1e9ac59edbfa874dd47d74dba42e21839f"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare1pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare1pct\\embeddings\\train_predictions.csv": "d8d22226091e6c719caf4e9a445c8379efdd124d9cf62a4ebc0715663918cbe3",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare1pct\\embeddings\\train_latent.csv": "c022d4f58711013a76a680809ddfa4a8c8b22782fa07b9d6717ed831fab59192",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare1pct\\embeddings\\validation_predictions.csv": "f89bc779fbf8899fcd4667389fe37f75c5cffa6a5894a60de24b800c0bba59b4",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare1pct\\embeddings\\validation_latent.csv": "ce7f065e29e6cefd8437e7a3de229aef2ef132ae3f9ad47a0ecfcf124143b3a7",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare1pct\\embeddings\\test_predictions.csv": "e36a6ecdb83b223703a108173ba170b13f3bf59bcda3b0f1ecfd8ce5e4c33bf6",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare1pct\\embeddings\\test_latent.csv": "f33e33aa4dc800b702f4957f31143cb0906069b407364890e710d6832629b6a7",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare1pct\\manifest.json": "b2c7f53d2f54ba51e74e59829de117841123dda3f1840853ff4dc5e43d8fc346"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare5pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare5pct\\embeddings\\train_predictions.csv": "efac8b7e8ea1636d83b0e6144ad2b67b55bbc334b3927ee5e899c84446acf40f",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare5pct\\embeddings\\train_latent.csv": "cbac9287fb052a1ee39176826fc061cdb5768dd7c6c4655421ec1adc4942d105",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare5pct\\embeddings\\validation_predictions.csv": "40962cf289238f63d7dd9d701b5525b467b2f9e6b28ce9df478441d41bd3d678",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare5pct\\embeddings\\validation_latent.csv": "d57564176a237b365a00c0447a63cd2e77dd6075301e8bbea2e5d9640e670b2a",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare5pct\\embeddings\\test_predictions.csv": "c5e2bd2a0feaa9135f6ce144b4f7f8b299457c261cee3c5f95bc14363a68b716",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare5pct\\embeddings\\test_latent.csv": "90f9f0747742cbcc7ed9f01b2471d3c93b3bb0004d934a389bc2c4d686aa3c0c",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare5pct\\manifest.json": "6e3ff626e4a07d9bc0a9450006db0391c07a12c265ffde170e8e8bba9effeae4"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare10pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare10pct\\embeddings\\train_predictions.csv": "0d171b853158fff5140161ddfe26b282b80558c5005062ac72d30cae11e63c47",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare10pct\\embeddings\\train_latent.csv": "937964a80499f0af073e916525c1616a5a82a52fb85d2f89d5faf939c93cb104",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare10pct\\embeddings\\validation_predictions.csv": "838d64bf40691f87919e283e3ea2f9df1354aac50ab7b1423168d9626636b018",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare10pct\\embeddings\\validation_latent.csv": "f275cbc20f89d9aa5a0dd528a3549de4b4e45d43234628c164ff88e8efb95055",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare10pct\\embeddings\\test_predictions.csv": "2fa36ef1eba0103bb5544df1b6a403fc80c98bdea886b181f618be0c4a493ae3",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare10pct\\embeddings\\test_latent.csv": "dbe9f4cd93ba0c29120d7b152f2693c3c9a75af4253803f66b13621c7e66e651",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rare10pct\\manifest.json": "4adbb9956641c89f98e1ed8cf7fd0f8dfc7e05ea9d48403aedfdad478287d8ed"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rareall",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rareall\\embeddings\\train_predictions.csv": "87bb2ba69779f8b01ffe4a663f83e9c59bec4c52575042cb6848d983824d9a42",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rareall\\embeddings\\train_latent.csv": "ec869a29fe92705b59a77a20cd72c4be97f302af1427a3c154119f7463ef9aa1",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rareall\\embeddings\\validation_predictions.csv": "d24eebb48abdfd5696e46595f27471d2c7484d26b9a7641c9c3786ad19e57a85",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rareall\\embeddings\\validation_latent.csv": "4697b628497b04e001efa671b2ac79355e2e04394d8b03bde6f289341040471a",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rareall\\embeddings\\test_predictions.csv": "3707e0b1e3a59ede0dd774098f77f388d6b2cb373f0695a69b69f6b5f1498de5",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rareall\\embeddings\\test_latent.csv": "f513d4a8f2b361e189c327c02406b95be96c3257d719567192a78a3acbe15b79",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed43_intestinal_tuft_cell_rareall\\manifest.json": "e9f3f2eba5316c2c93cc16c1f550c94079d9446ab0944146fd439fbb711311d5"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare1pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare1pct\\embeddings\\train_predictions.csv": "62d7dc9e9b11bfa6ff40a2acedb9e41b873691efcac978db62178dfedbea7d87",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare1pct\\embeddings\\train_latent.csv": "bea4f6422449a1d7e3e9c1b557da47d066f5fe06ad69ec8a349424f1cc7de704",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare1pct\\embeddings\\validation_predictions.csv": "a451b944909a15d6067337807ea801ace6a4f581db93f9e0948a368172d54b78",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare1pct\\embeddings\\validation_latent.csv": "9667d2e2e7b2cc43bf8d859f88109c328f3eaa93c433cf465654eb7a5d187f57",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare1pct\\embeddings\\test_predictions.csv": "00d381c71443bcdf2326426c204adb321def92eba41334543e44bb4fe28d8e2c",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare1pct\\embeddings\\test_latent.csv": "407253ae410f19cff61e48a626acad4977a7170fe0bb4a7bcb35ccad92cf2bd4",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare1pct\\manifest.json": "b2c66248ddafe99fae78a854c9c0adcbe33f921ada205ca2391a50e9d583ec38"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare5pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare5pct\\embeddings\\train_predictions.csv": "3dce39f2ca2ccef1dba1877899912061bd8deb3e58d474171370603d80573511",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare5pct\\embeddings\\train_latent.csv": "ae4af5a854e70eda6a40e16e51f451b9e7963f6ba6e7725693bc9449f47667a9",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare5pct\\embeddings\\validation_predictions.csv": "fd0852eb2980d8be561fa6ccf11b93b96b74362676cd053a3f145feb057a94b0",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare5pct\\embeddings\\validation_latent.csv": "981ffbf0463236f9dc3861ae4bc242673ec49c0ce7b8b40258eabc3e9fd5a564",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare5pct\\embeddings\\test_predictions.csv": "8becf8cd4d9deaec18d74eba981492a2c82360f1e12d9346d1807e631d9c71fe",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare5pct\\embeddings\\test_latent.csv": "b1661112ca4bf863e3d10da05a872b38831fd0c0d3bf0555e6f15345899d6122",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare5pct\\manifest.json": "2ef8bf6fa59bba5b83d5e9e2859749b8219868ea08a0c517d8d3c4749fc184af"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare10pct",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare10pct\\embeddings\\train_predictions.csv": "1fa0db4d7ee92236a13dde03e6d95774b572f2562b59d803f67c658964ae0300",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare10pct\\embeddings\\train_latent.csv": "f0f2fe9ee876d2b2014634da9911ac8d345ebf90e852576fe9fe023f7fb4b56d",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare10pct\\embeddings\\validation_predictions.csv": "7b0f077cfbe3311804dd4b5b3ccb38a4326ec32351148e4f1f5d7b5fb9731d0d",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare10pct\\embeddings\\validation_latent.csv": "22254ba40eef3eecbf8d6e6b2b1046a75dae9275e3a1a982e9e6db96fba2bd43",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare10pct\\embeddings\\test_predictions.csv": "b36945bf31f156596c14657458dbda93711d96d964e0921e94eb420114e6443e",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare10pct\\embeddings\\test_latent.csv": "346390d9128cbd7fea05b6f12d17e6e6e0cebe7b0eefbc485b6a968029cb19b0",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rare10pct\\manifest.json": "48c09ed03bc87bfc69b9188699f22c5779aaf31595bdb20d4630bcd25499cc89"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rareall",
+        "files": {
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rareall\\embeddings\\train_predictions.csv": "4a7185bd9ee551965bee8becf44f36774c5c4bf065b0efc5516bc37c3f89e2e9",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rareall\\embeddings\\train_latent.csv": "6557a3b50eea95d45a1c656bea34433c2461f187ccd7966936494fd5b40cc469",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rareall\\embeddings\\validation_predictions.csv": "a5c94ba9305dcfe9244a505050d9074c9b2895037da9514ad4c33cda4ac4f991",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rareall\\embeddings\\validation_latent.csv": "fce8e6d4df19f0c6ad173c11612b3ec4993ce1108fd119b2f8d34d22a7fc6fc1",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rareall\\embeddings\\test_predictions.csv": "d2939e6d529d902e4e7c629abe5443c632af90268d6156056390aca71b24b803",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rareall\\embeddings\\test_latent.csv": "f5762570e6710ddcbc9a7ba251558889bcdae1a979e72c9dbcfd5d69828d1518",
+          "outputs\\tabula_small_intestine\\batch_heldout_seed44_intestinal_tuft_cell_rareall\\manifest.json": "268800fbcb1193d832bf4ea5abc65837c24a6c01a0e12189a7fbfb0300b12066"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\train_predictions.csv": "fead53fd34b3db8730ef4a1a0a82825c9de2175530128a024156c2b62b70811d",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\train_latent.csv": "200b614f47ecc53b83ea3d32446eb9fb76baf5afa8de076f1bcfa80a10e141c7",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\validation_predictions.csv": "2f74f34d6aacaa3789b37b759a68e07e4a1f916e0f92b968bbf3cac4d4a83f54",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\validation_latent.csv": "715718be362131e1909523edf6ce03ed8c3fe8d6f601a6a1edaaf48f2364c60b",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\test_predictions.csv": "0f6649090fa24040b2c276eb2dcd76d99d9be630d521279f032082ed9542c0f7",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\test_latent.csv": "bc2e9e63599f8cf9148e8f0a26f8d9d744af9dc4f360225401c381cd6dddf086",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\manifest.json": "06ba6f283d2ecfcee310c720e6ba834ad1a4c80c1c4ffb0dbebea176f4c1c42f"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\train_predictions.csv": "4092c23a75b0d8f3d75e682323f0e419bbde5d250b3d2647f1f54d107bc69e2a",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\train_latent.csv": "4d7b047492be205dde73d810f95cc071c7716951239e96d15e1c9487369ce7df",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\validation_predictions.csv": "493430688097ad9434c51da80e18e2eb55249b77d5416c8c5958c761815634a3",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\validation_latent.csv": "e704e082d732a395b12c66f3e7c5ec630b71bf6d473971e2e4855a6ab923a1da",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\test_predictions.csv": "6f89713d5a05688162f6b7ace8f7c608802b21911a27379328fa1a6a09a52d76",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\test_latent.csv": "f4930c8ee8542dc5e84863e8620ef1caba54851692b224579412773532b586a0",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\manifest.json": "3fa6dab1bcb47c837db27ef4417a5000e1ef6ff3b0a64970c586becf681725f6"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\train_predictions.csv": "1244006e8449a7a2bed224b4670c8458150820df350367e0e9eb05010b8df8ab",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\train_latent.csv": "475bb49d258b23ef619b7ff3421c1f9e9fef08b41572841179303448f20dfa1e",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\validation_predictions.csv": "524986067b90713f15bbc9b2c40a81020de631f6f9ce899cf43c8cd6d935a778",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\validation_latent.csv": "0ff6b8ed994cfb95e638cbae7ed45ec5de4f35cb8802f7dddf361f511fb5b464",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\test_predictions.csv": "46acef8f4c309bd5bfa892517386214b8cfa1d1b1a6116d83752dd8d7ea1afb5",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\test_latent.csv": "eb392245b6714f0dfc2eba7d85a5576e7d0dc6b799d33dc32be421865a8d4d31",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\manifest.json": "6c6403aaa2a3d0542215ee2437f96fd0ac675e2f93dbcedab9de1d5c2fef7982"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\train_predictions.csv": "9eab5fafb7c6f0b29cd73ff0331fb72a46c4c7a5e2912b5430d2c79c911e7886",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\train_latent.csv": "89b5b85c1d43ee1b369428aa805361ca70234a9f78e7cd7ef44f3e22fd9632ea",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\validation_predictions.csv": "4fed2799a08bcb0a56860cad247447d76cf6d26dc4b61f42701b9c9efe81f551",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\validation_latent.csv": "95f52eefe9c419de0c6d279a5ece237e4033e10867fc7a0e215d795b4972059b",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\test_predictions.csv": "915e91c69ac10ebb4c2d5f00eb6739714f371b9855ccb7ba2a2475ed2c05e87f",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\test_latent.csv": "da586259bc68287e731a5fd8ceea8aa65b8953824f5771b21e30d4aba2c93a8d",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\manifest.json": "64771baa8cc65225b6e12b1662d3c49b3c61ab2b3dc4d10ec634a0360a903345"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare1pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare1pct\\embeddings\\train_predictions.csv": "06d09fd477cbfcedd27ec93a6cd86b21448ebef0876e8f1cd13b7eea8d09d293",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare1pct\\embeddings\\train_latent.csv": "9662410b4b10fa0ba95645ceb38ec2c9c8585deb34e487b1f1454bce0533971b",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare1pct\\embeddings\\validation_predictions.csv": "bd427c6f73bf9b197b399982b1a224cc77d16228219348b1474129114b341035",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare1pct\\embeddings\\validation_latent.csv": "fc540423c66bc41b5b3d5c9497eee437fe579e51024b890ee57e0195ee6b4475",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare1pct\\embeddings\\test_predictions.csv": "691f415b3eda5946847bb430dcc10abddc2cc126b030df51583f93955cbcfc5a",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare1pct\\embeddings\\test_latent.csv": "bc997d7489eb2fd38c8cb436e61525e6fecdf67e6597b4fecb861ab3fd20534a",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare1pct\\manifest.json": "ab0e3b1a482a7ae0bd19c2f80df7b13fda3f5bf68f5e5ec81a7b8c01ba180629"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare5pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare5pct\\embeddings\\train_predictions.csv": "9a2a226d2c2410855b8636bc3d3e281ee26d827ce5425a586b641671416ba448",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare5pct\\embeddings\\train_latent.csv": "7deb41dfbdc9d014e96ddb6a722f91e259b381ece01a06b328a301cddfdf518d",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare5pct\\embeddings\\validation_predictions.csv": "a784df3004c1929c99d9f8d9742d890e7dffc6c3a42c12ad29d69da8e85bf0ed",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare5pct\\embeddings\\validation_latent.csv": "c5d5c99c12098c5ed2fb538a49dbd9873096970280acca0646ba5c036b667a92",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare5pct\\embeddings\\test_predictions.csv": "09525c96abfa605ed2d8d34ba548f9ba5544ca016027c4d7095d9d0e8ba26660",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare5pct\\embeddings\\test_latent.csv": "7e0eb8a0f05438170eb53c00a32cf311e67b7d216fef8d33b36c807ed9423e69",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare5pct\\manifest.json": "99a7e5b1975b0ccea5f07f9e6ea70f49d5527a8a3d71c68261f30f80db50b64f"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare10pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare10pct\\embeddings\\train_predictions.csv": "62d02ef2466b28d910f67e0318d37313f6b1c90b1f5e7f1e8819bb793863555d",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare10pct\\embeddings\\train_latent.csv": "65ab6b0a163ffd2945dc14953535c9730e5d8bc8d6c5611f6a512928c18a9d86",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare10pct\\embeddings\\validation_predictions.csv": "3b9723896adaef1acc6db32f83021f81eca0df89c2c61175024d08f9a013aa2c",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare10pct\\embeddings\\validation_latent.csv": "03925b38626d6cb6012c1bfbf642bf082c61a633fa5fb3201de2bfb3f6f752d5",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare10pct\\embeddings\\test_predictions.csv": "2cdbc8ad8dda812867c59425241746deec89ff38936d73354b30639d989499f2",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare10pct\\embeddings\\test_latent.csv": "9f60d17893baa0cfdf23df2de38524e2c1b27299158f4b35ba7b7f54c490856d",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rare10pct\\manifest.json": "53804ef2edf6fc61a5bb484b5de1124aa6aaecf9c44fedaeccab5a499404767a"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rareall",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rareall\\embeddings\\train_predictions.csv": "d7c45e766406a829e63c0eb23891c643e7558ac5df6b73113bbe4ea27acc3fb8",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rareall\\embeddings\\train_latent.csv": "7c431ddde795c33f2d1095f3c7d4f171f16dc5fbaecc517dd4e603ff5a66f521",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rareall\\embeddings\\validation_predictions.csv": "589829ef40b258b1783a9e791967137f94487fe5f9fff47a5ea7e717f39f821b",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rareall\\embeddings\\validation_latent.csv": "0063f64cc3912d6c0992c9a0818e9a83d7e60011a871b0ff2ff39135f54f316e",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rareall\\embeddings\\test_predictions.csv": "fbce7205566e03bbed07398d6455811fed8f6601ede58ab820d4441d6e199899",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rareall\\embeddings\\test_latent.csv": "d29b16b065a7656e9774787180b66b11b9629f9111dc0e13f7b26b083cc6571a",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed43_vein_endothelial_cell_rareall\\manifest.json": "e88f1af203c8b240dab74fff48e05c663e485e4ebdcf5613c3aef2a4bd244638"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare1pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare1pct\\embeddings\\train_predictions.csv": "2ba4541bae4596fc20e6a7e79cff0b352b640d3eaf604e558821c8a7a2caacf1",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare1pct\\embeddings\\train_latent.csv": "10fd9441b6fb57dc926f2ef969d4c6cdad777bf98c2b0833dd7663c69443f5b3",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare1pct\\embeddings\\validation_predictions.csv": "a4b09db2b81a384d2b5524fff83862e88c7fdc973e6771f8d96e488176e4944e",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare1pct\\embeddings\\validation_latent.csv": "aa299ffbf73cf14bd3e0b21711d4294aa96162b120c971252831a9540deeeddf",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare1pct\\embeddings\\test_predictions.csv": "e0ec495e55c238888ec742d644e52a3e207a8f5dc82a0322cfbb881437463031",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare1pct\\embeddings\\test_latent.csv": "cd8eb888b3183a043e0d9b0519f211da5130e326370f3a982ab8389c9072d9d7",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare1pct\\manifest.json": "d58d34108e56a455f4b801d1e1aa1e545ad04bc190aefaebe51ff5475276ddab"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare5pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare5pct\\embeddings\\train_predictions.csv": "d744a52f3ad42616439b75020b228aed2dab535a43776311af1f3e5c6ee84c4a",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare5pct\\embeddings\\train_latent.csv": "efa44ecfc77c5a7c90dded7854d2354dd1795dd09e5108432afae8aec455ea2c",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare5pct\\embeddings\\validation_predictions.csv": "a794a668b671e41037b77691f8c37fb01ce9de370dd67d826c2455383a822c92",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare5pct\\embeddings\\validation_latent.csv": "89f5ad46d49bcaa380241eb4375e1814cf0544b0209ca746f519892918d5cb5e",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare5pct\\embeddings\\test_predictions.csv": "fe196c2916a339660c5403efa1aca5d4e8dfa766aa1988bee02af33cc601b4df",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare5pct\\embeddings\\test_latent.csv": "5eed2ca94b7a94b137f9e0049a850d56c5183918980b449cb41af6a4f3d555ad",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare5pct\\manifest.json": "922ba710ffd9c74abe27acecc74a999ea9ccf877f32ef395f6519e46419c26a5"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare10pct",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare10pct\\embeddings\\train_predictions.csv": "a51e5d40dcc37cf6ad6a333fd9bc188b0e84abb853fe235f13d1fe97cd14e143",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare10pct\\embeddings\\train_latent.csv": "8982e41997c467cae433c598bc7b3a97fc8bac7eb937b7537b8dce07eb424ab1",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare10pct\\embeddings\\validation_predictions.csv": "67ce4713151430eff5a65362b04ab60c277d1321490353d0b7fc2182c9d84112",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare10pct\\embeddings\\validation_latent.csv": "67572506efd7499e2620aa14db0a98dc9179ed396f90c2f4ad52d93fc347514f",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare10pct\\embeddings\\test_predictions.csv": "e925ce2c615613902a38909057b6aa4bf6edc75ccd98c7c8987423002141a120",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare10pct\\embeddings\\test_latent.csv": "a1149a8c27dd666e726d963dcb55ff50190bff0833a4c7eddd58bf69cb96e7c8",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rare10pct\\manifest.json": "db8c77f2a108a3ea7eec0eae95fbf877c8e6d5e0942ac0a7355a1951821c8e33"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rareall",
+        "files": {
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rareall\\embeddings\\train_predictions.csv": "09c91670970631f98587fd109bdd3e4c15393485a1635d06d5099a043e80b42d",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rareall\\embeddings\\train_latent.csv": "79595595c94ae7182097ca416ef594d9a9a403fa1abffd09d3d523dd005b8fb6",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rareall\\embeddings\\validation_predictions.csv": "15535bc91046ff1c20e3de81c978b8d24482288a68493cd085b2fd30e08630f1",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rareall\\embeddings\\validation_latent.csv": "af16d1c6a74f6cb05d6866eb16c0d3179b8f8d5c0e2fb0737fe208e66aedeb4c",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rareall\\embeddings\\test_predictions.csv": "c8cbe84889ea49ede0b3ca0bbdf5edfd189d9f28cf3cb015f57a5b689cb3b3f6",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rareall\\embeddings\\test_latent.csv": "8d40d3fb670c741cddfa9e2a6929c3fe783422054c8b5f3c155c2656c1364c41",
+          "outputs\\mouse_lung_tms_10x\\batch_heldout_seed44_vein_endothelial_cell_rareall\\manifest.json": "76238080c964c7d4b6c7d1157689b21dacc112188e1d7ab76e67e4823be3f620"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\train_predictions.csv": "58a32ffd70561c12e7396a55f803e75648bb0a675200312010448c860b9ffddf",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\train_latent.csv": "f3d46912f3a1bfc1e469aab683ccae13d284e20f37cff2df1cd946c86c620612",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\validation_predictions.csv": "69cf0fb7b8c6f473f5add7a4830dd46fedb2dc6d025480e4611a40b732c69c5c",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\validation_latent.csv": "abde3b7b815833974143a9b6614014dbe05a02537742523dc6722340b529a890",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\test_predictions.csv": "27792d23168fe653cf3181a9fd5acd6ec9db4fd74016fd7f62ba12d8b20028f2",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\test_latent.csv": "5c6ea3f6263c29505f6754f9798f67bed083e0342e1068db9c55acb5bd04ea18",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\manifest.json": "e98e749cb0f69d9e912dd286bbea0ff5bae375c35cc0ceccd77b92557c336478"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\train_predictions.csv": "2709327a04c447ee2797f264fd3719eaf6ed7b2b4f05256cc3ef951d6a395adb",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\train_latent.csv": "23151dcf00f1dc6042ae7402e1ee16b242fa42643da5e86db97a72a5a2310d96",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\validation_predictions.csv": "60d2305c35419b1520eab865a7fbb9770e8617ca93b1037c27e02fe516947bcd",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\validation_latent.csv": "dd3a378b60e55f6b2640e2309a15cc62c60358d03f93f6245440111d6a8efccc",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\test_predictions.csv": "6dcef6c4072071eb9f4c34ef6751081cf64e35b621bb793cfca7dbefc234ee3e",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\test_latent.csv": "16336eb1923acccfc91c2add98f59bc413eabd301428c43ee6a55a51ffcb9be4",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\manifest.json": "57116739bfb70bc7033111710b7b7650c2056cacfcf8e584e4af2dcd68da0f1b"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\train_predictions.csv": "5ad97d828f41c3660b4f09f49c166c163cacfe5e1f897cbe0f7660d22a36dd06",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\train_latent.csv": "535462133667a4fb9c0e5251429a4cc2f3c112f190125f22cbb76ac41dbb2ff9",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\validation_predictions.csv": "505a4b29224b2d2049210bd6d1bc692a3727eb1401d942794eee5a46890a3ad2",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\validation_latent.csv": "48c1acfd4c7fc4bf36e890ca399cf433badd930eb9feaec960723c632602bc07",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\test_predictions.csv": "2e6f74873c2b563da4930812c2f7ee477d45aa58eb2ba3afcb6b83fe4c71489a",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\test_latent.csv": "bc595b928306629fe72049cca6b321d35ce56cea0c41ac34769bb6146e13eb83",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\manifest.json": "eb92405e05e91fc277575ef18443a902ec0f38dfe350ea198a2c97f6ac73250f"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\train_predictions.csv": "7c911ba368d565ec37b07f7a22cb746198ec80106a02281a2129635c972cc631",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\train_latent.csv": "a4404c30278032234fc84e45bc5ce309ba7b71dbebb68a5664388ab4891a6cdd",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\validation_predictions.csv": "c28976caa5330c10d0a808a2b44ed8a5e5f3773d44114cadea8759976142807f",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\validation_latent.csv": "7e51655a1985d4358d40f022ad9cea401e92ac1287c5a3430db5de74f179301f",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\test_predictions.csv": "1ce2e2dce95b962798405ccc00a048be8499cd9d9348ca78290fbbc7d66ea49c",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\test_latent.csv": "7e46320eb88fd4d162e1b010668f40ad5cd39a19022c4d1bed9c59c4aee9c3aa",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\manifest.json": "e0ffa8ef485c0ac0f664412626d1095b2452c9f5eca5f40d8d2e7b45cd38e615"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare1pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare1pct\\embeddings\\train_predictions.csv": "5036a962b34b48c1e2720f9126d5966e060d5f4ff4720f5c4cce823223f199c4",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare1pct\\embeddings\\train_latent.csv": "10351c9661c5699bbc8b8f100753284d47c0ed988416914b8fda22e44fdd3081",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare1pct\\embeddings\\validation_predictions.csv": "ceb177a41483d8778d4a1912704619dcf2706319adbaf124505f199bea33705f",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare1pct\\embeddings\\validation_latent.csv": "289af9cff8acc564b6a87ac82c09d12caa524122fe751254b2ec7db42060ceba",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare1pct\\embeddings\\test_predictions.csv": "813183545f57e9af3b09c9a69210d03b949a7dac755cfb69543befd81711e0e5",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare1pct\\embeddings\\test_latent.csv": "83003d15cdb21f317fee324ee4e66f4207a3a901d4cc2a52163ea7264638db6b",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare1pct\\manifest.json": "34e9999275ac500a53477f84e8180caab884dd0e1d493e8895a3f1d8ba54cce0"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare5pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare5pct\\embeddings\\train_predictions.csv": "8446f1d3d4db9d9a15b0641106c6003d6f4e2e34c39cac248657678d6faa6dd3",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare5pct\\embeddings\\train_latent.csv": "36e7be9795b1eece0c1769a3088a895b337a18608044568f78a016fc67691466",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare5pct\\embeddings\\validation_predictions.csv": "3dc6b879ac9dac7cedbccc05ef44319e850ddd87d3af9664d03a2dc2e48c1a7b",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare5pct\\embeddings\\validation_latent.csv": "0d1c876cf7e9aedf087faf61e2e8938ba285959089f49bdfeb40ccc38ec9e047",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare5pct\\embeddings\\test_predictions.csv": "45a167dc6fc1578a5c33dabdcb250d4a0bcaec5fe6635f40b42f6440412a1838",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare5pct\\embeddings\\test_latent.csv": "0db4a3359a2c59925e8e6a0655deab6bee79894ad69bfe89b6280590965e8bd6",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare5pct\\manifest.json": "74241a83a219536aa9acaba06053c7d7cd8e5d311de57bd5fda053e472e43562"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare10pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare10pct\\embeddings\\train_predictions.csv": "c601706637d14e05679986546226f9acebf9c9fbc405fa2158c5bc9c9181f257",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare10pct\\embeddings\\train_latent.csv": "766404b5c34865007c1c5a4b836e8c65df72d2a258eca01865a9e1e2456ace85",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare10pct\\embeddings\\validation_predictions.csv": "48a1d7b2ccf47bf4377834044a286b9cdde01fdfeba20e22907da479955d1c92",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare10pct\\embeddings\\validation_latent.csv": "abdef9e34946aef98630fbe2df023ba4993fce07fcf701e4a1b4f72f26434674",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare10pct\\embeddings\\test_predictions.csv": "735c2fa207cdba54786e516ff58928ff39748b900b76559f269d7c3631ea1b8f",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare10pct\\embeddings\\test_latent.csv": "003509e448960a0e9f566ac6f8cf09b4ce5da5abf9069522f046648c12ead535",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rare10pct\\manifest.json": "ceff6110c14a09d986cc99c0ee6ce89d72f8deecbdb2bca36cfa8747ac5fff36"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rareall",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rareall\\embeddings\\train_predictions.csv": "eae6f6a72accada3ac6b08408be12e8a969bd7b4554175a97589a2839c7cd12d",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rareall\\embeddings\\train_latent.csv": "025bb66bef5ee6adbad2fc809de8f39dc81a521960991a66fe9ff01c7e85be9c",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rareall\\embeddings\\validation_predictions.csv": "090ea7e61d8fb5fae2f77840086aea37089e5c5b94b53ab0de8bcdc7495bd759",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rareall\\embeddings\\validation_latent.csv": "ac62bcb0218c368759a2a148752ebd026e24b3dcf16c679a56a3e0845777acee",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rareall\\embeddings\\test_predictions.csv": "34c6bd9839f0582d4930fdebf65a08b3d04d6dc5433656ddae660388bafb9285",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rareall\\embeddings\\test_latent.csv": "e2215a09534059546696dd4fecfa6975e3d73180f330720557809c35176b4c5a",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed43_pancreatic_d_cell_rareall\\manifest.json": "5ee04a6f916587047a8c80fd2cc42e500467415caee0e3d3cce57c0a51c28536"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare1pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare1pct\\embeddings\\train_predictions.csv": "41e01fc875ac435cff7e9bec9a66b7ba85743c40d7b6dad717837cb2d691a192",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare1pct\\embeddings\\train_latent.csv": "47b874eec3e8afb44a0f789f9932f3279d81dd3c4ecfd432070100ea88e7d4c3",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare1pct\\embeddings\\validation_predictions.csv": "503da8f95ac960a79530fb83b5b587e8592b57afb03e6ec72e63e2fbf43f5618",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare1pct\\embeddings\\validation_latent.csv": "8f4c297187af3db459c65de44e79d68b8d70c40e3284bb3ab29d2348f1749104",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare1pct\\embeddings\\test_predictions.csv": "706fbca92737f2621da00674ae8644c01ea2479de490ad70808c54a4000c14e8",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare1pct\\embeddings\\test_latent.csv": "ab9e6751c5ac430a52e37ec96e691521bfc95c3153de5c03c9b649e0a34eb922",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare1pct\\manifest.json": "58b2c033ba5b084a13fde1ff587cde0079d4c0983244334ab10ee0e3ce4e765b"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare5pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare5pct\\embeddings\\train_predictions.csv": "234207bf6fdb3a1bfa856ce81c695316d439171a4cbe95f703f0591ac1feccbf",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare5pct\\embeddings\\train_latent.csv": "025a9b6257866c46ef50d1f454a91566b5c490795b53242992045277b3fbbdd2",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare5pct\\embeddings\\validation_predictions.csv": "9c98b435100bdb09ef66f14175dae62d5f3c006661ab5ec2fc2c1cecc0e1cf53",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare5pct\\embeddings\\validation_latent.csv": "de7d957968495d0cd55f186ab2fa8cc8e50c468830d45022ac81f05413039da6",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare5pct\\embeddings\\test_predictions.csv": "3398300863858a547789a38c2ed125ddcf757ea3c34644668157a10d06a7b8d6",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare5pct\\embeddings\\test_latent.csv": "6385c57dd99c6f24c85ba77520c5d08abf2c3380f23d8d29afce401ad1b39396",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare5pct\\manifest.json": "b75108161ba69de52ae58b41c3186099ac660872cfddbb2ae861d280de925f62"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare10pct",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare10pct\\embeddings\\train_predictions.csv": "3752c34aedc363394b1fb5e8119a9046dc68532399e0949ec060c3d407e313cc",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare10pct\\embeddings\\train_latent.csv": "2d40ab3cf015fe930f56217de88ce25ea0d2fe78e0d6bc0da0525978ce2f8059",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare10pct\\embeddings\\validation_predictions.csv": "2c6a34f4796ea957615bf98034525f3349f4972cfac0cf47a1a0029295fc8301",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare10pct\\embeddings\\validation_latent.csv": "744e25cc99563ee48dfdcf3a9b65a886fea4c8d62e94e530ef2f182cc2140262",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare10pct\\embeddings\\test_predictions.csv": "b3b1878462e59b95cc6ffdb56cef58e80813de1bc9f39a70b7955b5f361e9b31",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare10pct\\embeddings\\test_latent.csv": "efe1032393a1f5a1d80258a3f6bfa4d5865cd71bcb94f9a5b8af90e915701941",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rare10pct\\manifest.json": "47012c284277a062b183f1bee4b53be1db57166ae0d3196b082b3ddfdf16d983"
+        }
+      },
+      {
+        "run_dir": "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rareall",
+        "files": {
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rareall\\embeddings\\train_predictions.csv": "ef5b4cabfdc1c29a8a19d3147f71da9e273298beaebb38bde151563397eba04b",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rareall\\embeddings\\train_latent.csv": "02c52e9c6a1246616d5fe9622c824a76aaf4bba81b08f7304f13e0f657290ba1",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rareall\\embeddings\\validation_predictions.csv": "cbea677983a181bec51202fe2d687c7db2b01328b7b8736c1ecbde72654c4e4b",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rareall\\embeddings\\validation_latent.csv": "ea601db153b9d60698bee3cb41ce17a25f08fb32aab148281cf723194a386d68",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rareall\\embeddings\\test_predictions.csv": "9955d0983e200e812f0a4ec7d3799dae31fb726ea5f2160508f669b913e62d93",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rareall\\embeddings\\test_latent.csv": "a19df062a92b20a92ccde4c052e81dd3265cea111fe725ae304ef0b5b901832a",
+          "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed44_pancreatic_d_cell_rareall\\manifest.json": "2842d52a5fbb17f89179275dd176d355771b6c4c2f0dc8bacc09bb8b539e90f0"
+        }
+      }
+    ]
+  },
+  "outputs": {
+    "results\\supplementary_ablation\\v1\\run_level.csv": "982f89889fb3ab36d4bddf732c20cd2fdfb1cebbd25ec96a1bc58793750270a1",
+    "results\\supplementary_ablation\\v1\\tables\\identity_collapsed.csv": "9e842b50a6f95ceee1d3991b79dc92f451a3f7a8c69c36b4767e8e882e012a9b",
+    "results\\supplementary_ablation\\v1\\tables\\seed_count_variant_units.csv": "1441d4317bf25c0206360bb628f1651467e5ac9d8f799a5b558400b6a5e590e1",
+    "results\\supplementary_ablation\\v1\\summary.csv": "898b334b41a1d719e653c807dbb6b618c1d8ae1afc92070d6a7681d837c6ea41",
+    "results\\supplementary_ablation\\v1\\tables\\dataset_equal_summary.csv": "e3e2f1ea986f2c375c3fef2f2094fc90ff865cd40b4aac2359b2e3121f6a4df5",
+    "results\\supplementary_ablation\\v1\\tables\\abstention_reasons.csv": "259982e210e1145ab017b4b98b48c2fdfb8c8f01b2b05e14fd30d4673a6d9a89",
+    "results\\supplementary_ablation\\v1\\analysis_notes.md": "2ab4b8f210fd769e5213689e6d4ab9a2f58dfc78c4e5fcfcaa7e81f707ce9c5f",
+    "logs\\supplementary_ablation\\supplementary_ablation_v1.log": "4563fabee55eacaece6e8a2f7a1489aceb7fc0f1423ff713d273d18bce217c28",
+    "results\\supplementary_ablation\\v1\\figures\\supplementary_ablation.png": "b4fce14b1d0248e85c42007da9a75ce19607734aae6ddffd1c98d69d0996dc4a",
+    "results\\supplementary_ablation\\v1\\figures\\supplementary_ablation.pdf": "dad4c0a998920e9ba918facba745ba4878ffe7dc9a99daaeb2e4d624963f90f1",
+    "results\\supplementary_ablation\\v1\\_script_manifest.jsonl": "47119ac73d818cc6ee21bd6a7c2a4b663d365f37431f1d971ff7d35760afbe2c"
+  }
+}

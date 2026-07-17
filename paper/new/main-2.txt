@@ -1,0 +1,558 @@
+    Risk-controlled post-hoc rescue of rare cell types in single-cell
+                    RNA-seq under label scarcity
+                                              Anonymous Authors
+                                                   Afﬁliation
+                                            corresponding@author
+
+
+                                                      Abstract
+
+      Motivation: Rare cell types in single-cell RNA-seq are systematically missed by semi-supervised clas-
+      siﬁers when few rare cells are labelled, and naively over-predicting the rare class inﬂates false positives
+      that can be more damaging than the missed cells. A method recovering rare cells with an explicit error-
+      rate bound is needed.
+      Results: scRareReﬁne is a post-hoc module reﬁning a frozen scANVI backbone via an anisotropic
+      prototype-membership score and a split-conformal threshold with three abstention gates, calibrated only
+      on held-out data to target a false-rescue rate (FFR) budget of α = 0.01 (empirical, not ﬁnite-sample).
+      Across six datasets, nine methods and three splits, it raises mean rare-cell F1 in the label-scarce regime
+      from 0.72 (scANVI) to 0.88 while keeping worst-case FFR at 0.0098, the only method achieving both.
+      It abstains to the backbone when rescue is unwarranted, so it does not underperform scANVI (dataset-
+      clustered bootstrap, sign-test p = 0.031). We characterise failure modes, including a recall ceiling for
+      entangled rare types.
+      Availability and implementation: Code and reproduction scripts are available at https://github.
+      com/scrarerefine/scrarerefine.
+      Contact: corresponding@author
+
+
+
+1    Introduction
+Single-cell RNA sequencing (scRNA-seq) routinely resolves the major cell types of a tissue, but the pop-
+ulations that matter most for a biological question are often the rare ones: a small dendritic-cell subset, a
+sparse endocrine population, or a handful of mast cells. Automated annotation methods trained with only a
+few labelled examples of such a type tend to absorb its cells into a transcriptionally adjacent majority class.
+Semi-supervised models such as scANVI (Xu et al., 2021), which combine a variational backbone with a
+small amount of label information, are a strong default for this task, yet they inherit the same difﬁculty:
+when the labelled budget for a rare type is small, the type is under-represented in the supervised signal and
+is systematically missed at test time.
+     A natural reﬂex is to make the classiﬁer more willing to predict the rare class. This does recover some
+missed cells, but it also relabels majority cells that merely sit near the rare population, inﬂating false pos-
+itives. In many downstream analyses a false rare call (e.g. reporting mast cells where there are none) is
+more costly than a missed one. The practical problem is therefore not simply “predict more rare cells” but
+“recover missed rare cells without paying an uncontrolled false-positive cost” — and to do so inductively,
+using only information available at training and calibration time.
+     We address this with scRareReﬁne, a lightweight post-hoc module that reﬁnes, rather than replaces,
+the predictions of a frozen scANVI backbone (Fig. 1). scRareReﬁne ﬁrst builds a class prototype for every
+
+                                                          1
+labelled training type in the scANVI latent space and scores each query cell by an anisotropic membership
+distance to the rare prototype, normalised by each class’s compactness. It then decides which cells to
+relabel through a calibration step performed entirely on a held-out validation set: a conformal threshold on
+validation non-rare scores controls the false-rescue rate, and three abstention gates — a separability safety
+net, a necessity guard, and a validation-adaptive candidate-rank selector — prevent the module from acting
+when rescue is unsafe or unnecessary. The reference prototypes come only from the training set and every
+threshold comes only from the validation set; test labels are used exclusively for ﬁnal evaluation.
+     The central design choice is to trade a little recall for a controlled false-rescue rate (FFR). We ﬁx the
+FFR budget to a publication-grade α = 0.01 across all datasets and never tune it, so that improvements in
+rare-cell F1 are never bought with an uncontrolled increase in false positives. Because the module abstains
+when its gates are not satisﬁed, it reduces exactly to the backbone on datasets where rescue is not warranted;
+its beneﬁt is concentrated in the genuinely label-scarce, genuinely-missed regime.
+
+Contributions.
+
+   1. A risk-controlled rescue module. scRareReﬁne is a fully inductive, post-hoc reﬁnement of a frozen
+      scANVI classiﬁer that recovers missed rare cells while holding the false-rescue rate below a ﬁxed
+      budget α = 0.01 (Section 2).
+
+   2. Label-scarce gains with controlled FFR. Across six datasets, nine methods and three splits, scRar-
+      eReﬁne attains the highest mean rare-cell F1 in the label-scarce regime (0.88 vs. 0.72 for scANVI)
+      and is the only method whose worst-case FFR stays ≤ α; it does not underperform scANVI in this
+      regime, and a dataset-clustered bootstrap over the six datasets conﬁrms the improvement is not driven
+      by any single dataset (sign-test p = 0.031) (Section 3.2).
+
+   3. Component analysis. A leave-one-out ablation shows that the adaptive candidate-rank selector is
+      the component that drives F1, the conformal threshold is what controls FFR, and the two gates act as
+      safety mechanisms that prevent regressions rather than as performance boosters (Section 3.3).
+
+   4. An honest analysis of the separability gate. Through a controlled stress test and a benchmark-wide
+      sensitivity sweep we show that the gate threshold is a deliberately conservative, pre-speciﬁed prior
+      whose risk axis is dataset-dependent, and we report where it is too cautious (Section 3.4).
+
+   5. Characterised failure modes. We delineate the regime in which the method is a no-op and its con-
+      crete limitations, including a recall ceiling for rare types that are geometrically entangled with a
+      majority population (Section 4).
+
+Related work. Reference-based annotation methods — logistic-regression CellTypist (Domínguez Conde
+et al., 2022), imbalance-aware scBalance (Cheng et al., 2023), and the interpretable transformer TOSICA
+(Chen et al., 2023) — transfer labels from a reference but do not provide an explicit false-positive guarantee
+for a target rare type, and their accuracy degrades when the rare type is sparsely labelled. Rare-population
+discovery methods such as scCAD (Xu et al., 2024) detect anomalous clusters in an unsupervised manner;
+mapping such discoveries onto a speciﬁc rare type incurs an inherent precision penalty. Prototype and
+semi-supervised approaches, including the scVI/scANVI family (Lopez et al., 2018; Xu et al., 2021) and
+prototype classiﬁers, motivate our latent-space prototype scoring but do not target the scarce-label rescue
+problem with risk control. Conformal prediction (Vovk et al., 2005; Angelopoulos and Bates, 2023) provides
+the distribution-free machinery we use to translate a validation calibration set into a bound on the false-
+rescue rate. Conformal inference has very recently been introduced to single-cell annotation by López-De-
+Castro et al. (2025), who use it to attach coverage-guaranteed prediction sets and to ﬂag out-of-distribution
+
+
+                                                      2
+Figure 1: Overview of scRareReﬁne. A frozen scANVI backbone produces a latent embedding and a
+prediction for every cell. On the training set we build class prototypes; for each query cell we compute an
+anisotropic rare-membership score. A validation set calibrates a conformal threshold and three abstention
+gates so that the false-rescue rate stays below α. At test time, candidate cells whose score exceeds the
+threshold are relabelled to the rare class. Reference prototypes use only training cells; all thresholds use
+only validation cells.
+
+
+cells; that work controls the marginal coverage of a prediction set over all cells, whereas scRareReﬁne uses
+conformal calibration for a different objective — a directed, per-type bound on the rate at which a speciﬁc
+rare type is falsely called. scRareReﬁne thus combines latent-space prototype geometry with conformal
+calibration to obtain a rescue that is both effective in the scarce regime and risk-controlled, a combination
+not offered by prior methods.
+
+
+2     System and methods
+2.1   Setup and inductive protocol
+Let a dataset contain cells with expression proﬁles and a single designated rare type r. We split cells
+into training, validation and test partitions using a batch-/donor-held-out scheme (target 70/15/15), so that
+validation and test cells come from donors unseen during training; this is the harder, more realistic inductive
+setting. A semi-supervised scANVI model (Xu et al., 2021), itself initialised from an scVI model (Lopez
+et al., 2018), is trained on the training partition with all majority cells labelled and only a limited budget
+of rare cells labelled. The labelled rare budget is max(5, ⌊p Ntrr ⌋) for a nominal fraction p, where Ntrr is
+the number of rare cells in the training partition; the ﬂoor of ﬁve reﬂects the minimum needed to estimate a
+prototype. The model yields, for every cell, a latent embedding z ∈ Rd and a predicted label. scRareReﬁne
+consumes these frozen outputs and never retrains the backbone.
+
+
+
+
+                                                      3
+2.2   Prototype-membership scoring
+                                                                                           P
+For each class c observed among the labelled training cells we form a prototype µc = |S1c | i∈Sc zi , the
+                                                                                             
+mean latent of its labelled cells Sc , and a robust radius rc = max mediani∈Sc ∥zi − µc ∥, ϵ (set to a
+conservative default when |Sc | < 3). For a query cell with embedding z we deﬁne an anisotropic rare-
+membership score
+                                                      ∥z − µ ∥ h i
+                                                                c
+                                  s(z) = softmaxc −                r ,                                (1)
+                                                             rc
+i.e. the rare-class component of a softmax over per-class distances normalised by each class’s compactness.
+The per-class normalisation lets the score adapt to classes of different spread and limits intrusion from a
+tight neighbouring majority cluster. We also deﬁne a train-only separability ratio
+
+                                                  minc̸=r ∥µr − µc ∥
+                                         ρ =     1 P                   ,                                    (2)
+                                                |Sr |  i∈Sr ∥zi − µr ∥
+
+the distance from the rare prototype to its nearest majority prototype divided by the mean rare intra-class
+radius; ρ measures how geometrically distinct the rare type is, using only training information.
+
+2.3   Algorithm: conformal calibration and abstention gates
+Given the frozen scores, scRareReﬁne decides which test cells to relabel using only validation labels. Three
+gates and one threshold are applied in sequence (Algorithm 1).
+
+Separability gate. If ρ < ρlow the rare and majority populations are too entangled for prototype rescue to
+be safe and the module abstains. We ﬁx ρlow = 1.3 as a dataset-independent prior (Section 3.4).
+
+Necessity guard. If the validation backbone already recovers the rare type — speciﬁcally if the number of
+validation rare cells it misses is below M — rescue is unnecessary and may only add noise, so the module
+abstains. We ﬁx M = 3, the minimum support needed for the validation-adaptive selection below to carry
+signal.
+
+Conformal threshold. Let the validation non-rare scores be s1 , . . . , sn . We set the threshold τ to the
+ﬁnite-sample (1 − α) conservative order statistic τ = s(k⋆ ) with k ⋆ = ⌈(1 − α)(n + 1)⌉ (and τ = +∞,
+i.e. no rescue, if k ⋆ > n). Under exchangeability of validation and test non-rare cells, relabelling only cells
+with s ≥ τ bounds the marginal probability that a non-rare cell is rescued at α.
+
+Validation-adaptive candidate rank. A cell is a candidate only if the rare prototype is among its k
+nearest prototypes (isotropic Euclidean rank ≤ k) and its backbone label is not already rare. We choose
+k ∈ {1, 2, 3} on validation as the value that maximises validation rare-cell F1 subject to a Wilson 95%
+upper bound on the validation FFR not exceeding α, breaking ties toward the smaller (more conservative)
+k. Using the Wilson upper bound rather than a point estimate guards against the validation/test distribution
+shift induced by donor-held-out splits.
+
+Rescue rule. A test cell is relabelled to r iff it is a candidate (rank ≤ k) and s ≥ τ . All other predictions
+are left unchanged.
+
+
+
+
+                                                       4
+Algorithm 1 scRareReﬁne conformal rescue (inductive)
+Require: frozen latents and predictions for train/val/test; rare type r; budget α
+ 1: ﬁt prototypes {µc }, radii {rc }, separability ρ on labelled train cells
+ 2: if ρ < ρlow then return backbone predictions                                           ▷ separability gate
+ 3: end if
+ 4: vmiss ← #validation rare cells missed by backbone
+ 5: if vmiss < M then return backbone predictions                                           ▷ necessity guard
+ 6: end if
+ 7: compute scores Eq. (1) for val and test; set τ from val non-rare scores
+ 8: choose k ∈ {1, 2, 3} maximising val rare-F1 s.t. Wilson-upper val-FFR ≤ α
+ 9: for each test cell: relabel to r if rank≤ k and s ≥ τ
+10: return reﬁned test predictions
+
+
+
+2.4   False-rescue rate
+We quantify the cost of rescue by the false-rescue rate,
+
+                                         {non-rare test cells relabelled to r}
+                              FFR =                                            .
+                                                {non-rare test cells}
+
+The conformal threshold and gates are designed so that FFR is controlled at the ﬁxed budget α = 0.01.
+Because validation and test cells come from different donors under our split, this control provides marginal
+(not per-dataset conditional) coverage and is empirical rather than a strict ﬁnite-sample guarantee; we report
+FFR with raw counts and treat α as a ﬁxed prior, never tuned per dataset.
+
+2.5   Implementation
+scRareReﬁne is implemented as a lightweight post-processing layer in Python (NumPy/SciPy) that con-
+sumes only the frozen latent embeddings and label predictions exported by an existing scANVI/scVI model;
+it requires no modiﬁcation to, or retraining of, the backbone, and adds negligible runtime (prototype ﬁtting
+and scoring are O(Ntrain d) and O(Ntest Cd) for C classes and latent dimension d). Benchmarking used
+scvi-tools for the scANVI/scVI backbone and standard scientiﬁc-Python tooling for prototypes, conformal
+calibration and evaluation; comparator methods used their respective published implementations. All splits,
+seeds, per-run manifests and the exact conﬁguration used for every reported number are released with the
+code (Supplementary S1); see the Availability and implementation statement in the Abstract for the reposi-
+tory location.
+
+
+3     Results
+3.1   Experimental setup
+We evaluate on six scRNA-seq datasets, each with a designated rare type: human immune dendritic cells
+(ASDC), Baron pancreas (gamma) (Baron et al., 2016), an integrated human pancreas (endothelial), and
+three Tabula Sapiens subsets (Tabula Sapiens Consortium, 2022) — lung (lymphatic endothelial), small
+intestine (tuft) and stomach (mast). For every dataset we use a donor-held-out 70/15/15 split and vary
+the labelled rare fraction over {0.01, 0.05, 0.10, all}, repeating each conﬁguration over three random seeds
+(42, 43, 44). We compare scRareReﬁne against eight methods that read the same split and the same labelled
+subset: the scANVI backbone, a k-NN classiﬁer on the scANVI latent, CellTypist, scBalance, ProtoCloud,
+
+                                                      5
+Figure 2: Main result. (a) Mean rare-cell F1 in the label-scarce regime (p ≤ 0.10), averaged over six
+datasets, three fractions and three seeds. (b) Worst-case FFR over the whole benchmark; the dashed line is
+the budget α = 0.01. scRareReﬁne is the only method that combines the highest scarce-regime F1 with a
+worst-case FFR ≤ α. † HiCat is transductive.
+
+Table 1: Per-dataset rare-cell F1 in the label-scarce regime (mean over fractions p ≤ 0.10 and three
+seeds). FFRmax is the worst-case false-rescue rate for scRareReﬁne over the same conﬁgurations.
+
+              Dataset (rare type)           scANVI     Best baseline      scRareReﬁne    FFRmax
+              immune dendritic (ASDC)        0.59        0.72 (kNN)          0.94         0.0010
+              Baron pancreas (gamma)         0.53        0.46 (kNN)          0.66         0.0098
+              lung (lymphatic EC)            0.72        0.92 (kNN)          0.98         0.0029
+              small intestine (tuft)         0.98        0.98 (kNN)          0.98         0.0005
+              stomach (mast)                 0.61     0.49 (CellTypist)      0.72         0.0002
+              integrated pancreas (endo.)    0.89        0.98 (kNN)          1.00         0.0006
+
+
+scCAD, TOSICA, and HiCat. HiCat is transductive (its dimensionality reduction is ﬁt on combined train
+and test cells) and is therefore reported as an upper-bound reference rather than a fair inductive competitor;
+TOSICA is run with its default pathway conﬁguration. We report rare-cell F1 and the false-rescue rate
+(FFR), aggregated as mean ± standard deviation over seeds. Because the labelled budget is max(5, ⌊p Ntrr ⌋),
+several nominal fractions collapse to the same labelled set on small-rare datasets; we therefore report the
+label-scarce comparison over the 15 distinct labelled conﬁgurations rather than the 18 nominal ones.
+
+3.2   scRareReﬁne improves rare-cell F1 in the scarce regime with controlled FFR
+Across the label-scarce regime scRareReﬁne attains the highest mean rare-cell F1 of all nine methods
+(Fig. 2a): 0.88, against 0.72 for the scANVI backbone and 0.73 for the next-best inductive method (k-
+NN on the scANVI latent); the remaining methods range from 0.49 to 0.65, and the transductive HiCat
+reference is lower (0.19) because it returns no rare cells on several datasets. Per dataset (Table 1), scRareRe-
+ﬁne is the best or tied-best inductive method on all six datasets, with the largest gains where the backbone
+is weakest (immune dendritic cells, 0.59 → 0.94; stomach mast cells, 0.61 → 0.72).
+    This F1 advantage is not bought with an uncontrolled false-positive cost. scRareReﬁne is the only
+method whose worst-case FFR over the whole benchmark stays within budget (0.0098 ≤ α, Fig. 2b); by
+contrast scCAD (0.045), scBalance (0.016) and TOSICA (0.036) exceed it. A paired analysis over the
+
+                                                       6
+Figure 3: Per-dataset rescue in the label-scarce regime (p ≤ 0.10, mean over three seeds). (a) scRareRe-
+ﬁne rare-cell F1 for each dataset × labelled-fraction cell. (b) Improvement over the scANVI backbone (∆
+F1 = scRareReﬁne − scANVI); every cell is non-negative, so the module never lowers F1 relative to the
+backbone, and the largest gains fall on the sparsely labelled columns of the datasets the backbone handles
+worst (immune dendritic, lung, integrated pancreas at p = 0.01).
+
+
+54 scarce conﬁgurations (six datasets × three distinct fractions × three seeds) shows that scRareReﬁne
+does not underperform the backbone: 29 wins, 25 ties — the ties are abstentions — and 0 losses, with a
+mean F1 improvement of +0.16 (per-conﬁguration bootstrap 95% CI [+0.09, +0.24], one-sided Wilcoxon
+p ≤ 1.3 × 10−6 treating all 54 conﬁgurations as independent). Because seeds and collapsed fractions
+within a dataset are correlated, we treat that test as liberal and additionally run a dataset-clustered bootstrap
+that resamples whole datasets (the six biologically independent units) rather than conﬁgurations: against
+scANVI this gives a mean ∆F1 of +0.16 with a 95% CI of [+0.08, +0.25] (20 000 resamples) and, at the
+coarser per-dataset level, scRareReﬁne improves scANVI on 5/6 datasets with 0 losses (one exact tie, on
+the already-saturated small-intestine tuft dataset; sign-test p = 0.031). The two tests agree in direction and
+magnitude; we report both because the dataset-clustered version is the more conservative unit of resampling
+given the correlation structure (Supplementary S2). Because the labelled budget has a ﬂoor of ﬁve cells, the
+18 nominal scarce conﬁgurations collapse to 15 distinct ones; over these, scRareReﬁne beats the majority
+of baselines in 15/15 and is the single best method in 14/15 (Supplementary S3).
+    Figure 3 resolves the per-method summary of Fig. 2 into the scRareReﬁne F1 grid and its improvement
+over the backbone: the gains concentrate in the most label-scarce columns of the datasets the backbone
+handles worst, and no cell is negative. Figure 4 shows the same effect as an across-conﬁguration distribution
+— scRareReﬁne attains the highest and tightest F1 median (0.96) and lacks the long lower tail that the
+backbone and baselines inherit from the conﬁgurations on which they miss the rare type.
+
+3.3   Component ablation
+In the label-scarce regime the full method raises mean rare-cell F1 from 0.72 (backbone) to 0.88 (Fig. 5, left).
+Removing each component in turn separates two roles, and each ablated variant is itself a legitimate rescue
+baseline (an alternative post-hoc design one could have shipped instead of the full method), so we read this
+panel as a baseline comparison rather than only a component audit. The validation-adaptive candidate-rank
+
+                                                       7
+Figure 4: Across-conﬁguration distribution of rare-cell F1 in the label-scarce regime. Each box sum-
+marises a method over 54 scarce conﬁgurations (six datasets × three fractions × three seeds); points are
+individual conﬁgurations. scRareReﬁne has the highest and tightest F1 distribution (median 0.96), while the
+backbone and the strongest baselines carry long lower tails from the datasets and fractions on which they
+miss the rare type. † HiCat is transductive.
+
+
+selector is the only component that materially raises F1: replacing it with the most conservative ﬁxed rank
+(k = 1) lowers mean F1 from 0.88 to 0.87. The conformal threshold and the two gates, by contrast, barely
+change mean F1 but are what keep the method safe. Removing the conformal threshold – an uncalibrated-
+threshold rescue baseline – leaves mean F1 essentially unchanged (0.88) yet pushes the worst-case FFR to
+0.0165, above budget; removing the separability gate – an ungated rescue baseline that ﬁres regardless of
+how entangled the rare type is with its neighbours – even raises mean F1 (to 0.90) but likewise breaks the
+budget (worst-case FFR 0.0153); and removing the necessity guard leaves the benchmark mean unchanged
+(0.88, worst-case FFR 0.0098) but causes per-dataset regressions on already-saturated datasets. Each of
+these three baselines is thus dominated by the full method once FFR is held to budget: they either match or
+exceed scRareReﬁne’s F1 but violate α, or match its FFR while regressing F1 on individual datasets – no
+ablated variant dominates the full method on both axes simultaneously. The rank-sensitivity panel (Fig. 5,
+right) conﬁrms the value of adapting k: every ﬁxed choice is dominated in F1 by the adaptive selector (k=1:
+0.87, k=2: 0.85, k=3: 0.84 vs. adaptive 0.88), and the most permissive ﬁxed rank (k=3) – a ﬁxed-rank-3
+rescue baseline – drives the worst-case FFR to 0.046, far above budget, whereas the adaptive selector stays
+within it (0.0098). In summary, the adaptive rank drives F1, the conformal threshold controls FFR, and the
+two gates prevent regressions rather than boosting F1; and against every one of these four ablated-variant
+baselines, the full method is the only conﬁguration that stays within the FFR budget without giving up F1.
+
+3.4   The separability gate is a conservative, dataset-dependent prior
+The separability gate uses a ﬁxed, dataset-independent threshold (ρlow = 1.3). We probe this choice from
+two directions. First, a controlled semi-synthetic stress test progressively entangles a rare population (lung
+lymphatic endothelial cells) toward its nearest majority type; rescue without the gate stays within the FFR
+budget down to separability ≈ 0.76 and produces a single marginal violation (18 false rescues out of 1716,
+
+
+                                                      8
+Figure 5: Ablation (label-scarce regime), read as a baseline comparison. Each leave-one-out variant
+is an alternative rescue design (an uncalibrated-threshold, ungated, or ﬁxed-rank baseline) rather than only
+a component audit. Left: the four leave-one-out variants, per dataset (F1 top row, worst-case FFR bottom
+row); the dashed line is the budget α = 0.01. Right: candidate-rank sensitivity (ﬁxed k ∈ {1, 2, 3} baselines
+vs. the validation-adaptive selector), mean F1 and worst-case FFR. Removing the conformal threshold or
+the separability gate barely changes — or even raises — mean F1 but breaks the FFR budget; the adaptive
+rank is the component that raises F1; a ﬁxed rank = 3 over-ﬁres FFR. No ablated-variant baseline dominates
+the full method on both F1 and FFR simultaneously.
+
+
+FFR 0.0105) only at the lowest separability (≈ 0.69), well below the gate (Fig. 6). Second, a benchmark-
+wide sweep of the gate threshold (Supplementary S4) shows that 1.3 is the smallest threshold that keeps the
+worst-case FFR within budget on real data: lowering it to ≤ 1.0 raises mean scarce-regime F1 by 0.024
+(0.878 → 0.902) but admits two FFR violations (worst-case 0.0153, on the low-separability Baron-pancreas
+conﬁgurations at ρ ≈ 1.22), whereas raising it to 1.6 only sacriﬁces F1 (0.878 → 0.838) with no further FFR
+beneﬁt. The two experiments disagree on where rescue becomes unsafe (≈ 1.22 on real Baron pancreas vs.
+≈ 0.69 on the synthetic sweep), which is the central observation: separability alone does not monotonically
+determine rescue risk. We therefore present 1.3 not as a located collapse boundary but as a deliberately
+conservative, pre-speciﬁed prior chosen by the FFR constraint rather than tuned for F1 — lowering it would
+in fact raise mean F1 — that occasionally abstains where rescue would have been safe.
+
+3.5   Qualitative rescue in latent space
+We visualise the scANVI latent embedding with UMAP (McInnes et al., 2018).
+    Fig. 7 visualises the rescue on immune dendritic cells in the scANVI latent space. Of the true rare cells,
+the backbone recovers those forming a compact cluster (recall 0.72). scRareReﬁne relabels 23 further cells
+lying at the edge of this cluster, raising recall to 0.90 at precision 0.99, with a single false rescue. The 13 rare
+cells that remain missed are scattered far from the rare prototype; admitting them would require widening
+the candidate pool past the FFR budget. This is the geometric recall ceiling discussed in Section 4.
+
+
+4     Discussion
+scRareReﬁne is a conservative, risk-controlled rescuer, and its value is concentrated in a speciﬁc regime
+rather than uniform across all settings. We make this scope explicit.
+
+The method is conditional by design. Two abstention gates cause scRareReﬁne to return the unmodiﬁed
+backbone prediction whenever the rare and majority prototypes are too entangled or the validation backbone
+already recovers the rare type. On datasets where the backbone is already saturated, the module therefore
+reduces exactly to scANVI — it neither helps nor harms — and its beneﬁt is restricted to the genuinely label-
+scarce, genuinely missed regime. This conditional behaviour is what underwrites the “never underperforms
+
+
+                                                         9
+Figure 6: Separability-gate analysis. Controlled semi-synthetic stress test that progressively entangles a
+rare type toward its nearest majority population, read from right to left as entanglement increases (the x-axis
+shows separability ρ on its natural, increasing scale). Ungated rescue stays FFR-safe well below the gate at
+ρ = 1.3 and produces only a single marginal violation at the lowest separability, on the left edge of the plot;
+the gate abstains (ρ < 1.3) before rescue reaches that point. The budget α = 0.01 is the dashed line.
+
+
+the backbone” property: it holds by construction of the abstention mechanism, so the paired comparison
+should be read as evidence that rescue, when it ﬁres, does not hurt, rather than as an unconditional dominance
+claim.
+
+A recall ceiling for entangled rare types. For a rare type that is transcriptionally interleaved with a
+majority population, prototype-distance rescue has an intrinsic ceiling: a substantial fraction of true rare
+cells fall at candidate rank ≥ 3, where admitting them would require widening the candidate pool past the
+point at which the FFR budget is exceeded. The adaptive-rank selector correctly refuses to do so, so recall
+plateaus (Fig. 7). Breaking this ceiling likely requires expression-side signals (e.g. marker genes) and is left
+to future work; we report below that a ﬁrst attempt at incorporating such signals did not succeed under our
+inductive constraints, so this is a harder problem than it may appear.
+
+Marker-gene validation did not help. Before converging on the purely embedding-based prototype-
+and-conformal design used in the main pipeline, we implemented and evaluated two earlier strategies
+that additionally scored rescue candidates against curated marker-gene expression: a marker-gated vari-
+ant (gate_marker) and a linear score-fusion variant (fusion) that combined the prototype-membership
+score with a marker-expression score. On our development data, all three strategies – prototype-only gat-
+ing, marker-gated, and fusion – converged to the same rare-cell F1, and the marker signal changed neither
+the selected candidates nor the outcome. We also found that the natural marker-threshold analogue of our
+conformal calibration is not informative in this setting: the validation-calibrated marker threshold collapses
+to the least restrictive value the search considers (equivalent to no ﬁltering), and the corresponding test-set
+false-rescue rate at that threshold is zero, which reﬂects an already-clean candidate set from the embedding
+geometry rather than any discriminative contribution from marker expression. We disclose this negative re-
+sult rather than omitting it: it indicates that, at least for the rare-vs-majority pairs in our six datasets, curated
+marker panels are largely redundant with the scANVI latent geometry once anisotropic prototype distance is
+used, and that closing the recall ceiling above will likely require a different source of signal (e.g. pathway-
+
+
+                                                         10
+level scores, spatial context, or a learned rather than curated marker set) rather than a simple threshold or
+linear fusion on top of the existing markers. This experiment used only training/validation partitions and is
+consistent with the inductive, test-blind protocol used throughout; no marker-based mechanism is part of the
+released method.
+
+FFR control is marginal and empirical, and can sit near the boundary. The conformal threshold pro-
+vides marginal FFR control under validation calibration, not a per-dataset conditional or strict ﬁnite-sample
+guarantee on test: under donor-held-out splits the exchangeability assumption is only approximately sat-
+isﬁed, and on one dataset (Baron pancreas) the worst-case test FFR reaches the α = 0.01 budget. That
+worst case rests on the dataset with the fewest rare cells and thus the widest binomial uncertainty, so the true
+operating point could sit on either side of the budget; we mitigate this with a Wilson upper bound for rank
+selection and report all FFR values with raw counts, but the budget should be read as empirical, marginal
+control under distribution shift rather than a guarantee.
+
+Seed sensitivity at extreme scarcity. At the smallest budget (ﬁve labelled rare cells) the improvement on
+one dataset is positive on average but unstable across seeds, mirroring the variance of the backbone itself; the
+instability disappears once at least ten rare cells are labelled. We therefore do not claim stable improvement
+at the ﬁve-label point on that dataset.
+
+Evaluation caveats. Because the labelled budget has a ﬂoor of ﬁve, several nominal label fractions col-
+lapse to the same labelled set on small-rare datasets; we report distinct conﬁgurations to avoid double-
+counting. The per-conﬁguration signiﬁcance test pairs predictions by (dataset, fraction, seed); because these
+cells are correlated across seeds and near-duplicated across collapsed fractions, we treat that test as liberal
+and use a dataset-clustered bootstrap (resampling whole datasets) as our primary evidence instead (Supple-
+mentary S2). With only six datasets, the dataset-clustered analysis has limited power in absolute terms – the
+best it can report is a sign-test p = 0.031 – and we report it precisely because it is the honest, conservative
+unit of replication rather than because it is a strong result on its own. We evaluate six predominantly human
+single-cell datasets and do not test cross-species or disease-state transfer, both of which would further stress
+the exchangeability assumption. Finally, scRareReﬁne operates on scANVI embeddings; whether the same
+conformal rescue adds value on top of single-cell foundation-model embeddings is untested.
+
+Relation to conformal single-cell annotation. López-De-Castro et al. (2025) bring conformal prediction
+to single-cell annotation to produce prediction sets with guaranteed marginal coverage and to detect out-of-
+distribution cells. scRareReﬁne shares the conformal calibration machinery but targets a different quantity:
+rather than covering the true label of every cell, it bounds the rate at which one designated rare type is falsely
+assigned. The two are complementary — a coverage-guaranteed prediction set quantiﬁes uncertainty for all
+cells, whereas a directed false-rescue bound is what a practitioner needs when the decision is speciﬁcally
+whether to trust newly reported rare cells.
+
+Outlook. The combination of latent-space prototype geometry with conformal calibration offers a gen-
+eral template for risk-controlled post-hoc reﬁnement. Natural extensions include expression-side scoring
+to address the recall ceiling, batch-conditional calibration to tighten FFR control under donor shift, and
+application on top of foundation-model embeddings.
+
+
+
+
+                                                       11
+5    Conclusion
+We introduced scRareReﬁne, a fully inductive post-hoc module that reﬁnes a frozen scANVI classiﬁer to
+recover rare cell types under label scarcity while keeping the false-rescue rate below a ﬁxed budget. By
+scoring cells with training-only prototype distances and gating relabelling with validation-only conformal
+calibration, the method raises rare-cell F1 in the label-scarce regime — the only method in our benchmark to
+do so with a controlled worst-case false-rescue rate — and abstains when rescue is not warranted, a property
+that holds by construction rather than as an unconditional dominance claim (§4, “The method is conditional
+by design”). We further provided an honest analysis of its conservative separability gate, its failure modes,
+and a prior internal negative result on marker-gene fusion. Risk-controlled reﬁnement is a practical way
+to recover rare populations without paying an uncontrolled false-positive cost, and we hope it encourages
+reporting the operating point, not only the accuracy, of rare-cell annotation methods.
+    In summary: (i) scRareReﬁne is a post-hoc, inductive module that rescues missed rare cells on top
+of a frozen scANVI classiﬁer without retraining the backbone; (ii) it couples training-only prototype-
+membership scoring with validation-only conformal calibration and three abstention gates to hold the false-
+rescue rate below a ﬁxed budget α = 0.01; (iii) in the label-scarce regime it raises mean rare-cell F1 from
+0.72 to 0.88 across six datasets while being the only method with worst-case FFR ≤ α, and it abstains –
+returning the backbone – when rescue is unsafe; and (iv) the leave-one-out baseline comparison attributes
+F1 gains to the validation-adaptive candidate rank and FFR control to the conformal threshold and gates,
+while a controlled separability sweep shows the gate is a deliberately conservative, not an over-ﬁtted, prior.
+
+
+Supplementary material
+Supplementary Material (S1–S8: reproduction protocol, dataset-clustered and per-conﬁguration signiﬁcance
+tables, distinct labelled conﬁgurations, and the separability-gate threshold sweep) is provided as a standalone
+document, supplement.pdf, distributed alongside this manuscript and referenced throughout the text as
+“Supplementary Sn”.
+
+
+Acknowledgements
+We thank the maintainers of the public single-cell atlases used in this study.
+
+
+Funding
+[To be completed.]
+
+
+References
+Anastasios N Angelopoulos and Stephen Bates. Conformal prediction: A gentle introduction. Foundations
+  and Trends in Machine Learning, 16(4):494–591, 2023. doi: 10.1561/2200000101.
+
+Maayan Baron, Adrian Veres, Samuel L Wolock, Aubrey L Faust, Renaud Gaujoux, Amedeo Vetere, et al.
+ A single-cell transcriptomic map of the human and mouse pancreas reveals inter- and intra-cell population
+ structure. Cell Systems, 3(4):346–360, 2016. doi: 10.1016/j.cels.2016.08.011.
+
+
+
+
+                                                      12
+Jiawei Chen, Hao Xu, Wanyu Tao, Zhaoxiong Chen, Yuxuan Zhao, and Jing-Dong J Han. Transformer
+   for one stop interpretable cell type annotation. Nature Communications, 14(1):223, 2023. doi: 10.1038/
+   s41467-023-35923-4.
+
+Yuqi Cheng, Xingyu Fan, Jianing Zhang, and Yu Li. A scalable sparse neural network framework for rare
+  cell type annotation of single-cell transcriptome data. Communications Biology, 6(1):545, 2023. doi:
+  10.1038/s42003-023-04928-6.
+
+C Domínguez Conde, C Xu, L B Jarvis, D B Rainbow, S B Wells, T Gomes, et al. Cross-tissue immune cell
+  analysis reveals tissue-speciﬁc features in humans. Science, 376(6594):eabl5197, 2022. doi: 10.1126/
+  science.abl5197.
+
+Romain Lopez, Jeffrey Regier, Michael B Cole, Michael I Jordan, and Nir Yosef. Deep generative
+  modeling for single-cell transcriptomics. Nature Methods, 15(12):1053–1058, 2018. doi: 10.1038/
+  s41592-018-0229-2.
+
+Marcos López-De-Castro, Alberto García-Galindo, José González-Gomariz, and Rubén Armañanzas. Con-
+ formal inference for reliable single cell RNA-seq annotation. Bioinformatics, 41(10):btaf521, 2025. doi:
+ 10.1093/bioinformatics/btaf521.
+
+Leland McInnes, John Healy, and James Melville. UMAP: Uniform manifold approximation and projection
+  for dimension reduction. arXiv preprint arXiv:1802.03426, 2018. doi: 10.48550/arXiv.1802.03426.
+
+Tabula Sapiens Consortium. The Tabula Sapiens: A multiple-organ, single-cell transcriptomic atlas of
+  humans. Science, 376(6594):eabl4896, 2022. doi: 10.1126/science.abl4896.
+
+Vladimir Vovk, Alexander Gammerman, and Glenn Shafer. Algorithmic Learning in a Random World.
+  Springer, 2005. doi: 10.1007/b106715.
+
+Chenling Xu, Romain Lopez, Edouard Mehlman, Jeffrey Regier, Michael I Jordan, and Nir Yosef. Prob-
+  abilistic harmonization and annotation of single-cell transcriptomics data with deep generative models.
+  Molecular Systems Biology, 17(1):e9620, 2021. doi: 10.15252/msb.20209620.
+
+Yunpei Xu, Shaokai Wang, Qilong Feng, Jiazhi Xia, Yaohang Li, Hong-Dong Li, and Jianxin Wang. scCAD:
+  Cluster decomposition-based anomaly detection for rare cell identiﬁcation in single-cell expression data.
+  Nature Communications, 15(1):7561, 2024. doi: 10.1038/s41467-024-51891-9.
+
+
+
+
+                                                    13
+Figure 7: Rescue in the scANVI latent space (immune dendritic cells). Cells missed by scANVI that
+lie near the rare cluster are recovered (recall 0.72 → 0.90), whereas geometrically distant rare cells remain
+missed, illustrating the recall ceiling discussed in Section 4.
+
+
+
+
+                                                     14
+

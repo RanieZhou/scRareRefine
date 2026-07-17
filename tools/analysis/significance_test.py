@@ -1,23 +1,11 @@
-"""Paired significance tests for scRareRefine comparisons.
+"""Dataset-level paired inference for scRareRefine comparisons.
 
-Input:
-    results/comparison/comparison_summary.csv
-
-Pairing unit:
-    (dataset, rare_train_size, seed)
-
-For each baseline, this script compares scRareRefine against the baseline on
-rare_f1 using:
-    - win / tie / loss counts,
-    - paired one-sided Wilcoxon signed-rank test (H1: scRareRefine > baseline),
-    - bootstrap 95% CI of mean paired Delta F1, resampling paired units.
-
-Important interpretation:
-    The paired units are not fully independent because seeds from the same
-    dataset/budget are correlated, and some rare-label budgets collapse to the
-    same effective number of rare labels. Use p-values as directional evidence
-    and report effect sizes plus confidence intervals in the paper.
+Run-level differences on matched ``(dataset, rare_train_size, seed)`` units are
+retained for descriptive win/tie/loss counts. Statistical inference treats the
+dataset as the independent unit: paired differences are averaged within each
+dataset, and confidence intervals resample those dataset effects as clusters.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -28,76 +16,239 @@ from scipy import stats
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 SUMMARY_CSV = ROOT / "results" / "comparison" / "comparison_summary.csv"
+LABEL_COUNT_CSV = (
+    ROOT
+    / "results"
+    / "comparison"
+    / "split_rare_nonrare_by_rts_long_train_label_ratio.csv"
+)
 OUT_CSV = ROOT / "results" / "comparison" / "significance_test.csv"
+EFFECTS_CSV = ROOT / "results" / "comparison" / "significance_dataset_effects.csv"
 
 OUR = "scRareRefine"
-BASELINES = ["scANVI", "kNN", "CellTypist", "scBalance", "ProtoCloud", "HiCat", "scCAD", "TOSICA"]
+BASELINES = [
+    "scANVI",
+    "kNN",
+    "CellTypist",
+    "scBalance",
+    "ProtoCloud",
+    "HiCat",
+    "scCAD",
+    "TOSICA",
+]
 TRANSDUCTIVE = {"HiCat"}
 SCARCE = ["0.01", "0.05", "0.10"]
 KEY = ["dataset", "rare_train_size", "seed"]
+TIE_TOL = 1e-9
+BOOTSTRAP_ITERATIONS = 10000
 
 
 def _paired(df: pd.DataFrame, base: str) -> pd.DataFrame:
     ours = df[df.method == OUR].set_index(KEY)["rare_f1"]
     baseline = df[df.method == base].set_index(KEY)["rare_f1"]
-    return pd.concat([ours.rename("our"), baseline.rename("base")], axis=1).dropna()
+    paired = pd.concat([ours.rename("our"), baseline.rename("base")], axis=1).dropna()
+    paired["delta"] = paired["our"] - paired["base"]
+    return paired.reset_index()
 
 
-def _boot_ci(delta: np.ndarray, n: int = 10000, seed: int = 0) -> tuple[float, float]:
-    if len(delta) == 0:
+def _dataset_effects(paired: pd.DataFrame) -> pd.Series:
+    return paired.groupby("dataset", sort=True)["delta"].mean()
+
+
+def _assert_complete_grid(
+    paired: pd.DataFrame, expected_rts: set[str], expected_seeds: set[int], base: str
+) -> None:
+    expected = {(rts, seed) for rts in expected_rts for seed in expected_seeds}
+    for dataset, group in paired.groupby("dataset"):
+        observed = set(
+            zip(group["rare_train_size"].astype(str), group["seed"].astype(int))
+        )
+        if observed != expected:
+            missing = sorted(expected - observed)
+            extra = sorted(observed - expected)
+            raise ValueError(
+                f"Incomplete matched grid for {base}/{dataset}: missing={missing}, extra={extra}"
+            )
+
+
+def _cluster_boot_ci(
+    dataset_effects: np.ndarray, n: int = BOOTSTRAP_ITERATIONS, seed: int = 0
+) -> tuple[float, float]:
+    effects = np.asarray(dataset_effects, dtype=float)
+    if len(effects) == 0:
         return (np.nan, np.nan)
     rng = np.random.default_rng(seed)
-    idx = rng.integers(0, len(delta), size=(n, len(delta)))
-    means = delta[idx].mean(axis=1)
+    idx = rng.integers(0, len(effects), size=(n, len(effects)))
+    means = effects[idx].mean(axis=1)
     return float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-def _test_block(df: pd.DataFrame, label: str) -> list[dict]:
+def _sign_test(effects: np.ndarray) -> tuple[int, int, int, float]:
+    effects = np.asarray(effects, dtype=float)
+    positive = int((effects > TIE_TOL).sum())
+    zero = int((np.abs(effects) <= TIE_TOL).sum())
+    negative = int((effects < -TIE_TOL).sum())
+    n_nonzero = positive + negative
+    p_value = (
+        float(
+            stats.binomtest(positive, n_nonzero, p=0.5, alternative="two-sided").pvalue
+        )
+        if n_nonzero
+        else np.nan
+    )
+    return positive, zero, negative, p_value
+
+
+def _wilcoxon_dataset(effects: np.ndarray) -> tuple[float, float]:
+    nonzero = np.asarray(effects, dtype=float)
+    nonzero = nonzero[np.abs(nonzero) > TIE_TOL]
+    if len(nonzero) == 0:
+        return np.nan, np.nan
+    try:
+        result = stats.wilcoxon(nonzero, alternative="two-sided", zero_method="wilcox")
+        return float(result.statistic), float(result.pvalue)
+    except ValueError:
+        return np.nan, np.nan
+
+
+def _lodo_range(effects: np.ndarray) -> tuple[float, float]:
+    effects = np.asarray(effects, dtype=float)
+    if len(effects) < 2:
+        return np.nan, np.nan
+    means = np.asarray([np.delete(effects, i).mean() for i in range(len(effects))])
+    return float(means.min()), float(means.max())
+
+
+def _collapse_effective_counts(
+    paired: pd.DataFrame, label_counts: pd.DataFrame
+) -> pd.DataFrame:
+    counts = label_counts[
+        (label_counts["split"] == "train")
+        & label_counts["rare_train_size"].isin(SCARCE)
+    ][KEY + ["train_labeled_rare"]].copy()
+    merged = paired.merge(counts, on=KEY, how="left", validate="one_to_one")
+    if merged["train_labeled_rare"].isna().any():
+        missing = merged.loc[merged["train_labeled_rare"].isna(), KEY]
+        raise ValueError(
+            f"Missing effective rare-label counts for:\n{missing.to_string(index=False)}"
+        )
+    return (
+        merged.groupby(["dataset", "seed", "train_labeled_rare"], as_index=False)[
+            "delta"
+        ]
+        .mean()
+        .rename(columns={"train_labeled_rare": "effective_rare_labels"})
+    )
+
+
+def _analysis_row(
+    paired: pd.DataFrame,
+    dataset_effects: pd.Series,
+    label: str,
+    base: str,
+    analysis: str,
+    seed: int,
+) -> dict:
+    run_delta = paired["delta"].to_numpy(dtype=float)
+    effects = dataset_effects.to_numpy(dtype=float)
+    lo, hi = _cluster_boot_ci(effects, seed=seed)
+    d_pos, d_zero, d_neg, sign_p = _sign_test(effects)
+    wilcoxon_stat, wilcoxon_p = _wilcoxon_dataset(effects)
+    lodo_lo, lodo_hi = _lodo_range(effects)
+    return {
+        "region": label,
+        "analysis": analysis,
+        "baseline": base,
+        "transductive": base in TRANSDUCTIVE,
+        "n_run_pairs": len(run_delta),
+        "n_independent_datasets": len(effects),
+        "run_wins": int((run_delta > TIE_TOL).sum()),
+        "run_ties": int((np.abs(run_delta) <= TIE_TOL).sum()),
+        "run_losses": int((run_delta < -TIE_TOL).sum()),
+        "run_mean_delta": float(run_delta.mean()) if len(run_delta) else np.nan,
+        "run_median_delta": float(np.median(run_delta)) if len(run_delta) else np.nan,
+        "dataset_mean_delta": float(effects.mean()) if len(effects) else np.nan,
+        "dataset_median_delta": float(np.median(effects)) if len(effects) else np.nan,
+        "cluster_boot_ci_lo": lo,
+        "cluster_boot_ci_hi": hi,
+        "dataset_positive": d_pos,
+        "dataset_zero": d_zero,
+        "dataset_negative": d_neg,
+        "exact_sign_p_two_sided": sign_p,
+        "dataset_wilcoxon_stat": wilcoxon_stat,
+        "dataset_wilcoxon_p_two_sided": wilcoxon_p,
+        "lodo_mean_min": lodo_lo,
+        "lodo_mean_max": lodo_hi,
+        "bootstrap_unit": "dataset",
+        "bootstrap_iterations": BOOTSTRAP_ITERATIONS,
+        "inference_unit": "dataset",
+        "tie_tolerance": TIE_TOL,
+    }
+
+
+def _test_block(
+    df: pd.DataFrame, label: str, label_counts: pd.DataFrame, seed_offset: int
+) -> tuple[list[dict], list[dict]]:
     rows: list[dict] = []
+    effect_rows: list[dict] = []
     print(f"\n========== {label} ==========")
     print(
-        f"{'baseline':12s} {'n':>3s} {'win':>3s} {'tie':>3s} {'loss':>4s} "
-        f"{'median_d':>9s} {'mean_d':>8s} {'boot95%CI':>18s} {'Wilcoxon p':>13s}"
+        f"{'baseline':12s} {'runs':>4s} {'W/T/L':>9s} {'ds mean':>8s} {'cluster 95% CI':>20s} {'ds +/-/0':>9s} {'sign p':>9s}"
     )
-    for base in BASELINES:
+    for i, base in enumerate(BASELINES):
         paired = _paired(df, base)
-        delta = (paired["our"] - paired["base"]).to_numpy()
-        n = len(delta)
-        win = int((delta > 1e-9).sum())
-        tie = int((np.abs(delta) <= 1e-9).sum())
-        loss = int((delta < -1e-9).sum())
-        median_delta = float(np.median(delta)) if n else np.nan
-        mean_delta = float(delta.mean()) if n else np.nan
-        lo, hi = _boot_ci(delta)
-        if n and np.any(np.abs(delta) > 1e-12):
-            try:
-                p_value = float(stats.wilcoxon(delta, alternative="greater", zero_method="wilcox").pvalue)
-            except ValueError:
-                p_value = np.nan
-        else:
-            p_value = np.nan
-        tag = " (transductive)" if base in TRANSDUCTIVE else ""
+        _assert_complete_grid(
+            paired,
+            set(df["rare_train_size"].astype(str).unique()),
+            set(df["seed"].astype(int).unique()),
+            base,
+        )
+        effects = _dataset_effects(paired)
+        row = _analysis_row(
+            paired, effects, label, base, "nominal_budget", seed_offset + i
+        )
+        rows.append(row)
+        for dataset, effect in effects.items():
+            effect_rows.append(
+                {
+                    "region": label,
+                    "analysis": "nominal_budget",
+                    "baseline": base,
+                    "dataset": dataset,
+                    "dataset_effect": effect,
+                    "n_within_dataset_pairs": int((paired["dataset"] == dataset).sum()),
+                }
+            )
         print(
-            f"{base:12s} {n:3d} {win:3d} {tie:3d} {loss:4d} "
-            f"{median_delta:+9.4f} {mean_delta:+8.4f} [{lo:+.4f},{hi:+.4f}] {p_value:13.3e}{tag}"
+            f"{base:12s} {row['n_run_pairs']:4d} {row['run_wins']:d}/{row['run_ties']:d}/{row['run_losses']:d} {row['dataset_mean_delta']:+8.4f} [{row['cluster_boot_ci_lo']:+.4f},{row['cluster_boot_ci_hi']:+.4f}] {row['dataset_positive']:d}/{row['dataset_negative']:d}/{row['dataset_zero']:d} {row['exact_sign_p_two_sided']:.4f}"
         )
-        rows.append(
-            {
-                "region": label,
-                "baseline": base,
-                "transductive": base in TRANSDUCTIVE,
-                "n_pairs": n,
-                "win": win,
-                "tie": tie,
-                "loss": loss,
-                "median_delta": round(median_delta, 4),
-                "mean_delta": round(mean_delta, 4),
-                "boot_ci_lo": round(lo, 4),
-                "boot_ci_hi": round(hi, 4),
-                "wilcoxon_p_greater": p_value,
-            }
-        )
-    return rows
+
+        if set(df["rare_train_size"].unique()).issubset(set(SCARCE)):
+            collapsed = _collapse_effective_counts(paired, label_counts)
+            collapsed_effects = collapsed.groupby("dataset", sort=True)["delta"].mean()
+            collapsed_row = _analysis_row(
+                collapsed,
+                collapsed_effects,
+                label,
+                base,
+                "collapse_aware_effective_count",
+                seed_offset + 100 + i,
+            )
+            rows.append(collapsed_row)
+            for dataset, effect in collapsed_effects.items():
+                effect_rows.append(
+                    {
+                        "region": label,
+                        "analysis": "collapse_aware_effective_count",
+                        "baseline": base,
+                        "dataset": dataset,
+                        "dataset_effect": effect,
+                        "n_within_dataset_pairs": int(
+                            (collapsed["dataset"] == dataset).sum()
+                        ),
+                    }
+                )
+    return rows, effect_rows
 
 
 def _sort_rts(values: list[str]) -> list[str]:
@@ -115,31 +266,39 @@ def _sort_rts(values: list[str]) -> list[str]:
 def main() -> None:
     df = pd.read_csv(SUMMARY_CSV, dtype={"rare_train_size": str})
     df = df[df.status == "ok"].copy()
-
+    label_counts = pd.read_csv(LABEL_COUNT_CSV, dtype={"rare_train_size": str})
     datasets = sorted(df["dataset"].dropna().unique().tolist())
     rts_all = _sort_rts(df["rare_train_size"].dropna().unique().tolist())
     seeds = sorted(df["seed"].dropna().astype(int).unique().tolist())
     methods = sorted(df["method"].dropna().unique().tolist())
-
     print(f"datasets={len(datasets)} {datasets}")
     print(f"rts={rts_all} seeds={seeds} methods={methods}")
 
-    rows = []
-    rows += _test_block(df, f"ALL rts ({len(datasets)}ds x {len(rts_all)}rts x {len(seeds)}seed)")
-
-    scarce_df = df[df.rare_train_size.isin(SCARCE)].copy()
-    scarce_datasets = sorted(scarce_df["dataset"].dropna().unique().tolist())
-    rows += _test_block(
-        scarce_df,
-        f"SCARCE rts<=0.10 ({len(scarce_datasets)}ds x {len(SCARCE)}rts x {len(seeds)}seed)",
+    rows: list[dict] = []
+    effect_rows: list[dict] = []
+    block_rows, block_effects = _test_block(
+        df,
+        f"ALL rts ({len(datasets)}ds x {len(rts_all)}rts x {len(seeds)}seed)",
+        label_counts,
+        0,
     )
-
-    out = pd.DataFrame(rows)
-    out.to_csv(OUT_CSV, index=False)
+    rows += block_rows
+    effect_rows += block_effects
+    scarce_df = df[df.rare_train_size.isin(SCARCE)].copy()
+    block_rows, block_effects = _test_block(
+        scarce_df,
+        f"SCARCE rts<=0.10 ({len(datasets)}ds x {len(SCARCE)}rts x {len(seeds)}seed)",
+        label_counts,
+        1000,
+    )
+    rows += block_rows
+    effect_rows += block_effects
+    pd.DataFrame(rows).to_csv(OUT_CSV, index=False)
+    pd.DataFrame(effect_rows).to_csv(EFFECTS_CSV, index=False)
     print(f"\n[saved] {OUT_CSV}")
+    print(f"[saved] {EFFECTS_CSV}")
     print(
-        "Note: paired units are correlated across seeds and collapsed rare-label budgets; "
-        "treat p-values as directional evidence. HiCat is marked as transductive."
+        "Inference uses equally weighted dataset effects (n=8). Run-level W/T/L is descriptive; the sign test evaluates directional consistency, not the arithmetic mean."
     )
 
 
