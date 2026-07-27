@@ -193,3 +193,30 @@ reports the number of contributing datasets, effective-budget units, and seeds.
   at least one real-data PNG/PDF figure; unavailable genes yield explicit NA.
 - P3: complete frozen grids, independent tau per alpha, clustered association
   summaries, and a leakage-free paired second-backbone evaluation.
+
+## P4: independent CellTypist classifier backbone
+
+P4 is a minimal portability screen requested after P0--P3 were specified. It
+does not replace P3c. A custom CellTypist 1.7.1 logistic classifier is trained
+only on cells carrying the frozen `is_labeled_for_scanvi` permission. Cached
+HVG identities are reused because they were selected by train-only variance;
+no scANVI latent vector, probability, or predicted label enters P4.
+
+The native multiclass CellTypist decision-function vector, ordered by the
+classifier's class registry, is the representation supplied to the unchanged
+`PrototypeRescuer`. Training prototypes use labeled training cells only.
+CellTypist validation predictions select the candidate rank and validation
+non-target scores calibrate conformal tau. Test labels are used only after both
+CellTypist and refined test predictions are frozen.
+
+The prespecified screen is three heterogeneous human datasets
+(`immune_dc`, `pancreas_baron`, `tabula_sapiens_stomach`), seed 42, and rare
+training-label fractions 0.01, 0.05, and 0.10. Formal rescue constants remain
+unchanged (`alpha=0.01`, `low_sep=1.3`, ranks 1--3, `min_val_missed=3`). Every
+attempt, abstention, failure, and empirical alpha exceedance is retained.
+
+P4 acceptance requires a closed 9-run ledger, at least two datasets with
+evaluable CellTypist predictions, no test-label leakage, and complete paired
+metrics. Positive gain is not required for technical completion. Any scientific
+claim is limited to a single-seed portability screen; null or mixed outcomes
+must be reported as such and may not support backbone universality.

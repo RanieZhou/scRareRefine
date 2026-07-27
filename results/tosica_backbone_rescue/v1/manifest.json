@@ -1,0 +1,880 @@
+{
+  "analysis": "tosica_backbone_rescue",
+  "version": "v1",
+  "created_at_utc": "2026-07-27T05:14:19.465870+00:00",
+  "environment": {
+    "python": "3.10.20 | packaged by conda-forge | (main, Jun 11 2026, 03:28:51) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "packages": {
+      "TOSICA": "1.0.0",
+      "anndata": "0.11.4",
+      "numpy": "1.26.4",
+      "pandas": "2.3.3",
+      "torch": "2.0.1+cu118"
+    }
+  },
+  "git": {
+    "sha": "227e1c5",
+    "dirty": true
+  },
+  "parameters": {
+    "configs": [
+      "configs/immune_dc.yaml",
+      "configs/pancreas_baron.yaml",
+      "configs/pancreas_integrated.yaml",
+      "configs/tabula_lung_endo.yaml",
+      "configs/tabula_sapiens_stomach.yaml",
+      "configs/tabula_small_intestine.yaml",
+      "configs/mouse_lung_tms_10x.yaml",
+      "configs/mouse_pancreas_tms_10x.yaml"
+    ],
+    "seeds": [
+      42
+    ],
+    "rare_train_sizes": [
+      "0.01",
+      "0.05",
+      "0.10",
+      "all"
+    ],
+    "requested_runs": 32,
+    "ledger_runs": 32,
+    "tosica_epochs": 10,
+    "tosica_max_gene_sets": 300,
+    "tosica_embedding_dim": 48,
+    "tosica_internal_seed": 1,
+    "tosica_prediction_cutoff": 0.1,
+    "alpha": 0.01,
+    "low_sep": 1.3,
+    "rank_grid": [
+      1,
+      2,
+      3
+    ],
+    "min_val_missed": 3
+  },
+  "test_label_usage": "final paired metrics only; never TOSICA training, prototype fitting, gates, rank, or tau",
+  "status_counts": {
+    "success": 32
+  },
+  "source_hashes": {
+    "tools\\analysis\\tosica_backbone_rescue.py": "9381c3d5ee7f598211d60ed424e26fbc09394f27fe75255335523ee484d3c23c",
+    "src\\rescue.py": "4af0f0d077a4ef440dada000def50dc7add75de2a6909620d852a423af4e7d47",
+    "src\\utils.py": "c1cf895f85000bb603b9ebd72495c9f24b409bdf34d2afbc56f6f9b6b65eae81",
+    "configs\\immune_dc.yaml": "93db4f77b7d3163ca9b5e4d023b59ffe206f77fdc1bf98c71e574bc5b8e135e9",
+    "configs\\pancreas_baron.yaml": "cc73e4271ffa2c387f26094d33017862202af4599f8644ce310ba862cb734138",
+    "configs\\pancreas_integrated.yaml": "a9a082a49f7587fe9cc9f738e1673df2db8d9ba5d975348f162f560f5ebbca07",
+    "configs\\tabula_lung_endo.yaml": "e039ea85d2b7ac13d119183696b8d58ac0940e9f258cd148161319003bc888a5",
+    "configs\\tabula_sapiens_stomach.yaml": "bfdfd4567dd30da8997d0f34a53df03af1848234f865f05cdd56d4f5005c0b0c",
+    "configs\\tabula_small_intestine.yaml": "95e360815dc18713b6d3f81ce75a9a77428894df2adccdd112efe3c571533cf1",
+    "configs\\mouse_lung_tms_10x.yaml": "0ee6f0c30ac3cf979e39b11b60297f989734e6c45cd09b0361f844936dc3e420",
+    "configs\\mouse_pancreas_tms_10x.yaml": "efa2b7c16c695464cf20b4d1677c0614f6706b283e20c9c9e30a44522b889498"
+  },
+  "run_provenance": [
+    {
+      "key": "immune_dc_seed42_rare0p01",
+      "inputs": {
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\manifest.json": "4555b6f3cb41de92a51a1bdcbb8dc2e6a1c3f328eb2c508426dcace0fe0fd1ca",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\selected_hvg_genes.csv": "6cdf86b976bbbdb6eb7892851c56d2f2ccab75c9bac4f6deee2e8bb21a64f2b2",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\train_predictions.csv": "9da70edee89f9077f6c51bc5795bbc8dd5817278d9abfd54883e1d94fb3f3c9f",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\validation_predictions.csv": "dea7bbad4119a5b160046cc3a02e4e44c148923ecd0b5cfa35bfc2c71db73ca8",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\embeddings\\test_predictions.csv": "7c18aa14aed05c474aaadf79cd1b206ed4307aa8d35f5847a4f7929617da3285"
+      },
+      "outputs": {
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "cda738df7ce226b27baabc79aed67bb032533ca257c59a3d41ffb696c4442d06",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "54a50e15e53b24ac5aec307433954ef65af2d8444fe14b9d89d4bb0794e3e8b9",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "454436060c4d44485d42dae3148b864b3911e72bd1074c06257a0a876a28a2cb",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "023fc8fea02a6198756a8f1276c6c376c5af4221751e9ff8b2a359b6308b6d3c",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "d49395c3afff35850699b4207007d758040924f68a18a56b847f0355f6161a75",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\tosica_backbone_rescue_v1\\test_latent.npz": "d659dbc1f7d72842d8b347b4f8ced1cc31e0577832c51643ed317dad40cc7b60",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "a2978365e84b83d64e04a6c7f5699b2d8aa2a9dfbd75716219ddcf0691d9bc0b",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare1pct\\tosica_backbone_rescue_v1\\decision.json": "a5b78da35a86a47f1615da51befacf50a74da392c006bb79c54df464e033a3b5",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p01\\gene2token_weights.csv": "18e303a68c95d8ee9ff23502de33ee20646b0308dcdb0b241098fec3d6656714",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p01\\label_dictionary.csv": "cac4042bdcc1b850231f488dd97e2ec0b1eb2e1b91d4ec27589d488ce4afa906",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p01\\mask.npy": "7b9caba9d53baeb75a5ffb30c56b323e23ebef4fad5e122270418c8747695fc9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p01\\model-9.pth": "863e2102073ae3a4a0393da25a75891fb24cbb205a53148c22714269c7563926",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p01\\pathway.csv": "b5166a8aa3866ba130736810adad967529d20bb2f06ada6defd1c9c4c0566e91"
+      }
+    },
+    {
+      "key": "immune_dc_seed42_rare0p05",
+      "inputs": {
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\manifest.json": "f27d267ce03a38f3d43f33c2cde7aba906fe3d69d256bd602766b17b3d1d6022",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\selected_hvg_genes.csv": "6cdf86b976bbbdb6eb7892851c56d2f2ccab75c9bac4f6deee2e8bb21a64f2b2",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\train_predictions.csv": "9aaca8828e7b0b175540034de22e7291ebf7bfa4f4de53eb687e7911ccec6c1a",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\validation_predictions.csv": "124a97cda9fd5dcf853c1fd5676609519d4d1908becb17db8aad07378a509979",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\embeddings\\test_predictions.csv": "a5784b208744c50ff64e84085f8366cf6a2581c697d8298df62f3e807ac966c2"
+      },
+      "outputs": {
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "57367809f3b7717c9473841591286b0dd0e083a512fd810669f3d36265305ca1",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "b5a7410812bfa4e1eb04d4bf59cbfa1cbe8c0af408ad710c44b2df2eb53bca1a",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "357f8908344ac461346bcb32f89b07575e53bfc0757c495d89a9b7f973d254e9",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "794498fb07129519e91058bea1e3609daefe7e058d0052a6ca9089427f9768fd",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "986ade03cfe404e9699ddf1350bd7a445a541ffb56a3138ac2c980169a6405f5",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\tosica_backbone_rescue_v1\\test_latent.npz": "e063dd7041bae0b2d657a3a05f84adcad4d2ef421a5621a125e6c327390849aa",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "fb916cef5a701c0180b2b55a2b50df138cd7ab76aed36fd10a6bae00f454dd59",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare5pct\\tosica_backbone_rescue_v1\\decision.json": "8a48733d7208738a43d66a0d1399739d53d6dd5183419f1d906840e0e5413e9f",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p05\\gene2token_weights.csv": "b1f3d9f077f1e8c1117475c89ba0ea253a312f116ad33551bce61ef6b68ead5d",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p05\\label_dictionary.csv": "cac4042bdcc1b850231f488dd97e2ec0b1eb2e1b91d4ec27589d488ce4afa906",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p05\\mask.npy": "7b9caba9d53baeb75a5ffb30c56b323e23ebef4fad5e122270418c8747695fc9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p05\\model-9.pth": "efe50b690c0b048f82f44fd23f63c416612a81a49c33b8f056cb4e190082bbfa",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p05\\pathway.csv": "b5166a8aa3866ba130736810adad967529d20bb2f06ada6defd1c9c4c0566e91"
+      }
+    },
+    {
+      "key": "immune_dc_seed42_rare0p10",
+      "inputs": {
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\manifest.json": "8e2a707b39b043b4c59442b84aa4b0f40a89a2860ec2c63868a44e26d96b9325",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\selected_hvg_genes.csv": "6cdf86b976bbbdb6eb7892851c56d2f2ccab75c9bac4f6deee2e8bb21a64f2b2",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\train_predictions.csv": "542deaca0dcdbfd491ba1ed2456de87f2332506865fdaa4acde6dfa8c7241e6f",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\validation_predictions.csv": "2edc04e27e70dd02c47cbfcc27595d3cea8483e890ecc9d097f868cd101df5c4",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\test_predictions.csv": "fa02ce7cfe0460fe28fbea204219cc2b20962aba7f6e32d5a6d8b01338f3ac50"
+      },
+      "outputs": {
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "ea764bdcaba4ad327845f2d164112f6f3a1e03fb3dddde2686f7f7f97e77e44c",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "9b7085e10efe75a8a476343be6226a18770c63e0acfc07a455db619df6b8d04d",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "adec990f046d8d5136ff4eb4baa1f93df1e1b15112f5991d10220935fdf05c83",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "432c6bdb1c56c501c013c94c4a14f72b736dba5ecd290c9044f1c1299f29b6fd",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "630e1904c5ca88e589c16ba8dfb58ddc61c6d5fe454bf1fafd1b401540b4fcb3",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\tosica_backbone_rescue_v1\\test_latent.npz": "dfa671a08696f09341b026fc7faf60e61b11e5eadd5a4f3bba744481553bbaf2",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "81deefc9f01a60ba93cf292fc1fe0633e1c69ce1f444f2221ec582794cf4b12e",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\tosica_backbone_rescue_v1\\decision.json": "48bee4b4f0c50bd3118442f461c670a335f657f2a6b49c0278a735aa4fbf83b9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p10\\gene2token_weights.csv": "69de3b88f58eec3c86f111f3a10976dc8eaccb87761f025362bbda993e639096",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p10\\label_dictionary.csv": "cac4042bdcc1b850231f488dd97e2ec0b1eb2e1b91d4ec27589d488ce4afa906",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p10\\mask.npy": "7b9caba9d53baeb75a5ffb30c56b323e23ebef4fad5e122270418c8747695fc9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p10\\model-9.pth": "c25aa596d84144758241e16a3e59a4a1f893eb66607be53aa5de5883e43e6c7f",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rare0p10\\pathway.csv": "b5166a8aa3866ba130736810adad967529d20bb2f06ada6defd1c9c4c0566e91"
+      }
+    },
+    {
+      "key": "immune_dc_seed42_rareall",
+      "inputs": {
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\manifest.json": "f5f1369522b1db976bc68cd9537e64799d4ff243b47993e88c08d6480ab030f0",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\selected_hvg_genes.csv": "6cdf86b976bbbdb6eb7892851c56d2f2ccab75c9bac4f6deee2e8bb21a64f2b2",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\train_predictions.csv": "3703ff28a775e6d2bc4fec3996b19e8d1dba7846502f267a853c4d3aa7861048",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\validation_predictions.csv": "b4b8f570293c0c245eece402b7ed7e83f619a28f853aa0ee7fa3a7a0cb16d560",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\embeddings\\test_predictions.csv": "d6012dddd2efc6bac3050db42e3979344b7c259a0818dda7234b3f3955e11c62"
+      },
+      "outputs": {
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "8e859e51f9a9f7f980612edc927ca847aed5a43dd2d0ae00d9f84c308c105335",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\tosica_backbone_rescue_v1\\validation_predictions.csv": "48fa09116dab0a98df9de896a424c7969cab25ab1bad0c4853034e1bcc1cbb79",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\tosica_backbone_rescue_v1\\test_predictions.csv": "b444cf336d7310994f18c3643ab11f946ec61da0579306c9b7e3551a91b1eb0a",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "d5184214a21fca67ba0236064d6c2ab7cea018965c04d82ddc299c0e1344a57f",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\tosica_backbone_rescue_v1\\validation_latent.npz": "080eecd25c738f87f732b9011e232c4eeea6087a7eddcb381714022c8ba2a331",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\tosica_backbone_rescue_v1\\test_latent.npz": "5728172f3a7f1fb7a7cfb2bf9ace961450ad53b9404262865f97eca6be4c362c",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "032da988e16ffec6cc501c98c863180d73f96554a4a565d90a47f51423e5e1f7",
+        "outputs\\immune_dc\\batch_heldout_seed42_asdc_rareall\\tosica_backbone_rescue_v1\\decision.json": "b580ac705aa5bc0d872baab46bd95c13c0375655edbe7cf7cc64e053c904daba",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rareall\\gene2token_weights.csv": "86b04775a3270bca1802d67f20af3af4e8bdbd11994e73f8b442a860265b4936",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rareall\\label_dictionary.csv": "cac4042bdcc1b850231f488dd97e2ec0b1eb2e1b91d4ec27589d488ce4afa906",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rareall\\mask.npy": "7b9caba9d53baeb75a5ffb30c56b323e23ebef4fad5e122270418c8747695fc9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rareall\\model-9.pth": "677a3594ac77dfbf918710b974ee5987ad25bb6090c0bc5e1cb36a67f8cbbb31",
+        "checkpoints\\tosica_backbone_rescue\\v1\\immune_dc_seed42_rareall\\pathway.csv": "b5166a8aa3866ba130736810adad967529d20bb2f06ada6defd1c9c4c0566e91"
+      }
+    },
+    {
+      "key": "pancreas_baron_seed42_rare0p01",
+      "inputs": {
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\manifest.json": "39a2023cd01dc895af30b214c8b8c3c57e8f7db44f2c3a4ff0210c4767c72bff",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\selected_hvg_genes.csv": "cced25c51e0448c662aeccb80934fd2555cc20bf88cfe9d1f5a67bd9148bf950",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\train_predictions.csv": "1fd7615683cfcadaa6f4e15b50b8aa65375aaef3eab2fc044c810d9e180a9df5",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\validation_predictions.csv": "e88ed1efd76e11356583373f0a9cf68844c0ebc7fb35e890b1d32bb5c5abbd7b",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\test_predictions.csv": "f7d36de1c1d79ad502b44da0dfbe7e069d931519bf300e4a7c878883fe38a585"
+      },
+      "outputs": {
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "4a40278b31e1a4817831b9d45a685fc1589988601b864b4595f4478360ae3c45",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "40ba9d8b423cc12a19340816c838d080c09d049bf4c61a4f37b99ef8d25c2693",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "9b95fd5901f9e15a1d205c7c4b6337f44fa792f21dd35ca5ef5651f053f38d86",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "4d77626d33fec1bfb22789442cef15f0d09de3fe69a1ff40433ae5d952f61413",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "89b3a94b69ab606fbc1786ff2e5bd276eae8cf71c6708f55fc1db931e1263f5d",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\tosica_backbone_rescue_v1\\test_latent.npz": "ee4b123c3a28e9f8b1ff6106a6360fb248cd0d73dd0b2668e1caace1701931da",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "c80e8ecdef024fb081199697d058889000f697eed7d7d065cc02c7ad955bf471",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\tosica_backbone_rescue_v1\\decision.json": "c5eab70a16409175dd746c512d8ee1fc6a206c4ccd1700bfb59fa72215d4d4e4",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p01\\gene2token_weights.csv": "71398673556e9977f59d3e5c85525439db4351d9448ebd1f59eaff4cf06b26e4",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p01\\label_dictionary.csv": "8a0d58697c566cb516cb8cc8e4963b252d99b117685da2db6bf3334edd4f9712",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p01\\mask.npy": "cb53a2b78b4a9733c9066b193383cb4078fc2850efada51ce822e68c5e7c07f3",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p01\\model-9.pth": "174f46e94f335ee8a6ebf3d7b243c67ff2074e65c4d3ba68473f39d7970b2eb8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p01\\pathway.csv": "509750010fb1093c43cb49f5ff65072ec5ba41e2026c92e2b00ddc1a90a302ed"
+      }
+    },
+    {
+      "key": "pancreas_baron_seed42_rare0p05",
+      "inputs": {
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\manifest.json": "054b5fe114e1e4343412ed0d0753dca795f5ae48b2b5194b0dd306f5d6f55daf",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\selected_hvg_genes.csv": "cced25c51e0448c662aeccb80934fd2555cc20bf88cfe9d1f5a67bd9148bf950",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\train_predictions.csv": "1fd7615683cfcadaa6f4e15b50b8aa65375aaef3eab2fc044c810d9e180a9df5",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\validation_predictions.csv": "e88ed1efd76e11356583373f0a9cf68844c0ebc7fb35e890b1d32bb5c5abbd7b",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\test_predictions.csv": "f7d36de1c1d79ad502b44da0dfbe7e069d931519bf300e4a7c878883fe38a585"
+      },
+      "outputs": {
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "4a40278b31e1a4817831b9d45a685fc1589988601b864b4595f4478360ae3c45",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "40ba9d8b423cc12a19340816c838d080c09d049bf4c61a4f37b99ef8d25c2693",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "9b95fd5901f9e15a1d205c7c4b6337f44fa792f21dd35ca5ef5651f053f38d86",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "4d77626d33fec1bfb22789442cef15f0d09de3fe69a1ff40433ae5d952f61413",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "89b3a94b69ab606fbc1786ff2e5bd276eae8cf71c6708f55fc1db931e1263f5d",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\tosica_backbone_rescue_v1\\test_latent.npz": "ee4b123c3a28e9f8b1ff6106a6360fb248cd0d73dd0b2668e1caace1701931da",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "c80e8ecdef024fb081199697d058889000f697eed7d7d065cc02c7ad955bf471",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\tosica_backbone_rescue_v1\\decision.json": "c5eab70a16409175dd746c512d8ee1fc6a206c4ccd1700bfb59fa72215d4d4e4",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p05\\gene2token_weights.csv": "71398673556e9977f59d3e5c85525439db4351d9448ebd1f59eaff4cf06b26e4",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p05\\label_dictionary.csv": "8a0d58697c566cb516cb8cc8e4963b252d99b117685da2db6bf3334edd4f9712",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p05\\mask.npy": "cb53a2b78b4a9733c9066b193383cb4078fc2850efada51ce822e68c5e7c07f3",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p05\\model-9.pth": "174f46e94f335ee8a6ebf3d7b243c67ff2074e65c4d3ba68473f39d7970b2eb8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p05\\pathway.csv": "509750010fb1093c43cb49f5ff65072ec5ba41e2026c92e2b00ddc1a90a302ed"
+      }
+    },
+    {
+      "key": "pancreas_baron_seed42_rare0p10",
+      "inputs": {
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\manifest.json": "c2666c75bcf7f9706de179f55dd389534faa58fba0635ecc7b70d8d1a1787ae4",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\selected_hvg_genes.csv": "cced25c51e0448c662aeccb80934fd2555cc20bf88cfe9d1f5a67bd9148bf950",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\train_predictions.csv": "e8b32b7b0e98f55c97b48798aac7e8fc58acbd637d3c0c9fe730b9fbb3495d33",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\validation_predictions.csv": "c5b09989a19a2e0f49080b9bb679a0e08b75df552ada58d496885059cb98465d",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\test_predictions.csv": "8da9dc63907cfcf23daaa6fad2b53897e85d7add8dd4ba386852767d2c75a5a8"
+      },
+      "outputs": {
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "5392cc12db64677d13ae7c97c0c7a9e397cbae412b450bbfddd2576aa3d9c46f",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "cc46599ac874611fd74e86aed4cb70cd88af2967ad396a72b02d0e903a2655bb",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "1652cd03e27935b6bd360b933e6a2063fd48efa93b8a5d598f6e442dcde7a8fa",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "1a92020e0b8858580f57ce599503ad6ec413be8b89826336d2ae6cd749d46599",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "a932772e20e50da916b32a41b50cd68a784bb8e720500ef28b9e297c65e38c22",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\tosica_backbone_rescue_v1\\test_latent.npz": "c1138cb4e4617549f55a4e405551a680b4ee13067a3a4c9030a746fb94aab311",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "c5bdfb85670be6e017f849d6868c1b0b2972d767130253d4b9f5cea842330a3d",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\tosica_backbone_rescue_v1\\decision.json": "ad7886b2c40778c3dd138190728b6dde9f9093852e3bd6e2b074f4fe761cbf77",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p10\\gene2token_weights.csv": "95430c0f69501adc1860d135fb2ecac1693078c2e0be682598c4903fde272d98",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p10\\label_dictionary.csv": "8a0d58697c566cb516cb8cc8e4963b252d99b117685da2db6bf3334edd4f9712",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p10\\mask.npy": "cb53a2b78b4a9733c9066b193383cb4078fc2850efada51ce822e68c5e7c07f3",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p10\\model-9.pth": "5cc005ea4ad494ca0dc3e117fb3158b8a59f156ff93761dae431f8d61e740767",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rare0p10\\pathway.csv": "509750010fb1093c43cb49f5ff65072ec5ba41e2026c92e2b00ddc1a90a302ed"
+      }
+    },
+    {
+      "key": "pancreas_baron_seed42_rareall",
+      "inputs": {
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\manifest.json": "4f3da793795f9d05775fb7663469778f19225a34c02e2ae67732c960488b77e2",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\selected_hvg_genes.csv": "cced25c51e0448c662aeccb80934fd2555cc20bf88cfe9d1f5a67bd9148bf950",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\train_predictions.csv": "adc9e336b7438b88b0781e952de87866388d9cbd11c662d6ed5d8743878428f4",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\validation_predictions.csv": "8b2b6d3149f745ae3dd72f09a881271c4b8b013ec9a07fffdee5fd5ee6e5db60",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\embeddings\\test_predictions.csv": "46c78c62d94151568be5cd084105cc52652ac2b53887de5791c54b53005afe53"
+      },
+      "outputs": {
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "cca137356e93cbe0e24fe8286c1ee453135ae2b9a4935f0c1bfde4de584b3d74",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\tosica_backbone_rescue_v1\\validation_predictions.csv": "a9a6e877d10c4bd7cb56b0b07c30671f9aecccef99028179d81ad4a1a417f294",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\tosica_backbone_rescue_v1\\test_predictions.csv": "8de252955989c063f0da15dfc1f379e5d327e95d67bd15b85bc35e70660c16db",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "5ec36fd572fa9fe353b09f0316d344b700bf126c5f3d0a95a5dd4952fd0b2508",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\tosica_backbone_rescue_v1\\validation_latent.npz": "deba034e2a2e8741192f53ea6ebe761a3ab43c56d4158af645b824fbbc478265",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\tosica_backbone_rescue_v1\\test_latent.npz": "f5daea0841bff7aebeed7a0780dc04fdb9825c31ad1ad2869c7132e835a7710b",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "a9c1c2b3e58e3c4f9afc59529079256988ce888ae6dc0e3cd74c8fe9a496fdcf",
+        "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rareall\\tosica_backbone_rescue_v1\\decision.json": "3b3d622c2a93c6952a23aca7903802dcc28a3af96682df01024b6ed27c52153c",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rareall\\gene2token_weights.csv": "6183717c0cc4f25bf78d7f67b68d6a35f26c46c42efc98781607608e4059d966",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rareall\\label_dictionary.csv": "8a0d58697c566cb516cb8cc8e4963b252d99b117685da2db6bf3334edd4f9712",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rareall\\mask.npy": "cb53a2b78b4a9733c9066b193383cb4078fc2850efada51ce822e68c5e7c07f3",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rareall\\model-9.pth": "a7e6b4ad85175edbc2db8bb10984fbc0d7684b5cb834cd497b4b9e020f0490b1",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_baron_seed42_rareall\\pathway.csv": "509750010fb1093c43cb49f5ff65072ec5ba41e2026c92e2b00ddc1a90a302ed"
+      }
+    },
+    {
+      "key": "pancreas_integrated_seed42_rare0p01",
+      "inputs": {
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\manifest.json": "7d937dd9f7e22e73cb229e11bde6f0c41eaa98b9d244c3d8e6b7ef208258ea3c",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\selected_hvg_genes.csv": "541f79bf811850eed102adc5e26b366048b508ff1b012f799e52f32b47d0cc46",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\train_predictions.csv": "477bbe547f2ad53c3bb4adf9f271d5afc4a3a649c08087506ad54036300d4b35",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\validation_predictions.csv": "15a3ea5ba9ede5b5eba0535d0c7c2dceb7486c9d702821d9ae213b911b37f3a9",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\embeddings\\test_predictions.csv": "cc30bd5f1620a3408f922012a929ffa5f67cd5990056829a9fe6924fe9beb3c9"
+      },
+      "outputs": {
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "3bfb0b3803484b4c1f78c0ec317a4e0d3c09ff2cb7b83b63f8102d8c5ec9c022",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "6a149780c811ee4c37e2bf08be64cd717e2ce9b089def07c4cf64e9b99eea14e",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "c1c01db5f13eadd932cf9977b2f7958a8d2d81d6a8ecaa10745d722558e74b2e",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "e19b5d74fa338b5c9dffad9e3747747564a490fea61a24a622fa704d42ae70cd",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "0a54a53ccf9bee323f868e4c1a22adb642016a0f6d1f2644fbaa63413e955bf2",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\tosica_backbone_rescue_v1\\test_latent.npz": "a456c9c97b845f85b4aafb2bc6c48185c652f762891088ec9c1d69a1c1d01ee7",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "8c9b836701413f9671c6251f93af70849d990f4159328564320cac9e369b342c",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare1pct\\tosica_backbone_rescue_v1\\decision.json": "9cc383722af855f1bdebd14b748e268c3e7013c4799491878c515e1b4828bbd9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p01\\gene2token_weights.csv": "3d984cc409fb0c8966f796149968d9ad0f429fc6b3ea9e99d7af4faa7e21bd08",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p01\\label_dictionary.csv": "8a0d58697c566cb516cb8cc8e4963b252d99b117685da2db6bf3334edd4f9712",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p01\\mask.npy": "21517919a0d9529883a5df78a4725029a5214eef31c47213b90ffdb5d2efd4a9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p01\\model-9.pth": "0afaa08afaada3729be59637744ec1305e1569df8b6feb22d831d1ca9b7164dc",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p01\\pathway.csv": "cd533c3e1dbcae26640c041fefcb52c23b1849079656d465bf21dcedb7fc9fea"
+      }
+    },
+    {
+      "key": "pancreas_integrated_seed42_rare0p05",
+      "inputs": {
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\manifest.json": "7e779e1d52e41577444c28966cea95528f86fc8b08c17139452552c12648694a",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\selected_hvg_genes.csv": "541f79bf811850eed102adc5e26b366048b508ff1b012f799e52f32b47d0cc46",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\train_predictions.csv": "19116ff99e2b7dff35a9f42e493a5f3918288eeb2ac133a470b0b772154fed6b",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\validation_predictions.csv": "97b0b12db2135c8131ee14e9f2cd9b0161952d014feea0d6028c8c043f8e6cce",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\embeddings\\test_predictions.csv": "432a653c4992fcc461b27294b45fb41c3a7283145049ffcdd6fd26413f068f87"
+      },
+      "outputs": {
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "0ec50f02e99696050b4bc3afbdc941a1fd8c6a72c53fa2de5aeebccee087570e",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "d249658383ddf2bae401a709ccc7d3b79ec2aaf20535d20c0d0a3b3251d3675c",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "f355c2bfbfd9e28d98bafc486e03e179482b4f80f7bf2ffc9f08b3bc165157a4",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "74367c88202199fcf8c1eae02f6111adeb2584f23700a7a5cbe6d846bd9265ce",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "58f154646e32a8dd230ad20bd7a705aee43e04cde4855bd0c7a6d4906624246b",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\tosica_backbone_rescue_v1\\test_latent.npz": "01f4edbb417aa9df1e1d5c5783631aa41ee0e60da3cd8743eba047875724b3ed",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "8d507c0f01baa8808e0b5044b07714c27bda33a4a77d2b78eee58c65872db9a7",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare5pct\\tosica_backbone_rescue_v1\\decision.json": "33d48e88ee320e0e9baf845972b89fbf9df2522b263236763c3da5a169a0272c",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p05\\gene2token_weights.csv": "d1fea79846fceaddad793d20e346da788ac3cd1ab00696afcaf73615bc052bfb",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p05\\label_dictionary.csv": "8a0d58697c566cb516cb8cc8e4963b252d99b117685da2db6bf3334edd4f9712",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p05\\mask.npy": "21517919a0d9529883a5df78a4725029a5214eef31c47213b90ffdb5d2efd4a9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p05\\model-9.pth": "b764da7bb3937964dc07068fb1f553803fddabc0f79edfe80a0197c0b1991085",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p05\\pathway.csv": "cd533c3e1dbcae26640c041fefcb52c23b1849079656d465bf21dcedb7fc9fea"
+      }
+    },
+    {
+      "key": "pancreas_integrated_seed42_rare0p10",
+      "inputs": {
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\manifest.json": "b4a2d4e101ce804cfa68ba548dafba5bfbd04bebbaa702f50b79ccb70ca159b0",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\selected_hvg_genes.csv": "541f79bf811850eed102adc5e26b366048b508ff1b012f799e52f32b47d0cc46",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\train_predictions.csv": "1860e61adba0a83e2a57dee7db8baa830be329180f3fd5f33788c68bd8e9e49c",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\validation_predictions.csv": "a923d43765fe1db5d035d207de552dd43bd77e79765e779ae469367bbe2311b6",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\embeddings\\test_predictions.csv": "b8c5888078feb9cea5f2bc109da35f677431f82368e2d84b06d7c1072b898507"
+      },
+      "outputs": {
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "427c02320ac01c0b9c738c120c5ebc3a1d340d867302d1957bc3ad40c3dee420",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "f24c1bb5db9b76c970e0da07c008f66f584b04e722613e441954f9d118bfce16",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "cd9d4bdae5e5ac551df2542f1d1d65434106d31aa5aaa550b17c3e9495820400",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "bcd2835db6e84ca8d518a5aafef6ab64c3cb7d04d15ba8653144b2911feae12e",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "5176e13e0acf3fbf3c7aae196b50941148251561bd7201149d861dbc0d46a3b4",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\tosica_backbone_rescue_v1\\test_latent.npz": "c2d0e9b635bf6724e56078e5bc9f4660ca9fc262a5a470819ecd6945447362fe",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "c1f7e1fe0754346cd007463a1caa34b748f8b42beaafaa8b4c82f5a6c907c181",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rare10pct\\tosica_backbone_rescue_v1\\decision.json": "d170544bba75bdb13ddb62b61e3dac3e29cabf17bd5fafa5e5968693f8c0bda7",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p10\\gene2token_weights.csv": "032b2da0c334af13e8ffe8f9b3a273218ee8bf3da74fa6fa32b200f2c5e399f4",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p10\\label_dictionary.csv": "8a0d58697c566cb516cb8cc8e4963b252d99b117685da2db6bf3334edd4f9712",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p10\\mask.npy": "21517919a0d9529883a5df78a4725029a5214eef31c47213b90ffdb5d2efd4a9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p10\\model-9.pth": "32ffbba942fe5b92a17d730bafb715a49d764353afd4b3c35eb437852eb4df57",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rare0p10\\pathway.csv": "cd533c3e1dbcae26640c041fefcb52c23b1849079656d465bf21dcedb7fc9fea"
+      }
+    },
+    {
+      "key": "pancreas_integrated_seed42_rareall",
+      "inputs": {
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\manifest.json": "42916bd83174318fecd8360f537299f63418a9be638eaa4a93a934f3b54dfba4",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\selected_hvg_genes.csv": "541f79bf811850eed102adc5e26b366048b508ff1b012f799e52f32b47d0cc46",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\train_predictions.csv": "51114e5d35a7478705583acbc6a45c5940a78ee69e1da7d2ad123461793c94b2",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\validation_predictions.csv": "0855ca01dfef590a1dcd1581b167e7dac2e3b7eac472d67139eae22116e68b27",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\embeddings\\test_predictions.csv": "2fcdd59f85e1cad0323c2ebda696b5ccde78ebd78f262785d8f836d4a93c2e7a"
+      },
+      "outputs": {
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "24af6d8e5491025825a46f571dfcdc09910a0c62791d229bd478f22ddb64a6a3",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\tosica_backbone_rescue_v1\\validation_predictions.csv": "47b13bc867acb5dad5e4fad9f805edfdd1a2c57c8c10f24b8cec4d9166250ad5",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\tosica_backbone_rescue_v1\\test_predictions.csv": "4fc0282dfdf86aead3b2ae782a63e79a7cc972cc54bce4b1291e04a47fdb1c30",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "5b578d5b00b53d8e0226f9a3d130ba72c7723d4e70e845544a6546078e89ca56",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\tosica_backbone_rescue_v1\\validation_latent.npz": "43536b342b16d407000b4606c53ce28f350778ee3fec6d2fa9ca437eb6a9f422",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\tosica_backbone_rescue_v1\\test_latent.npz": "7476b3aa41e025986a06fd18f1003ff76232dc2d9352e414e933c926f014e8b5",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "ab2470d85789998c6f838cf7b5c450f6406e7b418c05b87818e9184f23ec377c",
+        "outputs\\pancreas_integrated\\batch_heldout_seed42_endothelial_rareall\\tosica_backbone_rescue_v1\\decision.json": "d170544bba75bdb13ddb62b61e3dac3e29cabf17bd5fafa5e5968693f8c0bda7",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rareall\\gene2token_weights.csv": "876da6974ebbc9667d767737a87d82ac8ff6eb0f1a1bef6f294915d6149ca163",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rareall\\label_dictionary.csv": "8a0d58697c566cb516cb8cc8e4963b252d99b117685da2db6bf3334edd4f9712",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rareall\\mask.npy": "21517919a0d9529883a5df78a4725029a5214eef31c47213b90ffdb5d2efd4a9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rareall\\model-9.pth": "de871be4216a7a3bfcf96cdea7fd89e0f83226b802ea6feb26bf6fad5ea9e481",
+        "checkpoints\\tosica_backbone_rescue\\v1\\pancreas_integrated_seed42_rareall\\pathway.csv": "cd533c3e1dbcae26640c041fefcb52c23b1849079656d465bf21dcedb7fc9fea"
+      }
+    },
+    {
+      "key": "tabula_lung_endo_seed42_rare0p01",
+      "inputs": {
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\manifest.json": "6a6c5c731ed3955aa7fec2c9af4969bcdd55474cf3f0aeda8c3b217d6f1fa9b3",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\selected_hvg_genes.csv": "1d5c66ecc494804a3ead98f54f675460613d09c3826bf39f405d081c8b6f8276",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\train_predictions.csv": "23cb397b933621f18aa16d800358993d7e6980e9b8c22f635d7add715ebd6f4c",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\validation_predictions.csv": "6a07f0a0a1e4ea96c60e6cb376742e9ba5852900324ca9fcf0c01b645c88bb3a",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\embeddings\\test_predictions.csv": "7be8bee1cbdead0fa5e2b71a9f3f8d7c1f638a984db6306e20cb92e3adbb4964"
+      },
+      "outputs": {
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "5cf2589449de222152656d4610a543e88818a870c3a0ccbb602a846f7b03cff2",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "21f04ca27f6aff5713169ed67e2bfbac816e6190b818897b84f64d01319b1175",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "22db18c809259a37eafcae70c19cb888fa6954f41a899e78ee107175dc6050ff",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "3f5d2578ecb59141741774c689eeb561a009590072e717b7ac831f7076f7e3a5",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "088770a9a547bab5042d52dec3e7f3d8980f8cd8153349ab4c9e966e0e55ddd1",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\tosica_backbone_rescue_v1\\test_latent.npz": "a7890228b1527a735dafde6ff20250264ad9ea138dabedb61e4afcf5fa6417d2",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "3bb3b0db1a3c232453fc749b81fdab011a4ab5b5ca079cdc1c48b9f9b1b06983",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare1pct\\tosica_backbone_rescue_v1\\decision.json": "d170544bba75bdb13ddb62b61e3dac3e29cabf17bd5fafa5e5968693f8c0bda7",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p01\\gene2token_weights.csv": "673885e6783e99edca6c1d658c84fed07bf7adc0a7398efb1f70eedb1fd9d7a0",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p01\\label_dictionary.csv": "59b4a9e484132430823e11494e47fe66b9822eb167287649ec230a4490867eb8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p01\\mask.npy": "950a8c71b999efe97fa524192dbe2261d2e9c72d146428ef9300c91d6ab81167",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p01\\model-9.pth": "05b324e38e6824abc12ae304a51c2b60d77e48ddcb4f12c1706feb7c70076be1",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p01\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_lung_endo_seed42_rare0p05",
+      "inputs": {
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\manifest.json": "437769c7190746692a9127eef43e92500c2a7877e10c4d4124c123537055c731",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\selected_hvg_genes.csv": "1d5c66ecc494804a3ead98f54f675460613d09c3826bf39f405d081c8b6f8276",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\train_predictions.csv": "175ec333f193cab702fe9965448f1f223bcdfcf5fdfee1332f3004d0b76dbe39",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\validation_predictions.csv": "dafa116ed3e6e629c45397d98baffa91359c6939d1a0e05cb852bdd4161e5bbd",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\embeddings\\test_predictions.csv": "d6aa66192977f08a601528bf0d1cc2273460c54dada72f99435e03b64126bb1f"
+      },
+      "outputs": {
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "8b68d601c73af7ad3795a949806b45ed0554cc7597f4c4cb20dff0888cf5ba9c",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "efb1b2184047d993f6282825a738f587f3529f4e084a1fb7d6f2bb2091bd7741",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "94757bec9b928170c2f7936a049df4119908010cdfc51e279c282eaa2c1a6b0e",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "e07ec9578c66831ca89f4cec29de7479e5bbddee9aca3426f9cffa715b029ed0",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "090a51816996c65a9c0c1f8a6b5c65ea5d4184218ba83cc0f7f6ffdfd4cf5954",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\tosica_backbone_rescue_v1\\test_latent.npz": "940d70cfc7eb0e0d77401e55a9fabc1fc8f480c7ef6e95305ed52c2d5151f78b",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "6de794c397ecc5a40f581400faa0da6f2cb11b3c848a12ac23adbbcd5fd6eede",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare5pct\\tosica_backbone_rescue_v1\\decision.json": "19c43c40b9aedf26aa91db417e23bed66a8ceeb10de1c97bf5fe28e38208e168",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p05\\gene2token_weights.csv": "bdd7c656dba111f9733ec4d5a2c1a8baf80cb3a2bf63a857dcbfb2d822df9ac8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p05\\label_dictionary.csv": "59b4a9e484132430823e11494e47fe66b9822eb167287649ec230a4490867eb8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p05\\mask.npy": "950a8c71b999efe97fa524192dbe2261d2e9c72d146428ef9300c91d6ab81167",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p05\\model-9.pth": "22071326fcc8e6639acdb5f5be328f42d6795637db12bd90269c885b46766582",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p05\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_lung_endo_seed42_rare0p10",
+      "inputs": {
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\manifest.json": "33d8f3647e692d0d67d13146aa26cf19d3c6b083a7d97257164ef583eab1d0d0",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\selected_hvg_genes.csv": "1d5c66ecc494804a3ead98f54f675460613d09c3826bf39f405d081c8b6f8276",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\train_predictions.csv": "3f710330ce1b59014376a772f2355f05ccd1cc44c90b42ce203a3ef4804a2fb0",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\validation_predictions.csv": "af7d49d99189717d474ab2e63a655c1186dc8a3f6122e2d7626cce985a4492b3",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\embeddings\\test_predictions.csv": "9a78e6d8f949be370f15c364f4aa818d659d218b5a65a3be019bd268ce410ecb"
+      },
+      "outputs": {
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "4dc521bb1a17b8db043a94c6b87ee0bae7b33f965df405c78b580eb4da122679",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "fb46de4b7d759b2efdb1badbdf3d14017a7c7facdbab8d45158f532d3c7dccbc",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "f43a2b171c6c384f368d2d1775c35f89dd3233a6c85201cdceede78546fe83ca",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "872783c36885567add3da57ffe9b20d09181427e9449888337c206286c7c96d1",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "4881ae6a5398e235b62ff4a8b67551954a79397c8394270339088c2fb313c642",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\tosica_backbone_rescue_v1\\test_latent.npz": "b47055ce1dd1f4af2bbfb68ed1dec3ee89f7d61d7ef62bd43b38450301ab7394",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "d499db063c860b0e92e49b06898ce921690a48f7193bb83a4aee9cbcfa62f740",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rare10pct\\tosica_backbone_rescue_v1\\decision.json": "d170544bba75bdb13ddb62b61e3dac3e29cabf17bd5fafa5e5968693f8c0bda7",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p10\\gene2token_weights.csv": "11845bda1d7212c0d679026885b3ade47d64416939dc466e775026e330f402e8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p10\\label_dictionary.csv": "59b4a9e484132430823e11494e47fe66b9822eb167287649ec230a4490867eb8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p10\\mask.npy": "950a8c71b999efe97fa524192dbe2261d2e9c72d146428ef9300c91d6ab81167",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p10\\model-9.pth": "da977337c71eed7d807583961eda739b8a1251ef9be942ad4e7d1e931ed1d964",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rare0p10\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_lung_endo_seed42_rareall",
+      "inputs": {
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\manifest.json": "ec2d1ca7439467cf950df96d93429eb6f342f3c15238db25d537315e58ccc38f",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\selected_hvg_genes.csv": "1d5c66ecc494804a3ead98f54f675460613d09c3826bf39f405d081c8b6f8276",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\train_predictions.csv": "e33854f9de1b38c750ab8f8ebd108802febd7f62da15460bdffe2c495db08534",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\validation_predictions.csv": "3a41153478ea40bb9cc8df472f66585550815e93155203ed19f91bc28da3dc54",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\embeddings\\test_predictions.csv": "ff28d0d5ea4513c8727f0e87b3052b9f0127a6863b38205186e8d9aaf90e7a8e"
+      },
+      "outputs": {
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "a9e51e9e138a166c3f80f5c6e2d71553c9177b66e29e4eee939907b0b1aec011",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\tosica_backbone_rescue_v1\\validation_predictions.csv": "3d572686a6bc31a077a417f82944721544fe3b66d919a8e18cb39761a847dd37",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\tosica_backbone_rescue_v1\\test_predictions.csv": "bd09057130ced7280fa93b386da99788f76c2bc89deab65b18ba78d2ea73a79e",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "7af070079083fb60b4fe733ab0d909051cc8b054679101e6d5062a1c58ae22ba",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\tosica_backbone_rescue_v1\\validation_latent.npz": "ab5f3272b9c469ca1ee855e825d967fd2b71151c00c7d12ca388e771e587c1c4",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\tosica_backbone_rescue_v1\\test_latent.npz": "4151139178e248f5f5304aca5e627cf8157a614836a05c84bf4ca66a9b6b0bc6",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "4f9740d32f85a148e6a58d3ec305cf54dca2ff9f18d923d314543681bb2715b1",
+        "outputs\\tabula_lung_endo\\batch_heldout_seed42_endothelial_cell_of_lymphatic_vessel_rareall\\tosica_backbone_rescue_v1\\decision.json": "d170544bba75bdb13ddb62b61e3dac3e29cabf17bd5fafa5e5968693f8c0bda7",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rareall\\gene2token_weights.csv": "daad386e1d21a1000adb0344d4c1400e63cfb6d0baf738b67a7f277d394381af",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rareall\\label_dictionary.csv": "59b4a9e484132430823e11494e47fe66b9822eb167287649ec230a4490867eb8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rareall\\mask.npy": "950a8c71b999efe97fa524192dbe2261d2e9c72d146428ef9300c91d6ab81167",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rareall\\model-9.pth": "3bfa669a2661f74e2443480035954ee24a2a6be9034ec8c039dd70a9e29cb8cc",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_lung_endo_seed42_rareall\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_sapiens_stomach_seed42_rare0p01",
+      "inputs": {
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\manifest.json": "ba08f4172d5f2117f0e81a98ca2db5b4df42d261a1d68038a44d59fac9eae243",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\selected_hvg_genes.csv": "12fcc12e9cd9412ded1605ca6d1fe2fb874880c7b9482e0930548972b90c1466",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f"
+      },
+      "outputs": {
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "0a8df64c937e733eba0c686944b4c2a10adfe39beb1e60a045664771d750c2bb",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "a1756eeb7b3281e39cb1acf63e202ee3946590f65e4962ba0596b3dd728162e3",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "cef1967e5ac2f884d2222e8a6e53da6bc957c7150164aa21ac5d2ed9c5d3ae0c",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "c0fa9f7d8a11dbcc7fd858f50c095a8e2ba60a529ed479d4c3aeac80c445563a",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "f33033f511620d5a05d4d47cd57074cb4ce952bb9ad06706c1fb1fbad1fde845",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\tosica_backbone_rescue_v1\\test_latent.npz": "a5353ede9cd798e90d2df0c105aae0efabb9b679d56db43524b686843c66b46c",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "2b4194a8cc44f08fe806089b32d91c33b341d033dbcec7f3cba156848e8454b3",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\tosica_backbone_rescue_v1\\decision.json": "5c4c949b161efd020ec6850c3d210d0a51e0eeed99cefa046b77ca1e848dbfa0",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p01\\gene2token_weights.csv": "f233bc9ff28dea18f8c66b440c23ca4e868f92e8c0c6d85a51dd64c99c1dbdbc",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p01\\label_dictionary.csv": "ebb96f3e898adb1cf1120dfaa6efbf9f07bb8a15c05f7360927463fe2683510e",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p01\\mask.npy": "fccdae0a6e52cd97ffec7c8f024e99919b99632dc68c6bc6a1dbcb1ac23d6349",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p01\\model-9.pth": "b4e54592a42c09708952f4da3d18d9046ccdabc503613bb857ba0d45071c3e21",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p01\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_sapiens_stomach_seed42_rare0p05",
+      "inputs": {
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\manifest.json": "d70e94382fbe206e47bb7a47bac369a4ee0ca757839243b942908cc6686ebcb9",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\selected_hvg_genes.csv": "12fcc12e9cd9412ded1605ca6d1fe2fb874880c7b9482e0930548972b90c1466",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f"
+      },
+      "outputs": {
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "0a8df64c937e733eba0c686944b4c2a10adfe39beb1e60a045664771d750c2bb",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "a1756eeb7b3281e39cb1acf63e202ee3946590f65e4962ba0596b3dd728162e3",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "cef1967e5ac2f884d2222e8a6e53da6bc957c7150164aa21ac5d2ed9c5d3ae0c",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "c0fa9f7d8a11dbcc7fd858f50c095a8e2ba60a529ed479d4c3aeac80c445563a",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "f33033f511620d5a05d4d47cd57074cb4ce952bb9ad06706c1fb1fbad1fde845",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\tosica_backbone_rescue_v1\\test_latent.npz": "a5353ede9cd798e90d2df0c105aae0efabb9b679d56db43524b686843c66b46c",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "2b4194a8cc44f08fe806089b32d91c33b341d033dbcec7f3cba156848e8454b3",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\tosica_backbone_rescue_v1\\decision.json": "5c4c949b161efd020ec6850c3d210d0a51e0eeed99cefa046b77ca1e848dbfa0",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p05\\gene2token_weights.csv": "f233bc9ff28dea18f8c66b440c23ca4e868f92e8c0c6d85a51dd64c99c1dbdbc",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p05\\label_dictionary.csv": "ebb96f3e898adb1cf1120dfaa6efbf9f07bb8a15c05f7360927463fe2683510e",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p05\\mask.npy": "fccdae0a6e52cd97ffec7c8f024e99919b99632dc68c6bc6a1dbcb1ac23d6349",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p05\\model-9.pth": "b4e54592a42c09708952f4da3d18d9046ccdabc503613bb857ba0d45071c3e21",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p05\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_sapiens_stomach_seed42_rare0p10",
+      "inputs": {
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\manifest.json": "af02e4537494768d54bbb79b26a5a201bd88c232b6f401260956befbf79427dd",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\selected_hvg_genes.csv": "12fcc12e9cd9412ded1605ca6d1fe2fb874880c7b9482e0930548972b90c1466",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f"
+      },
+      "outputs": {
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "0a8df64c937e733eba0c686944b4c2a10adfe39beb1e60a045664771d750c2bb",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "a1756eeb7b3281e39cb1acf63e202ee3946590f65e4962ba0596b3dd728162e3",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "cef1967e5ac2f884d2222e8a6e53da6bc957c7150164aa21ac5d2ed9c5d3ae0c",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "c0fa9f7d8a11dbcc7fd858f50c095a8e2ba60a529ed479d4c3aeac80c445563a",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "f33033f511620d5a05d4d47cd57074cb4ce952bb9ad06706c1fb1fbad1fde845",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\tosica_backbone_rescue_v1\\test_latent.npz": "a5353ede9cd798e90d2df0c105aae0efabb9b679d56db43524b686843c66b46c",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "2b4194a8cc44f08fe806089b32d91c33b341d033dbcec7f3cba156848e8454b3",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\tosica_backbone_rescue_v1\\decision.json": "5c4c949b161efd020ec6850c3d210d0a51e0eeed99cefa046b77ca1e848dbfa0",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p10\\gene2token_weights.csv": "f233bc9ff28dea18f8c66b440c23ca4e868f92e8c0c6d85a51dd64c99c1dbdbc",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p10\\label_dictionary.csv": "ebb96f3e898adb1cf1120dfaa6efbf9f07bb8a15c05f7360927463fe2683510e",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p10\\mask.npy": "fccdae0a6e52cd97ffec7c8f024e99919b99632dc68c6bc6a1dbcb1ac23d6349",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p10\\model-9.pth": "b4e54592a42c09708952f4da3d18d9046ccdabc503613bb857ba0d45071c3e21",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rare0p10\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_sapiens_stomach_seed42_rareall",
+      "inputs": {
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\manifest.json": "9668861135b79b7cfdb4765dfc329e123babf5f2b3a3f7bf58fea5970f249b8b",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\selected_hvg_genes.csv": "12fcc12e9cd9412ded1605ca6d1fe2fb874880c7b9482e0930548972b90c1466",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\train_predictions.csv": "529e995b98daab589abe07f1fcfe46fc7235b0e04914abd37d56db1eb1f014eb",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\validation_predictions.csv": "21efa70fd7f0eb36cfb8627dc400e98a5341a48c275aab1945418ec4124631db",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\embeddings\\test_predictions.csv": "9de4b2398ccbdf469243431e355280f914c60e295752133241b6ae6c8a95ab00"
+      },
+      "outputs": {
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "ce859c101a48730b15143c1224bba256d02ab5eaaf109c653f904000628782eb",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\tosica_backbone_rescue_v1\\validation_predictions.csv": "f30d7e6b758c222b503dc33c951e86afa421c0302f35f17d61c36c621762903b",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\tosica_backbone_rescue_v1\\test_predictions.csv": "8b7544827c88fc683c3843538d433d7f3f484f15bb45f8df89be129bb6b647a6",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "ea396e68482ddc8ac78d1af70d0e9278cbffa0051af4733d6d720a0c7265354e",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\tosica_backbone_rescue_v1\\validation_latent.npz": "59c7375a96aafcd5c1091f788b369a2f2330eccf3cf51e5b6d1082aaac578b59",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\tosica_backbone_rescue_v1\\test_latent.npz": "1ce2b5fcb95b6a584973b06a84b2842db0437528249ef1b2724e31746d0188ed",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "c1103436adb562b6e72c44f4ef208ecdf5b0a3d62478d2492f7b8f73fed50d98",
+        "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rareall\\tosica_backbone_rescue_v1\\decision.json": "c46c20d0f94cebefd0fd49e5d487446d49fa20ac2f8e7499c6783015b2bd1be5",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rareall\\gene2token_weights.csv": "c5a49638cd26e2214a863464906424ca03ea21f377d5dc0b61528b3a9ce5173d",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rareall\\label_dictionary.csv": "ebb96f3e898adb1cf1120dfaa6efbf9f07bb8a15c05f7360927463fe2683510e",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rareall\\mask.npy": "fccdae0a6e52cd97ffec7c8f024e99919b99632dc68c6bc6a1dbcb1ac23d6349",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rareall\\model-9.pth": "eb74a2e1fb0a3170fd20f8c433ccc2075eaa4c8756d835e14cfd773fb6f968ed",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_sapiens_stomach_seed42_rareall\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_small_intestine_seed42_rare0p01",
+      "inputs": {
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\manifest.json": "561b6a0c95d3d0c03eb08abfb36d9914fae489ef65324b35f803a3309cf2eadc",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\selected_hvg_genes.csv": "b8160ae766b187d1a0f8c7807b0f83bfd1500a0f7857a96f7981e36f6d2e95ea",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\train_predictions.csv": "7cb0920e1d40a0e1ce9bee705ea50c9374173a0ceb417e8b0a4a21f09c3c81bc",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\validation_predictions.csv": "60f5dbc562709a4d0a9e346f3dfff3e463c0f17a789c18a459e6842eed73c883",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\embeddings\\test_predictions.csv": "ed987afd71d6f57a3ad0ff21e956c99007482688ea05807b9d887a0fa9126812"
+      },
+      "outputs": {
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "bd05c70a00ceb328ee18186a47353c0912e34595b2931a1b85625d5133233445",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "ff41d02b21c8b9270026a78381e793d7b281e9bbbb493570b4918626312e40f2",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "02a23443ca4550c700dcf932a67b93c43ee840ae7f4f88a784149f9638697b6e",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "a27b4d63f4ff654cb351d9242feb60c4e1d7debe0ad8caee2816cbac7d0cdfb2",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "83607e9d53e0c48cf671a846e78e4d9a4d11a014a97db6ca4e7ad702152b476b",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\tosica_backbone_rescue_v1\\test_latent.npz": "a3d569c81fa08efc6eafb07934b826fab6ee3910958500f0fc2c589a224c2be4",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "11ad6462fc96d860a9bd1cc3673c229f5e198d1334316e804d5050b9ff5f92bf",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare1pct\\tosica_backbone_rescue_v1\\decision.json": "47f520705be38849b1715b00b77933ab9342c920f9fa558098c729cb5c417959",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p01\\gene2token_weights.csv": "00602b1064519ecf540e0761036086889abc9b6c4b6251c1396a9fe11d148ae3",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p01\\label_dictionary.csv": "d859dd4204eebf76c845d064536ba50b667fa49297363c7ce0070b5cb604b371",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p01\\mask.npy": "fccdae0a6e52cd97ffec7c8f024e99919b99632dc68c6bc6a1dbcb1ac23d6349",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p01\\model-9.pth": "6a3d3964f7a62b53a8a4b6c18e183a6df8118cfc2fe85d5585b26acabcad50c9",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p01\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_small_intestine_seed42_rare0p05",
+      "inputs": {
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\manifest.json": "be9e492cb2d87dffe3402dd6ff3f143314c54924580bed7a06b9b4e263e32aac",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\selected_hvg_genes.csv": "b8160ae766b187d1a0f8c7807b0f83bfd1500a0f7857a96f7981e36f6d2e95ea",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\train_predictions.csv": "1c546d873e5d513420107646db1da67d08248d6a8ae30eb9903743fa3ae96afe",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\validation_predictions.csv": "fd259e82efda3c66d77a886ed9d3a8bb01cd991f8ac47d4c571345918707786d",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\embeddings\\test_predictions.csv": "ef82e9df8b31afd7926d7177e63397aba41d16bebc4733d6dddef3a6a1591165"
+      },
+      "outputs": {
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "88fee35dd0d4a7e9806b0ea4d2c2b368e752abf5359838ac46655e8ff0c4d18b",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "e90d0a4afae04d79a6502f9a0105f8fa836da493a8627f06b305fdb14f8ddfc8",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "f5064eb7504f39dd1cb7823e62cc4210fa44b30c48c038a67392d1de64ee6502",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "efd81ef45bffa308b41a67175a64b9c63c2a5d2649bbee1be810b64a1bc307fa",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "6e478152366025ee661126d5ff25c57ffdb2f237d7c4411db7a66f639ba70f08",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\tosica_backbone_rescue_v1\\test_latent.npz": "b52e043f75e6099a83a2ac11ef1793a24fb6c85543c9b3da55784cc1a8e3aeee",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "34d5b5542d054869aba0d054c77eb25fed6bdb759472f9c8639f3a3f113d1b84",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare5pct\\tosica_backbone_rescue_v1\\decision.json": "fd2b0870aa36f924f1068a8a985bee89aa5d1942f977a7ca2bf4088bfe8c0b24",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p05\\gene2token_weights.csv": "724f4da09359720159b12a2316bc7f9215ce22677582fa2fa7e554e15b74351c",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p05\\label_dictionary.csv": "d859dd4204eebf76c845d064536ba50b667fa49297363c7ce0070b5cb604b371",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p05\\mask.npy": "fccdae0a6e52cd97ffec7c8f024e99919b99632dc68c6bc6a1dbcb1ac23d6349",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p05\\model-9.pth": "d0a2be2318b199b4ef8814dbd7863f730e87e83047e45b5a72322dd375764e1c",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p05\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_small_intestine_seed42_rare0p10",
+      "inputs": {
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\manifest.json": "b847254cce748bd6f1a32921f44a66d61b03835f08251a83069d06a45ad08bf0",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\selected_hvg_genes.csv": "b8160ae766b187d1a0f8c7807b0f83bfd1500a0f7857a96f7981e36f6d2e95ea",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\train_predictions.csv": "1ff5d33bb1089bc3f3ae8f71d99311fc506bfa776940d671d007c76e63a8ebe0",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\validation_predictions.csv": "c98208c3187723a49f03afe92cc603aa617c76982f2d7f276bbe22b76550958d",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\embeddings\\test_predictions.csv": "f35b690ab8f4f721c74659fc2a31446485bb040fe0046086dee8c37b80e0c08e"
+      },
+      "outputs": {
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "6fa9254b3286533eb7b67b1399f259785c7b1e82d08770e303764134a2ca6483",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "7df1ac6b08fe3c9cd944c7dc331bfcd93f7d3b93dee2606a4e378fda5936313f",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "486b64137fa7316ccae2c0e035ce1ec43c9cc7c59c7ce129d6dee43cc3ec90f6",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "99c7306df8301a49faea2c473a1337d2df56dbc21565e634d1cb6d8fad6f0c01",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "1232ae43ab11ec28708d9d67a3502a73c9b978c8b4bcda9ad9c23845254eadf3",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\tosica_backbone_rescue_v1\\test_latent.npz": "eca72edd6812dd7f2da3f223a504c3eac652acd98240bf0548922b3eb3cf55b9",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "0f76a536d3e651d1c2c41f28c246409292a13f871ee56c2d53085e4a9e5150c7",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rare10pct\\tosica_backbone_rescue_v1\\decision.json": "e772c5a920f74e7dbd1825fb3ee3f78118e00ee6a9fefdc26bfe5cc28f77e69e",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p10\\gene2token_weights.csv": "fe335d83057ef66c9ff274c25e671f19b0c38e9a43577bc47e0f9c5e60bc0ddf",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p10\\label_dictionary.csv": "d859dd4204eebf76c845d064536ba50b667fa49297363c7ce0070b5cb604b371",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p10\\mask.npy": "fccdae0a6e52cd97ffec7c8f024e99919b99632dc68c6bc6a1dbcb1ac23d6349",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p10\\model-9.pth": "1d756fc9302f85e4b585848d82a88e543e9cb586bfdd7b4958de7e66d59950c2",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rare0p10\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "tabula_small_intestine_seed42_rareall",
+      "inputs": {
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\manifest.json": "22ac0fc0094921f1f625fdd18aaacb1e9ac59edbfa874dd47d74dba42e21839f",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\selected_hvg_genes.csv": "b8160ae766b187d1a0f8c7807b0f83bfd1500a0f7857a96f7981e36f6d2e95ea",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\train_predictions.csv": "80b327c2ee28831dc75eef0496e28e8e19c09317fa45c6e2f869472a43d04eeb",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\validation_predictions.csv": "4dbe57cffe11d8d0db21957974240a9aad1f8609de12a5ddc744846c3196defa",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\embeddings\\test_predictions.csv": "a5d9fc35ebc1cd710a486510c23b8e95e90a2a47599f1c4f25a7b38dd0fc26a1"
+      },
+      "outputs": {
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "59c7a25ba9affbe4ee90be75da047c9dba0981be204a7df9ec9a6205b67a349a",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\tosica_backbone_rescue_v1\\validation_predictions.csv": "5734a7fb3cbd67ba0b3d3a70b46892cfba67ae8243a3d96348cc176e83ffc21e",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\tosica_backbone_rescue_v1\\test_predictions.csv": "33e7fb32c534cb20867d18ff5d1da3476a99e97d3064218f32b56ee510268d80",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "e9728ed82ee3545059133a4ddc4b8b7973352e316cb1655eeeb4a9fabe2b8f68",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\tosica_backbone_rescue_v1\\validation_latent.npz": "713d4d22b3bc8e9934e3e3fdf410bc1b27650aa21104d3361f81dd9be3beaace",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\tosica_backbone_rescue_v1\\test_latent.npz": "ad38b807c7157b9d8279bbe1af95dd0e72e05c274ce8a7f6a1f722bc8f8f6859",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "f17866867bf2e24f0157e0723775b8d5d5bcddafe2e60254b6ea23cdfb161e7f",
+        "outputs\\tabula_small_intestine\\batch_heldout_seed42_intestinal_tuft_cell_rareall\\tosica_backbone_rescue_v1\\decision.json": "d170544bba75bdb13ddb62b61e3dac3e29cabf17bd5fafa5e5968693f8c0bda7",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rareall\\gene2token_weights.csv": "0e092510a9e68c1d19f55d21acddd7fa7878886464c935c0a54af757695ddee1",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rareall\\label_dictionary.csv": "d859dd4204eebf76c845d064536ba50b667fa49297363c7ce0070b5cb604b371",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rareall\\mask.npy": "fccdae0a6e52cd97ffec7c8f024e99919b99632dc68c6bc6a1dbcb1ac23d6349",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rareall\\model-9.pth": "eb3c48eb7802fcbfdd97ed24b54f9ecf0a4a9636213fdfb8e3714627a414877d",
+        "checkpoints\\tosica_backbone_rescue\\v1\\tabula_small_intestine_seed42_rareall\\pathway.csv": "8a1046e6295880a4374425ec73cf94f5b07d4ed0e3959dcaed820881139b8e62"
+      }
+    },
+    {
+      "key": "mouse_lung_tms_10x_seed42_rare0p01",
+      "inputs": {
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\manifest.json": "06ba6f283d2ecfcee310c720e6ba834ad1a4c80c1c4ffb0dbebea176f4c1c42f",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\selected_hvg_genes.csv": "fb9af6c58a89b407725c04c4654139d346880c9c825f12eaf568e8df6110cf34",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\train_predictions.csv": "fead53fd34b3db8730ef4a1a0a82825c9de2175530128a024156c2b62b70811d",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\validation_predictions.csv": "2f74f34d6aacaa3789b37b759a68e07e4a1f916e0f92b968bbf3cac4d4a83f54",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\embeddings\\test_predictions.csv": "0f6649090fa24040b2c276eb2dcd76d99d9be630d521279f032082ed9542c0f7"
+      },
+      "outputs": {
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "c2ca171dc4cc97936e3d5c29cf530122e8cb715d01048d08d30214af0cf1afae",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "8fe17a6b11eef3fb1a054538c23fbda715883c24396cb7e7491017ff7f27ecd3",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "f4b71e245f99f8280ea3cf52db5c96a7a0853d6b45f798d45d1c5b6d2c819f95",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "2eaa9b79e4450ce114b36896594f1d9fea2f9849f0d2ffbd55dd3d9a168af37c",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "81e21890fc624791b89aafdea993a4621da4b7226d4c9f670f0dd9450be889e2",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\tosica_backbone_rescue_v1\\test_latent.npz": "a489843b58216a842d8c8a565f55cc6c21444315fd9cac61356b9b0638742b36",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "84dfda8ecc02595c854cb259de5c26fdcf25db1a93c2e42d11098c78a9090210",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare1pct\\tosica_backbone_rescue_v1\\decision.json": "987b61bb43727bdd82e9b63fff1b38d7472b356c9bffad036cb7ce294bfadf92",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p01\\gene2token_weights.csv": "61d4c8a7eae0edbc83aa9511bf354c73646130006db7586f3c05a4f40db607ba",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p01\\label_dictionary.csv": "6f87a0de74aa327c9d985a13886a0192c89fb8bace7aab924ed282118eb3fbbb",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p01\\mask.npy": "cb1b4b0a07a660c5da3e68a1b1b921c1faef20f13866b61342ab38e1baa29289",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p01\\model-9.pth": "49f862a82a6e66dce35dc784adb5d52e30f90d4d24f7d9ab63f9baf9e657c2b4",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p01\\pathway.csv": "f48ee9a01c807cb8073a7dc7c1f3785fecec4fc6727f95a138c7e76e4b36b820"
+      }
+    },
+    {
+      "key": "mouse_lung_tms_10x_seed42_rare0p05",
+      "inputs": {
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\manifest.json": "3fa6dab1bcb47c837db27ef4417a5000e1ef6ff3b0a64970c586becf681725f6",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\selected_hvg_genes.csv": "fb9af6c58a89b407725c04c4654139d346880c9c825f12eaf568e8df6110cf34",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\train_predictions.csv": "4092c23a75b0d8f3d75e682323f0e419bbde5d250b3d2647f1f54d107bc69e2a",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\validation_predictions.csv": "493430688097ad9434c51da80e18e2eb55249b77d5416c8c5958c761815634a3",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\embeddings\\test_predictions.csv": "6f89713d5a05688162f6b7ace8f7c608802b21911a27379328fa1a6a09a52d76"
+      },
+      "outputs": {
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "1272d678a396ab7b34499edbb6fbbae30494ade5763e7181ded0ae3ece03e7b5",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "a73a83a97ec4e9656557248105a745e12b5525eb5aca1bfca1d858fce5eaade6",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "a307c7e8e1ce78f58e0af7703750dc314d54a1eec171c8ef2b408c22f7b2f778",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "6d85219fcf7cc7a0a54773ba76aa8aff51964d06d8225a0cebb752211581de9f",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "dc35e7cf39bb76e5f177fa9ea90b4b17425e3805d02c5a2c818834e5a2403a66",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\tosica_backbone_rescue_v1\\test_latent.npz": "d3d2f05634a5604e0b54b873a7356c8e977fe54a6e16c731aa2713e86d801649",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "75289db3470c7490b57e0f51a61aab2ac6b2f8e958b03240b7dda4e20d8d6197",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare5pct\\tosica_backbone_rescue_v1\\decision.json": "826a1648b6c3b8bcd39ed99864bd29778d6620c2256e2d465d7f0852ced98689",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p05\\gene2token_weights.csv": "c545901392501fa3896f6f6a7ec1277c51dab120f1be4b5cf8374ef85c7dce4d",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p05\\label_dictionary.csv": "6f87a0de74aa327c9d985a13886a0192c89fb8bace7aab924ed282118eb3fbbb",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p05\\mask.npy": "cb1b4b0a07a660c5da3e68a1b1b921c1faef20f13866b61342ab38e1baa29289",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p05\\model-9.pth": "b8bf80215e6478ae261e865fc33808263d42e83a2db7c3baf69ecd4d220ea8b8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p05\\pathway.csv": "f48ee9a01c807cb8073a7dc7c1f3785fecec4fc6727f95a138c7e76e4b36b820"
+      }
+    },
+    {
+      "key": "mouse_lung_tms_10x_seed42_rare0p10",
+      "inputs": {
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\manifest.json": "6c6403aaa2a3d0542215ee2437f96fd0ac675e2f93dbcedab9de1d5c2fef7982",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\selected_hvg_genes.csv": "fb9af6c58a89b407725c04c4654139d346880c9c825f12eaf568e8df6110cf34",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\train_predictions.csv": "1244006e8449a7a2bed224b4670c8458150820df350367e0e9eb05010b8df8ab",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\validation_predictions.csv": "524986067b90713f15bbc9b2c40a81020de631f6f9ce899cf43c8cd6d935a778",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\embeddings\\test_predictions.csv": "46acef8f4c309bd5bfa892517386214b8cfa1d1b1a6116d83752dd8d7ea1afb5"
+      },
+      "outputs": {
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "ce8264ee0ecad2f118ded8a0442f2fa914842cf1e97d22ba77072e8975ffbe7a",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "e940a35fc3a8bbca1117790f953c2a8c621db086a03bf24d68563311ed27ac42",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "7b6b30ee9cfc55981a73e79f7f4e40bed49438f4832f6d645db0fd15de3ab0c8",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "fcbb74f324b2fdc3cd6c8cc1e7c73b2788c29666e953f5486a5933dfda64c86e",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "b98f901b0a2e30e9c2f8e7d0fd4c8f7c359b2b0e8965e704e4601ccee493c8c8",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\tosica_backbone_rescue_v1\\test_latent.npz": "505c66569a30b7b77a1bcc4e67cfbdbeff4d7a1afc96e4d6fb37572f60bef615",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "4b86fff1579d0c9b37d4dd97154b72ef20a2a39dfe5e2f0b573d7ca382c90294",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rare10pct\\tosica_backbone_rescue_v1\\decision.json": "c5e9fd27f08bc56f600b9079fd37144f377c4299a84c9b052c641f0c002174b4",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p10\\gene2token_weights.csv": "00f540380439e555df8493f66bacf58a2d7cb9086a6f87ac7a0948a607ebcecb",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p10\\label_dictionary.csv": "6f87a0de74aa327c9d985a13886a0192c89fb8bace7aab924ed282118eb3fbbb",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p10\\mask.npy": "cb1b4b0a07a660c5da3e68a1b1b921c1faef20f13866b61342ab38e1baa29289",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p10\\model-9.pth": "c361b2cb98da502f33f078cdd443c8cc170c4d9c2d06f213d14b8a3411a7731e",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rare0p10\\pathway.csv": "f48ee9a01c807cb8073a7dc7c1f3785fecec4fc6727f95a138c7e76e4b36b820"
+      }
+    },
+    {
+      "key": "mouse_lung_tms_10x_seed42_rareall",
+      "inputs": {
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\manifest.json": "64771baa8cc65225b6e12b1662d3c49b3c61ab2b3dc4d10ec634a0360a903345",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\selected_hvg_genes.csv": "fb9af6c58a89b407725c04c4654139d346880c9c825f12eaf568e8df6110cf34",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\train_predictions.csv": "9eab5fafb7c6f0b29cd73ff0331fb72a46c4c7a5e2912b5430d2c79c911e7886",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\validation_predictions.csv": "4fed2799a08bcb0a56860cad247447d76cf6d26dc4b61f42701b9c9efe81f551",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\embeddings\\test_predictions.csv": "915e91c69ac10ebb4c2d5f00eb6739714f371b9855ccb7ba2a2475ed2c05e87f"
+      },
+      "outputs": {
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "a17bc0b0680be86c65f3c7b5d904918207a802911d5e874c059514f8863a4576",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\tosica_backbone_rescue_v1\\validation_predictions.csv": "2c4ef91ea9d4863d7b9e725942d1d807e88f4d0106793e6973f659eef3c30e22",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\tosica_backbone_rescue_v1\\test_predictions.csv": "d0282235a2ce0d79600261ad17107c5fb404c9b56adeaed473beddeedfcd9119",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "d4912c46459c67be37faea2dcbb5a8b95e2f317579a9f8f75d6863cb7681b530",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\tosica_backbone_rescue_v1\\validation_latent.npz": "f321bfedc9e1bba2e456098c200af78d9cdeda8fd9bd586278a9bbcfeedeeed0",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\tosica_backbone_rescue_v1\\test_latent.npz": "ead913e4d59d09289fa3269dd354067e37f0bc75b8daad11c08b0c423ab47b51",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "c85ba19c32ebffc686f3bb00f0804c874de786fb99bf409acfdc09517bc5723d",
+        "outputs\\mouse_lung_tms_10x\\batch_heldout_seed42_vein_endothelial_cell_rareall\\tosica_backbone_rescue_v1\\decision.json": "3fd58162cdf778008485a485b82c8caa33db8ef36fb1d4fc9273f64bb9e39272",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rareall\\gene2token_weights.csv": "4758feff23d556426ed6dcc649e8f3a51a244c1864cd53cd7d01bc2b28ed8c46",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rareall\\label_dictionary.csv": "6f87a0de74aa327c9d985a13886a0192c89fb8bace7aab924ed282118eb3fbbb",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rareall\\mask.npy": "cb1b4b0a07a660c5da3e68a1b1b921c1faef20f13866b61342ab38e1baa29289",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rareall\\model-9.pth": "c2b9fe0fb3ebd87a8264fc61e8a53dff386bd9f5728ef69a45ef64a9ac4be692",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_lung_tms_10x_seed42_rareall\\pathway.csv": "f48ee9a01c807cb8073a7dc7c1f3785fecec4fc6727f95a138c7e76e4b36b820"
+      }
+    },
+    {
+      "key": "mouse_pancreas_tms_10x_seed42_rare0p01",
+      "inputs": {
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\manifest.json": "e98e749cb0f69d9e912dd286bbea0ff5bae375c35cc0ceccd77b92557c336478",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\selected_hvg_genes.csv": "d5d84511bd58f2bfa126a97d1943558372b8604d5bac3315b5ee1d85c12717c6",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\train_predictions.csv": "58a32ffd70561c12e7396a55f803e75648bb0a675200312010448c860b9ffddf",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\validation_predictions.csv": "69cf0fb7b8c6f473f5add7a4830dd46fedb2dc6d025480e4611a40b732c69c5c",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\embeddings\\test_predictions.csv": "27792d23168fe653cf3181a9fd5acd6ec9db4fd74016fd7f62ba12d8b20028f2"
+      },
+      "outputs": {
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "dc9c44a72d280b49fe16058b49b462efb22ca96125172593e391c7d5ba090db3",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "12c718e2fd2028c3ed79bdd89b336a91ca7d6d6e1de068fdb2c566a97699c88a",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "f9486addad623eb29e764223442c550072f2a647abe39b9afcf91d7d8cc8c65d",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "7b2c897266e85a09a281c7021a12a41346db62d5186ffd388afbe80e65c7ff2b",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "9cbece998c365ccebb0c9e12cbbc6a0cc44779e89631e4f21117366173ac6923",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\tosica_backbone_rescue_v1\\test_latent.npz": "258cd305e546b74684fd390222b2ea896a4404652eb13991a09d4a0fe58e2b03",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "92749fd882547af30b50c41df0e4ab8b2586352504ecdbfbd2b54359281f42e3",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare1pct\\tosica_backbone_rescue_v1\\decision.json": "e82af7cbbacea4a185397a48c70610158df5fb1df98de8fd016cfaa5bdfa4bd5",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p01\\gene2token_weights.csv": "9192a86077973bb9da19398b2f78111644ad22fb51883f234b73597875d863b8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p01\\label_dictionary.csv": "720e989e43f7fc71a0716c727c7f5934ff5c02b490ce2d15585c90a148c128b0",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p01\\mask.npy": "7f98fcc8316dfbb9d63a88b2f2685fab1820679d22ffc4ce092b6767275cdf00",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p01\\model-9.pth": "6f940e4936e8328ec8149370f98ce39c85f5172e5b59b21f5ec3b5ab4449437e",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p01\\pathway.csv": "9cfd196a6ccb4913ea9ba4d0d21a4f4d000e9ab6c5318582f56b775187a2d9f0"
+      }
+    },
+    {
+      "key": "mouse_pancreas_tms_10x_seed42_rare0p05",
+      "inputs": {
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\manifest.json": "57116739bfb70bc7033111710b7b7650c2056cacfcf8e584e4af2dcd68da0f1b",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\selected_hvg_genes.csv": "d5d84511bd58f2bfa126a97d1943558372b8604d5bac3315b5ee1d85c12717c6",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\train_predictions.csv": "2709327a04c447ee2797f264fd3719eaf6ed7b2b4f05256cc3ef951d6a395adb",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\validation_predictions.csv": "60d2305c35419b1520eab865a7fbb9770e8617ca93b1037c27e02fe516947bcd",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\embeddings\\test_predictions.csv": "6dcef6c4072071eb9f4c34ef6751081cf64e35b621bb793cfca7dbefc234ee3e"
+      },
+      "outputs": {
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "e40feb281226ecd44e4d282faa1d41c6c62685224b0a7d9ce9c52abbb224b70e",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "e6a47fe336d318709ba7f5a23e8b2b56c5bf3083530c0b2d60d6f133f3aa7122",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "8fd5488a858c9990fc80c0cd35499bda5b969fbf6d0b9212a86acff7d7ec7bdb",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "c9aee9b9dd97bf874824849ed864e088d97e8b38f02b007c66396da5a1d98c25",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "d030680e5b52ad9019e7093901a338836f096f68f1c3407d3fca3126b24a0368",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\tosica_backbone_rescue_v1\\test_latent.npz": "d786a7902bfc2c3487a94592f1655db74a93a28dc3ee220f26c9f6f832efbc8f",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "8c2ca07c991fc8f2ac29512c553a2a96f8252b2edea1c676b47d12ee73719452",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare5pct\\tosica_backbone_rescue_v1\\decision.json": "ec6513576ae50d90d216aa5a781921681296d0723ca3f711143921d8424025d8",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p05\\gene2token_weights.csv": "ab2b87ee28d4d4fac59b214d40b210e842d19d2ddeb365e17768b0f1f4b1a26b",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p05\\label_dictionary.csv": "720e989e43f7fc71a0716c727c7f5934ff5c02b490ce2d15585c90a148c128b0",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p05\\mask.npy": "7f98fcc8316dfbb9d63a88b2f2685fab1820679d22ffc4ce092b6767275cdf00",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p05\\model-9.pth": "b5213abcde7192457d7c33df4287550aafeb7e288d477c3efb50c8d1439f9572",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p05\\pathway.csv": "9cfd196a6ccb4913ea9ba4d0d21a4f4d000e9ab6c5318582f56b775187a2d9f0"
+      }
+    },
+    {
+      "key": "mouse_pancreas_tms_10x_seed42_rare0p10",
+      "inputs": {
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\manifest.json": "eb92405e05e91fc277575ef18443a902ec0f38dfe350ea198a2c97f6ac73250f",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\selected_hvg_genes.csv": "d5d84511bd58f2bfa126a97d1943558372b8604d5bac3315b5ee1d85c12717c6",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\train_predictions.csv": "5ad97d828f41c3660b4f09f49c166c163cacfe5e1f897cbe0f7660d22a36dd06",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\validation_predictions.csv": "505a4b29224b2d2049210bd6d1bc692a3727eb1401d942794eee5a46890a3ad2",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\embeddings\\test_predictions.csv": "2e6f74873c2b563da4930812c2f7ee477d45aa58eb2ba3afcb6b83fe4c71489a"
+      },
+      "outputs": {
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "811889e30d5512d68141b08d6294344f2781382b11baa81e6673a95fb19e54de",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\tosica_backbone_rescue_v1\\validation_predictions.csv": "d946c1ccc07ef3b0bceb405fd1194b6cd09851a617f392b3b99a7d750b243a74",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\tosica_backbone_rescue_v1\\test_predictions.csv": "c2343c2d2eba162e086de64833976ec059e11dc93ca2b2843358655416166208",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "6d3192c93371657aa3ab417d9ecc45802a2907021bc75903003f7b7c6b865eab",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\tosica_backbone_rescue_v1\\validation_latent.npz": "be98278e0517b2bae747cdbff668ffb1c245a943800a3f84d730929fc9b11441",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\tosica_backbone_rescue_v1\\test_latent.npz": "2adcef96476cf49d9dce08d10282ba1992cdcdb7f6c8646c5c7c51d57a7b7b1a",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "5d459e263368580c66afed284d19c7965d2fd3f9dbba2eddbe442bbbfe9f500d",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rare10pct\\tosica_backbone_rescue_v1\\decision.json": "3c7603688ccb08c70bef8e89e9b39545243e271f0a81abc0e846e730b49c9147",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p10\\gene2token_weights.csv": "baf27ddac080e49c6f0d576a65cc5ca7540bf691c546545f0d6941b23bfdd874",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p10\\label_dictionary.csv": "720e989e43f7fc71a0716c727c7f5934ff5c02b490ce2d15585c90a148c128b0",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p10\\mask.npy": "7f98fcc8316dfbb9d63a88b2f2685fab1820679d22ffc4ce092b6767275cdf00",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p10\\model-9.pth": "1a41790c914f2e697f6693efc82ae53476fff0df306af17bd9ed8d3eb6fe9ec6",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rare0p10\\pathway.csv": "9cfd196a6ccb4913ea9ba4d0d21a4f4d000e9ab6c5318582f56b775187a2d9f0"
+      }
+    },
+    {
+      "key": "mouse_pancreas_tms_10x_seed42_rareall",
+      "inputs": {
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\manifest.json": "e0ffa8ef485c0ac0f664412626d1095b2452c9f5eca5f40d8d2e7b45cd38e615",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\selected_hvg_genes.csv": "d5d84511bd58f2bfa126a97d1943558372b8604d5bac3315b5ee1d85c12717c6",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\train_predictions.csv": "7c911ba368d565ec37b07f7a22cb746198ec80106a02281a2129635c972cc631",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\validation_predictions.csv": "c28976caa5330c10d0a808a2b44ed8a5e5f3773d44114cadea8759976142807f",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\embeddings\\test_predictions.csv": "1ce2e2dce95b962798405ccc00a048be8499cd9d9348ca78290fbbc7d66ea49c"
+      },
+      "outputs": {
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\tosica_backbone_rescue_v1\\train_labeled_predictions.csv": "bd3581cf8659223c63b7de4ca5239fb9af672cf3ec1d37b47f85f2aa171358c5",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\tosica_backbone_rescue_v1\\validation_predictions.csv": "d49256f5d9604417fa7b3494ad05637824cbf985316628355de521a916bc38d8",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\tosica_backbone_rescue_v1\\test_predictions.csv": "563fb53de215f1984faae640d226db5275591b31d41d4f3d1bfd74434d30d7b3",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\tosica_backbone_rescue_v1\\train_labeled_latent.npz": "871b6711f9a641c4f0b7255e55d21a71fa16f647f52ee758cba6f440cf7219d7",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\tosica_backbone_rescue_v1\\validation_latent.npz": "02e5f86a2b2e2d79cba02a55bb1f7e388d046cd40b279866fa2760ff3afc1d5c",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\tosica_backbone_rescue_v1\\test_latent.npz": "729e970bda939463c9dd077fe7f8fb81d98491e57640bd2b753d0a8799829239",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\tosica_backbone_rescue_v1\\refined_test_predictions.csv": "d2fc0023fabda10f5a6b54ad7e9c51be267d90dfcaa1bc8f9d17726300c3b236",
+        "outputs\\mouse_pancreas_tms_10x\\batch_heldout_seed42_pancreatic_d_cell_rareall\\tosica_backbone_rescue_v1\\decision.json": "d15ea524cc7cf444d2a0eb95fbb93c15c0f6c08594d13f8e2eff14c29e6f8d1c",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rareall\\gene2token_weights.csv": "bda6fd820c78c8ea679cf624188df174ebb150ba192f76303a2c329da2af36c1",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rareall\\label_dictionary.csv": "720e989e43f7fc71a0716c727c7f5934ff5c02b490ce2d15585c90a148c128b0",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rareall\\mask.npy": "7f98fcc8316dfbb9d63a88b2f2685fab1820679d22ffc4ce092b6767275cdf00",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rareall\\model-9.pth": "b07fa70d0a9d94430c8fc6902951d460a1f469c9bf47eb652aac93cca002f42b",
+        "checkpoints\\tosica_backbone_rescue\\v1\\mouse_pancreas_tms_10x_seed42_rareall\\pathway.csv": "9cfd196a6ccb4913ea9ba4d0d21a4f4d000e9ab6c5318582f56b775187a2d9f0"
+      }
+    }
+  ],
+  "outputs": {
+    "results\\tosica_backbone_rescue\\v1\\run_level.csv": "b0fa42bd466a0df4cf36090d918abceb9ec7079328dcd01cf9401bdd45be0f0a",
+    "results\\tosica_backbone_rescue\\v1\\summary.csv": "a3f70169c1de5de121786c51fac551a1c7e2d1348d0025aeec2bbda2fa9f8c7b",
+    "results\\tosica_backbone_rescue\\v1\\analysis_notes.md": "2ec880800414c2f479cc59bdfeee7530e49b8a5261037f16ed4f03a80b2a8ebb"
+  }
+}

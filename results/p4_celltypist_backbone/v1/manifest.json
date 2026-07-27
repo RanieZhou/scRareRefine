@@ -1,0 +1,139 @@
+{
+  "analysis": "p4_celltypist_backbone",
+  "version": "v1",
+  "created_at_utc": "2026-07-17T15:37:53.145025+00:00",
+  "environment": {
+    "python": "3.11.15 | packaged by conda-forge | (main, Mar  5 2026, 16:36:00) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "packages": {
+      "celltypist": "1.7.1",
+      "numpy": "1.26.4",
+      "pandas": "2.3.3",
+      "scikit-learn": "1.8.0"
+    }
+  },
+  "git": {
+    "sha": "227e1c5",
+    "dirty": true
+  },
+  "parameters": {
+    "configs": [
+      "configs/immune_dc.yaml",
+      "configs/pancreas_baron.yaml",
+      "configs/tabula_sapiens_stomach.yaml"
+    ],
+    "seeds": [
+      42
+    ],
+    "rare_train_sizes": [
+      "0.01",
+      "0.05",
+      "0.10"
+    ],
+    "alpha": 0.01,
+    "low_sep": 1.3,
+    "rank_grid": [
+      1,
+      2,
+      3
+    ],
+    "min_val_missed": 3,
+    "representation": "CellTypist native multiclass decision-function vector"
+  },
+  "review_exception": "External self-review skipped by explicit user instruction on 2026-07-17.",
+  "test_label_usage": "final metrics only; never training, prototype fitting, gates, rank, or tau",
+  "expected_runs": 9,
+  "status_counts": {
+    "success": 9
+  },
+  "source_hashes": {
+    "tools\\analysis\\p4_celltypist_backbone.py": "e65f2db6fae7f2988161cec9035c8ba1e3e36e6c04288de2c353d8c5140fca1e",
+    "src\\rescue.py": "4af0f0d077a4ef440dada000def50dc7add75de2a6909620d852a423af4e7d47",
+    "results\\supplementary_program\\v1\\methodology.md": "8a1dd4aaa407b369de85df57e9cb959f1bd3d5c7110ae78828bef011d098945f",
+    "configs\\immune_dc.yaml": "93db4f77b7d3163ca9b5e4d023b59ffe206f77fdc1bf98c71e574bc5b8e135e9",
+    "configs\\pancreas_baron.yaml": "cc73e4271ffa2c387f26094d33017862202af4599f8644ce310ba862cb734138",
+    "configs\\tabula_sapiens_stomach.yaml": "bfdfd4567dd30da8997d0f34a53df03af1848234f865f05cdd56d4f5005c0b0c"
+  },
+  "inputs": {
+    "runs": [
+      {
+        "run_dir": "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct",
+        "files": {
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\manifest.json": "8e2a707b39b043b4c59442b84aa4b0f40a89a2860ec2c63868a44e26d96b9325",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\selected_hvg_genes.csv": "6cdf86b976bbbdb6eb7892851c56d2f2ccab75c9bac4f6deee2e8bb21a64f2b2",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\train_predictions.csv": "542deaca0dcdbfd491ba1ed2456de87f2332506865fdaa4acde6dfa8c7241e6f",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\validation_predictions.csv": "2edc04e27e70dd02c47cbfcc27595d3cea8483e890ecc9d097f868cd101df5c4",
+          "outputs\\immune_dc\\batch_heldout_seed42_asdc_rare10pct\\embeddings\\test_predictions.csv": "fa02ce7cfe0460fe28fbea204219cc2b20962aba7f6e32d5a6d8b01338f3ac50"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\manifest.json": "39a2023cd01dc895af30b214c8b8c3c57e8f7db44f2c3a4ff0210c4767c72bff",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\selected_hvg_genes.csv": "cced25c51e0448c662aeccb80934fd2555cc20bf88cfe9d1f5a67bd9148bf950",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\train_predictions.csv": "1fd7615683cfcadaa6f4e15b50b8aa65375aaef3eab2fc044c810d9e180a9df5",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\validation_predictions.csv": "e88ed1efd76e11356583373f0a9cf68844c0ebc7fb35e890b1d32bb5c5abbd7b",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare1pct\\embeddings\\test_predictions.csv": "f7d36de1c1d79ad502b44da0dfbe7e069d931519bf300e4a7c878883fe38a585"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\manifest.json": "054b5fe114e1e4343412ed0d0753dca795f5ae48b2b5194b0dd306f5d6f55daf",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\selected_hvg_genes.csv": "cced25c51e0448c662aeccb80934fd2555cc20bf88cfe9d1f5a67bd9148bf950",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\train_predictions.csv": "1fd7615683cfcadaa6f4e15b50b8aa65375aaef3eab2fc044c810d9e180a9df5",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\validation_predictions.csv": "e88ed1efd76e11356583373f0a9cf68844c0ebc7fb35e890b1d32bb5c5abbd7b",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare5pct\\embeddings\\test_predictions.csv": "f7d36de1c1d79ad502b44da0dfbe7e069d931519bf300e4a7c878883fe38a585"
+        }
+      },
+      {
+        "run_dir": "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct",
+        "files": {
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\manifest.json": "c2666c75bcf7f9706de179f55dd389534faa58fba0635ecc7b70d8d1a1787ae4",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\selected_hvg_genes.csv": "cced25c51e0448c662aeccb80934fd2555cc20bf88cfe9d1f5a67bd9148bf950",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\train_predictions.csv": "e8b32b7b0e98f55c97b48798aac7e8fc58acbd637d3c0c9fe730b9fbb3495d33",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\validation_predictions.csv": "c5b09989a19a2e0f49080b9bb679a0e08b75df552ada58d496885059cb98465d",
+          "outputs\\pancreas_baron\\batch_heldout_seed42_gamma_rare10pct\\embeddings\\test_predictions.csv": "8da9dc63907cfcf23daaa6fad2b53897e85d7add8dd4ba386852767d2c75a5a8"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\manifest.json": "ba08f4172d5f2117f0e81a98ca2db5b4df42d261a1d68038a44d59fac9eae243",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\selected_hvg_genes.csv": "12fcc12e9cd9412ded1605ca6d1fe2fb874880c7b9482e0930548972b90c1466",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare1pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\manifest.json": "d70e94382fbe206e47bb7a47bac369a4ee0ca757839243b942908cc6686ebcb9",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\selected_hvg_genes.csv": "12fcc12e9cd9412ded1605ca6d1fe2fb874880c7b9482e0930548972b90c1466",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare5pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f"
+        }
+      },
+      {
+        "run_dir": "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct",
+        "files": {
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\manifest.json": "af02e4537494768d54bbb79b26a5a201bd88c232b6f401260956befbf79427dd",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\selected_hvg_genes.csv": "12fcc12e9cd9412ded1605ca6d1fe2fb874880c7b9482e0930548972b90c1466",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\train_predictions.csv": "11cb06ff6544aa2fee19ae8087ab757296c4a11c295f700581932e5426a04604",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\validation_predictions.csv": "f5fa04cfd9f278bedb5c2ef4c01121718414e8d822a7f1370f307c1ad394f58f",
+          "outputs\\tabula_sapiens_stomach\\batch_heldout_seed42_mast_cell_rare10pct\\embeddings\\test_predictions.csv": "243e406e4a58f581d9cfea70709f82a94997f3f32e302da73b33422ec6d0965f"
+        }
+      }
+    ]
+  },
+  "outputs": {
+    "results\\p4_celltypist_backbone\\v1\\run_level.csv": "1bbcf833d7157146eaa7de69a101e842e9b9dc44b37f34ee2103421d7051a124",
+    "results\\p4_celltypist_backbone\\v1\\summary.csv": "fcb31d6308aac2e0c090f8b384c9931f0e109fed43661dfb151588280c3399d9",
+    "results\\p4_celltypist_backbone\\v1\\analysis_notes.md": "7886cd818715c937527255e18c4e22aa0305b3513cec17b8d4e92d295b63bb62",
+    "logs\\p4_celltypist_backbone\\p4_celltypist_backbone_v1.log": "bc4307a06098da9fc5020b691fcbf6f1f7bcb9e511edd47f31137c2d3c58671a",
+    "results\\p4_celltypist_backbone\\v1\\figures\\p4_celltypist_backbone.png": "2f1a76396cc4d987af21e04474e75e85902cb50224825aa7f08dc9e623e54874",
+    "results\\p4_celltypist_backbone\\v1\\figures\\p4_celltypist_backbone.pdf": "df2264106b4d3d5a4dd252f362132e48a39d56b9c6ed3a25fabce6d9a29eaa19"
+  }
+}
