@@ -16,7 +16,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from src.preprocess import run_preprocessing
 from src.model import run_model_training
-from src.rescue import PrototypeRescuer, conformal_rescue, DEFAULT_CONFORMAL_ALPHA
+from src.rescue import (
+    DEFAULT_CONFORMAL_ALPHA,
+    PrototypeRescuer,
+    rescue_with_separability_gate,
+    stable_adaptive_decision_seed,
+)
 from src.utils import (
     load_config,
     load_adata,
@@ -82,6 +87,7 @@ RARE_CLASS = None                        # 目标稀有类名称（若为 None �
 LABEL_COL = None                         # 细胞类型真实标签列名（若为 None 则从 yaml 配置的 dataset.label_key 读取）
 RARE_TRAIN_SIZE = None                   # 训练集稀有细胞显式标注数量（设为 None 则优先使用 YAML 中配置的列表首元素；也可配 float、int 或 'all'）
 SPLIT_MODE = None                        # 样本切分模式（设为 None 则默认 batch_heldout；可选 cell_stratified）
+SEPARABILITY_GATE_MODE = None            # fixed | adaptive；None 时读取 YAML，缺省保持 fixed
 # 后处理拯救所允许的最大误判率阈值（主路径为 conformal，实际作为 conformal_alpha 传入）。
 # 与 tools/comparison/run_scrarerefine_comparison.py 共用同一来源常量（src/rescue.py 的
 # DEFAULT_CONFORMAL_ALPHA），避免两处分别硬编码导致官方 baseline 对比和主流水线指标不可比。
@@ -110,6 +116,12 @@ def main() -> None:
     parser.add_argument("--label_col", default=None, help="真实标签列名")
     parser.add_argument("--rare_train_size", default=None, help="稀有细胞显式标注规模")
     parser.add_argument("--split_mode", default=None, help="切分模式 (batch_heldout | cell_stratified)")
+    parser.add_argument(
+        "--separability_gate_mode",
+        choices=["fixed", "adaptive"],
+        default=None,
+        help="可分性 gate：fixed=固定 S>=1.3；adaptive=低 S 时执行 validation OOF 审计",
+    )
     parser.add_argument("--max_false_rescue_rate", type=float, default=None,
                          help="最大误拯救率（主路径为 conformal，此值会作为 conformal_alpha 传入；"
                               "对 gate_only/gate_marker/fusion 才是直接的 FFR 约束）")
@@ -127,6 +139,11 @@ def main() -> None:
     label_column = resolve_param(args.label_col, config["dataset"].get("label_key", "label"), LABEL_COL)
     batch_key = config["dataset"].get("batch_key", "batch")
     split_mode = resolve_param(args.split_mode, exp.get("split_mode", "batch_heldout"), SPLIT_MODE)
+    separability_gate_mode = resolve_param(
+        args.separability_gate_mode,
+        exp.get("separability_gate_mode", "fixed"),
+        SEPARABILITY_GATE_MODE,
+    )
     
     # 智能读取 YAML 配置中的默认标注规模（若是列表取第一个元素，否则默认 10）
     yaml_sizes = exp.get("rare_train_sizes", [])
@@ -153,6 +170,7 @@ def main() -> None:
     print(f"  - 真实标签 : {label_column}")
     print(f"  - 标注规模 : {parsed_rare_size}")
     print(f"  - 随机种子 : {seed}")
+    print(f"  - S gate   : {separability_gate_mode}")
     print(f"  - 保存目录 : {run_dir}")
     print("=" * 80 + "\n")
 
@@ -253,14 +271,19 @@ def main() -> None:
                   train_pred_df["is_labeled_for_scanvi"].astype(bool).to_numpy())
 
         print(f"\n====== [scRareRefine 拯救中心] 激活后处理校正算法 (策略: conformal) ======")
-        final_test_pred, conf_summary = conformal_rescue(
+        adaptive_decision_seed = stable_adaptive_decision_seed(
+            config["dataset"]["name"], seed, raw_size
+        )
+        final_test_pred, conf_summary = rescue_with_separability_gate(
             proto,
             test_pred_df["predicted_label"],
             val_pred_df["predicted_label"],
             val_pred_df["true_label"],
             _latent_matrix(latents_dict["validation"]),
             _latent_matrix(latents_dict["test"]),
+            gate_mode=separability_gate_mode,
             alpha=max_false_rescue_rate,
+            decision_seed=adaptive_decision_seed,
         )
         final_test_pred.index = test_pred_df.index
 
@@ -270,6 +293,15 @@ def main() -> None:
             print(f"-> [Conformal] sep={proto.separability_ratio:.3f} | alpha={max_false_rescue_rate} | "
                   f"tau={conf_summary['tau']:.4f} | 选定rank={conf_summary['chosen_rank']} | "
                   f"候选={conf_summary['n_candidate']} | 实际拯救={conf_summary['n_rescued']}")
+        if separability_gate_mode == "adaptive" and conf_summary.get("gate_mode") == "adaptive_audit":
+            print(
+                "-> [Adaptive-S audit] "
+                f"pass={conf_summary.get('adaptive_pass', False)} | "
+                f"active_folds={conf_summary.get('active_folds', 0)} | "
+                f"WilsonUCB={conf_summary.get('oof_ffr_wilson_upper', float('nan')):.6f} | "
+                f"ΔF1-LCB={conf_summary.get('oof_delta_f1_lcb', float('nan')):.6f} | "
+                f"reason={conf_summary.get('adaptive_reason', '')}"
+            )
 
         n_rescued = int((final_test_pred.ne(base_pred_test) & final_test_pred.eq(rare_class)).sum())
         n_false_rescues = int((final_test_pred.ne(base_pred_test) & final_test_pred.eq(rare_class)
@@ -291,6 +323,12 @@ def main() -> None:
             "method": "scRareRefine",
             "seed": seed,
             "rare_train_size": str(parsed_rare_size),
+            "separability_gate_mode": separability_gate_mode,
+            "adaptive_pass": conf_summary.get("adaptive_pass"),
+            "adaptive_reason": conf_summary.get("adaptive_reason", ""),
+            "active_folds": conf_summary.get("active_folds"),
+            "oof_ffr_wilson_upper": conf_summary.get("oof_ffr_wilson_upper"),
+            "oof_delta_f1_lcb": conf_summary.get("oof_delta_f1_lcb"),
             **overall_metrics,
             "n_rescued": summary["n_rescued"],
             "n_false_rescues": summary["n_false_rescues"],

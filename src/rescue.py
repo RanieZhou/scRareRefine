@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import hashlib
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import StratifiedKFold
 from src.utils import classification_tables
 
 
@@ -178,6 +182,25 @@ CONFORMAL_RANK_GRID = (1, 2, 3)
 MIN_VAL_MISSED = 3
 
 
+@dataclass(frozen=True)
+class AdaptiveGatePolicy:
+    """Frozen validation-adaptive override for low-separability runs."""
+
+    alpha: float = DEFAULT_CONFORMAL_ALPHA
+    low_sep: float = CONFORMAL_LOW_SEP
+    n_splits: int = 5
+    min_active_folds: int = 3
+    min_val_missed: int = MIN_VAL_MISSED
+    bootstrap_reps: int = 2000
+    bootstrap_alpha: float = 0.05
+    wilson_z: float = 1.96
+    rank_grid: tuple[int, ...] = CONFORMAL_RANK_GRID
+
+
+DEFAULT_ADAPTIVE_GATE_POLICY = AdaptiveGatePolicy()
+SEPARABILITY_GATE_MODES = ("fixed", "adaptive")
+
+
 def conformal_rescue(
     proto: "PrototypeRescuer",
     base_pred_test: pd.Series,
@@ -287,4 +310,421 @@ def conformal_rescue(
     final = conf.relabel(base_pred_test, test_cand, test_score)
     summary["n_candidate"] = int(test_cand.sum())
     summary["n_rescued"] = int(final.ne(base_pred_test).sum())
+    return final, summary
+
+
+def wilson_upper(false_count: int, n_nonrare: int, *, z: float = 1.96) -> float:
+    """Wilson upper confidence bound for an incremental false-positive rate."""
+
+    if n_nonrare <= 0:
+        return 1.0
+    p = float(false_count) / float(n_nonrare)
+    n = float(n_nonrare)
+    denom = 1.0 + z * z / n
+    center = (p + z * z / (2.0 * n)) / denom
+    half = z * np.sqrt(p * (1.0 - p) / n + z * z / (4.0 * n * n)) / denom
+    return float(min(1.0, center + half))
+
+
+def _paired_stratified_bootstrap_delta_f1(
+    y_true,
+    baseline_pred,
+    refined_pred,
+    *,
+    rare: str,
+    reps: int,
+    lower_alpha: float,
+    seed: int,
+) -> tuple[float, float, float]:
+    """Paired rare/non-rare stratified bootstrap interval for F1 change."""
+
+    y = np.asarray(y_true).astype(str)
+    base = np.asarray(baseline_pred).astype(str)
+    refined = np.asarray(refined_pred).astype(str)
+    if not (len(y) == len(base) == len(refined)):
+        raise ValueError("y_true, baseline_pred, and refined_pred must align")
+    if reps <= 0:
+        raise ValueError("bootstrap reps must be positive")
+
+    is_rare = y == rare
+    if int(is_rare.sum()) == 0 or int((~is_rare).sum()) == 0:
+        return float("-inf"), float("nan"), float("nan")
+
+    state = ((base == rare).astype(int) << 1) | (refined == rare).astype(int)
+    rare_counts = np.bincount(state[is_rare], minlength=4)
+    nonrare_counts = np.bincount(state[~is_rare], minlength=4)
+    rng = np.random.default_rng(int(seed))
+    rare_draw = rng.multinomial(
+        int(rare_counts.sum()), rare_counts / rare_counts.sum(), size=int(reps)
+    )
+    nonrare_draw = rng.multinomial(
+        int(nonrare_counts.sum()),
+        nonrare_counts / nonrare_counts.sum(),
+        size=int(reps),
+    )
+
+    base_tp = rare_draw[:, 2] + rare_draw[:, 3]
+    refined_tp = rare_draw[:, 1] + rare_draw[:, 3]
+    base_fn = rare_draw.sum(axis=1) - base_tp
+    refined_fn = rare_draw.sum(axis=1) - refined_tp
+    base_fp = nonrare_draw[:, 2] + nonrare_draw[:, 3]
+    refined_fp = nonrare_draw[:, 1] + nonrare_draw[:, 3]
+
+    def _f1(tp, fp, fn):
+        denom = 2.0 * tp + fp + fn
+        return np.divide(
+            2.0 * tp,
+            denom,
+            out=np.zeros_like(denom, dtype=float),
+            where=denom > 0,
+        )
+
+    delta = _f1(refined_tp, refined_fp, refined_fn) - _f1(
+        base_tp, base_fp, base_fn
+    )
+    return (
+        float(np.quantile(delta, lower_alpha)),
+        float(np.quantile(delta, 0.5)),
+        float(np.quantile(delta, 1.0 - lower_alpha)),
+    )
+
+
+def _relaxed_conformal_rescue(
+    proto: "PrototypeRescuer",
+    base_pred_test: pd.Series,
+    val_pred_labels: pd.Series,
+    val_true: pd.Series,
+    val_latent: np.ndarray,
+    test_latent: np.ndarray,
+    *,
+    alpha: float,
+    min_val_missed: int,
+    rank_grid: tuple[int, ...],
+) -> tuple[pd.Series, dict]:
+    """Run the existing rescue stack with only the separability gate disabled."""
+
+    base_pred_test = pd.Series(base_pred_test).astype(str).reset_index(drop=True)
+    val_pred_labels = pd.Series(val_pred_labels).astype(str).reset_index(drop=True)
+    val_true = pd.Series(val_true).astype(str).reset_index(drop=True)
+    rare = proto.rare_class
+    summary = {
+        "abstain": False,
+        "reason": "",
+        "chosen_rank": 0,
+        "tau": float("inf"),
+        "n_candidate": 0,
+        "n_rescued": 0,
+    }
+
+    val_missed = int((val_true.eq(rare) & val_pred_labels.ne(rare)).sum())
+    summary["val_missed"] = val_missed
+    if int(val_true.eq(rare).sum()) > 0 and val_missed < min_val_missed:
+        summary.update(abstain=True, reason="necessity")
+        return base_pred_test.copy(), summary
+
+    val_score = proto.rare_membership_score(val_latent)
+    test_score = proto.rare_membership_score(test_latent)
+    conf = ConformalRescuer(rare, alpha=alpha)
+    tau = conf.calibrate(val_score, val_true)
+    summary["tau"] = tau
+    if not np.isfinite(tau):
+        summary.update(abstain=True, reason="tau=inf")
+        return base_pred_test.copy(), summary
+
+    val_ranks = proto.rare_rank(val_latent)
+    n_val_nonrare = int(val_true.ne(rare).sum())
+    best = None
+    chosen_rank = None
+    for rank in rank_grid:
+        candidate = (val_ranks <= rank) & val_pred_labels.ne(rare).to_numpy()
+        fire = candidate & (val_score >= tau)
+        relabeled = val_pred_labels.copy()
+        relabeled[fire] = rare
+        false_count = int((fire & val_true.ne(rare).to_numpy()).sum())
+        if wilson_upper(false_count, n_val_nonrare) > alpha:
+            continue
+        metrics, _ = classification_tables(val_true, relabeled, rare_class=rare)
+        key = (round(metrics["rare_f1"], 6), -int(rank))
+        if best is None or key > best:
+            best = key
+            chosen_rank = int(rank)
+    if best is None:
+        summary.update(abstain=True, reason="no_feasible_rank")
+        return base_pred_test.copy(), summary
+
+    summary["chosen_rank"] = chosen_rank
+    test_candidate = proto.rank_candidate(
+        test_latent, base_pred_test, max_rank=chosen_rank
+    )
+    final = conf.relabel(base_pred_test, test_candidate, test_score)
+    summary["n_candidate"] = int(test_candidate.sum())
+    summary["n_rescued"] = int(final.ne(base_pred_test).sum())
+    return final, summary
+
+
+def adaptive_conformal_rescue(
+    proto: "PrototypeRescuer",
+    base_pred_test: pd.Series,
+    val_pred_labels: pd.Series,
+    val_true: pd.Series,
+    val_latent: np.ndarray,
+    test_latent: np.ndarray,
+    *,
+    policy: AdaptiveGatePolicy = DEFAULT_ADAPTIVE_GATE_POLICY,
+    decision_seed: int = 42,
+) -> tuple[pd.Series, dict]:
+    """Apply the frozen validation-adaptive separability gate.
+
+    ``S >= 1.3`` is exactly the original fixed method.  For ``S < 1.3``,
+    tau/rank are cross-fitted within validation and the gate is relaxed only
+    when support, active-fold, Wilson-UCB, and one-sided bootstrap-LCB checks
+    all pass.  This function intentionally accepts no test ground-truth.
+    """
+
+    base_test = pd.Series(base_pred_test).astype(str).reset_index(drop=True)
+    val_pred = pd.Series(val_pred_labels).astype(str).reset_index(drop=True)
+    val_y = pd.Series(val_true).astype(str).reset_index(drop=True)
+    val_lat = np.asarray(val_latent)
+    test_lat = np.asarray(test_latent)
+    if len(val_pred) != len(val_y) or len(val_y) != len(val_lat):
+        raise ValueError("validation predictions, labels, and latent rows must align")
+    if len(base_test) != len(test_lat):
+        raise ValueError("test predictions and latent rows must align")
+
+    rare = str(proto.rare_class)
+    separability = float(proto.separability_ratio)
+    summary = {
+        "gate_mode": "fixed_pass" if separability >= policy.low_sep else "adaptive_audit",
+        "separability": separability,
+        "adaptive_pass": False,
+        "adaptive_reason": "",
+        "requested_folds": int(policy.n_splits),
+        "actual_folds": 0,
+        "active_folds": 0,
+        "val_missed": int((val_y.eq(rare) & val_pred.ne(rare)).sum()),
+        "oof_baseline_f1": float("nan"),
+        "oof_refined_f1": float("nan"),
+        "oof_delta_f1": float("nan"),
+        "oof_delta_f1_lcb": float("nan"),
+        "oof_delta_f1_median": float("nan"),
+        "oof_delta_f1_ucb": float("nan"),
+        "oof_false_rescues": 0,
+        "oof_incremental_fpr": float("nan"),
+        "oof_ffr_wilson_upper": float("nan"),
+        "fold_chosen_ranks": [],
+    }
+
+    if separability >= policy.low_sep:
+        final, fixed = conformal_rescue(
+            proto,
+            base_test,
+            val_pred,
+            val_y,
+            val_lat,
+            test_lat,
+            alpha=policy.alpha,
+            rank_grid=policy.rank_grid,
+        )
+        summary.update(fixed)
+        summary.update(
+            adaptive_pass=not bool(fixed.get("abstain", False)),
+            adaptive_reason="fixed_s_gate_passed",
+        )
+        return final, summary
+
+    if summary["val_missed"] < policy.min_val_missed:
+        summary.update(
+            abstain=True,
+            reason="adaptive_val_support",
+            adaptive_reason=(
+                f"val_missed={summary['val_missed']} < {policy.min_val_missed}"
+            ),
+            chosen_rank=0,
+            n_candidate=0,
+            n_rescued=0,
+        )
+        return base_test.copy(), summary
+
+    binary = val_y.eq(rare).astype(int).to_numpy()
+    class_counts = np.bincount(binary, minlength=2)
+    actual_folds = min(int(policy.n_splits), int(class_counts.min()))
+    summary["actual_folds"] = actual_folds
+    if actual_folds < policy.min_active_folds:
+        summary.update(
+            abstain=True,
+            reason="adaptive_insufficient_folds",
+            adaptive_reason=(
+                f"actual_folds={actual_folds} < min_active_folds="
+                f"{policy.min_active_folds}"
+            ),
+            chosen_rank=0,
+            n_candidate=0,
+            n_rescued=0,
+        )
+        return base_test.copy(), summary
+
+    splitter = StratifiedKFold(
+        n_splits=actual_folds, shuffle=True, random_state=int(decision_seed)
+    )
+    oof = val_pred.copy()
+    active_folds = 0
+    fold_ranks = []
+    fold_reasons = []
+    for calibrate_idx, audit_idx in splitter.split(np.zeros(len(binary)), binary):
+        fold_pred, fold_summary = _relaxed_conformal_rescue(
+            proto,
+            val_pred.iloc[audit_idx].reset_index(drop=True),
+            val_pred.iloc[calibrate_idx].reset_index(drop=True),
+            val_y.iloc[calibrate_idx].reset_index(drop=True),
+            val_lat[calibrate_idx],
+            val_lat[audit_idx],
+            alpha=policy.alpha,
+            min_val_missed=policy.min_val_missed,
+            rank_grid=policy.rank_grid,
+        )
+        oof.iloc[audit_idx] = fold_pred.to_numpy()
+        if not bool(fold_summary.get("abstain", False)):
+            active_folds += 1
+        fold_ranks.append(int(fold_summary.get("chosen_rank", 0)))
+        fold_reasons.append(str(fold_summary.get("reason", "")))
+
+    summary["active_folds"] = active_folds
+    summary["fold_chosen_ranks"] = fold_ranks
+    summary["fold_reasons"] = fold_reasons
+    baseline_metrics, _ = classification_tables(val_y, val_pred, rare_class=rare)
+    refined_metrics, _ = classification_tables(val_y, oof, rare_class=rare)
+    baseline_f1 = float(baseline_metrics["rare_f1"])
+    refined_f1 = float(refined_metrics["rare_f1"])
+    delta_f1 = refined_f1 - baseline_f1
+
+    nonrare = val_y.ne(rare).to_numpy()
+    false_mask = oof.ne(val_pred).to_numpy() & oof.eq(rare).to_numpy() & nonrare
+    n_nonrare = int(nonrare.sum())
+    n_false = int(false_mask.sum())
+    incremental_fpr = n_false / max(n_nonrare, 1)
+    ffr_upper = wilson_upper(n_false, n_nonrare, z=policy.wilson_z)
+    lcb, median, ucb = _paired_stratified_bootstrap_delta_f1(
+        val_y,
+        val_pred,
+        oof,
+        rare=rare,
+        reps=policy.bootstrap_reps,
+        lower_alpha=policy.bootstrap_alpha,
+        seed=decision_seed,
+    )
+    summary.update(
+        oof_baseline_f1=baseline_f1,
+        oof_refined_f1=refined_f1,
+        oof_delta_f1=delta_f1,
+        oof_delta_f1_lcb=lcb,
+        oof_delta_f1_median=median,
+        oof_delta_f1_ucb=ucb,
+        oof_false_rescues=n_false,
+        oof_incremental_fpr=incremental_fpr,
+        oof_ffr_wilson_upper=ffr_upper,
+    )
+
+    checks = {
+        "active_folds": active_folds >= policy.min_active_folds,
+        "ffr": ffr_upper <= policy.alpha,
+        "gain": lcb > 0.0,
+    }
+    if not all(checks.values()):
+        failed = ",".join(name for name, passed in checks.items() if not passed)
+        summary.update(
+            abstain=True,
+            reason="adaptive_audit_failed",
+            adaptive_reason=f"failed:{failed}",
+            chosen_rank=0,
+            n_candidate=0,
+            n_rescued=0,
+        )
+        return base_test.copy(), summary
+
+    final, full_summary = _relaxed_conformal_rescue(
+        proto,
+        base_test,
+        val_pred,
+        val_y,
+        val_lat,
+        test_lat,
+        alpha=policy.alpha,
+        min_val_missed=policy.min_val_missed,
+        rank_grid=policy.rank_grid,
+    )
+    if bool(full_summary.get("abstain", False)):
+        summary.update(full_summary)
+        summary.update(
+            adaptive_pass=False,
+            adaptive_reason=f"full_validation_abstain:{full_summary.get('reason', '')}",
+        )
+        return base_test.copy(), summary
+
+    summary.update(full_summary)
+    summary.update(adaptive_pass=True, adaptive_reason="oof_audit_passed")
+    return final, summary
+
+
+def stable_adaptive_decision_seed(
+    dataset: str, model_seed: int, rare_train_size: str | int | float
+) -> int:
+    """Reproduce the frozen v1 per-unit decision-seed convention."""
+
+    raw_rts = str(rare_train_size).strip().lower()
+    try:
+        numeric = float(raw_rts)
+        rts = f"{numeric:.2f}" if 0.0 < numeric <= 1.0 else raw_rts
+    except ValueError:
+        rts = raw_rts
+    raw = f"{dataset}|{int(model_seed)}|{rts}|adaptive-sep-v1".encode("utf-8")
+    return int.from_bytes(hashlib.sha256(raw).digest()[:4], "little")
+
+
+def rescue_with_separability_gate(
+    proto: "PrototypeRescuer",
+    base_pred_test: pd.Series,
+    val_pred_labels: pd.Series,
+    val_true: pd.Series,
+    val_latent: np.ndarray,
+    test_latent: np.ndarray,
+    *,
+    gate_mode: str = "fixed",
+    alpha: float = DEFAULT_CONFORMAL_ALPHA,
+    rank_grid=CONFORMAL_RANK_GRID,
+    decision_seed: int = 42,
+) -> tuple[pd.Series, dict]:
+    """Dispatch to the unchanged fixed gate or the frozen adaptive extension."""
+
+    mode = str(gate_mode).strip().lower()
+    if mode not in SEPARABILITY_GATE_MODES:
+        raise ValueError(
+            f"unknown separability gate mode {gate_mode!r}; "
+            f"expected one of {SEPARABILITY_GATE_MODES}"
+        )
+    if mode == "fixed":
+        final, summary = conformal_rescue(
+            proto,
+            base_pred_test,
+            val_pred_labels,
+            val_true,
+            val_latent,
+            test_latent,
+            alpha=alpha,
+            rank_grid=rank_grid,
+        )
+        summary["separability_gate_mode"] = "fixed"
+        return final, summary
+
+    policy = AdaptiveGatePolicy(alpha=float(alpha), rank_grid=tuple(rank_grid))
+    final, summary = adaptive_conformal_rescue(
+        proto,
+        base_pred_test,
+        val_pred_labels,
+        val_true,
+        val_latent,
+        test_latent,
+        policy=policy,
+        decision_seed=decision_seed,
+    )
+    summary["separability_gate_mode"] = "adaptive"
     return final, summary

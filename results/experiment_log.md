@@ -1796,3 +1796,41 @@ pancreas_baron ≤5 标注（gain +0.18 但 std 0.23，G71，已记 limitation�
 - post-compute critique 对脚本、script manifest、96 行账本、汇总、collapse tables、manifest、notes、测试及 PNG/PDF 图执行 Checklist E/G 审查，结论为 **PASS，无 BLOCKING issue**。
 - **裁定**：P0 验收通过。结果支持透明区分 training rare-label budget 与 validation calibration support；不支持把 nominal training percentage 直接解释为方法的完整稀有标签成本。
 - 本任务为 CPU cache-only 核算，未训练模型、未使用 GPU/云服务或付费 API，未修改 `outputs/`、正式预测、阈值、benchmark 或论文文件。
+
+## 第二十七轮（2026-07-29）：Validation-Adaptive Separability Gate 稳定性、split 验证与主线接入
+
+**层次**：validation-only gate extension；不修改 scANVI backbone、数据 split、rare-label budget、conformal alpha、rank grid 或 test-label 隔离协议。
+
+### 假设与冻结规则
+
+- `S>=1.3` 完全复用固定 gate；`S<1.3` 才执行 validation 5-fold cross-fitting。
+- OOF 放行同时要求 validation missed rare `>=3`、有效 folds `>=3`、Wilson-UCB(FFR) `<=0.01`、paired stratified bootstrap 单侧 95% LCB(ΔF1) `>0`。
+- 通过后仅用完整 validation 重校准 tau/rank 并应用 test；test 标签不参与任何 gate 决策。
+- 稳定性阈值预先固定：原 pass 单元 pass rate `>=0.80`；原 reject 单元 pass rate `<=0.20`。
+
+### 决策稳定性结果
+
+- 对 8 数据集 batch-heldout 全部 15 个低-S单元，各执行 20 个 deterministic decision seeds，共 300 次 OOF 审计；脚本显式不加载 test 标签。
+- 7 个冻结 pass 单元全部为 20/20 pass，8 个冻结 reject 单元全部为 0/20 pass；15/15 与冻结决策一致，没有单元落入不稳定区间。
+- 输出：`results/adaptive_separability_gate/v1/stability_20seeds/`，含 repeat-level CSV、unit summary、报告、manifest 及 PNG/PDF 图。
+
+### Cell-stratified 补充结果
+
+- 复用 6-human × seed42 × 4 budgets 的 24/24 现有 embeddings，无重训。
+- adaptive 相对 fixed 为 0 wins / 24 ties / 0 losses；两者 mean rare F1 均为 0.974522，最大 incremental FPR 均为 0.001870，0 violations。
+- no-sep-gate 为 1/22/1，mean rare F1 0.973777，低于 fixed/adaptive 0.000745；最大 incremental FPR 0.003208。
+- 3 个 cell-stratified 低-S单元全部来自 Baron pancreas，adaptive 全部拒绝：两个未通过正收益 LCB，一个 validation missed rare 仅为1。
+
+### 主线接入与验证
+
+- `src/rescue.py` 保留原 `conformal_rescue()` 固定-S行为；新增 adaptive policy、cross-fitted实现和 `fixed|adaptive` dispatcher。
+- 8 个主配置加入 `experiment.separability_gate_mode: adaptive`；`run_pipeline.py --separability_gate_mode fixed` 可显式复现原对照。
+- 主流水线输出新增 gate mode、adaptive pass/reason、active folds、Wilson UCB 和 ΔF1 LCB provenance 字段。
+- integrated core 与冻结实验实现在 15/15 个 batch-heldout 及 3/3 个 cell-stratified 低-S真实单元上预测及关键审计字段完全一致。
+- 定向测试 20 passed；完整回归 **61 passed**；代码通过 `py_compile` 和 `git diff --check`（仅工作树既有 LF/CRLF 提示）。
+
+### 裁定与边界
+
+- 两项预登记稳定性条件均通过，adaptive gate 接受为可配置主线扩展；固定 `S=1.3` 作为显式、可复现对照保留。
+- 结果支持“在当前评估数据上，以 validation OOF 证据选择性恢复低-S正收益且未观察到新增 test FFR 违规”。不得写成任意 distribution shift 下 test FFR 的理论保证。
+- 独立 experiment-integrity audit 当前不可用，因此审计状态仍为 provisional；不影响代码接入，但论文中的强安全措辞必须保持收缩。

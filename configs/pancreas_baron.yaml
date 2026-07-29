@@ -15,6 +15,7 @@ dataset:
 experiment:
   rare_class: gamma                     # 255 个细胞 (2.98%)，批次泛化下训练集约 150 个，最小标注可用
   split_mode: batch_heldout             # 4 个 donor 批次，按批次划分 train/val/test
+  separability_gate_mode: adaptive      # S<1.3 时启用 validation 5-fold OOF 安全审计；可用 CLI 切回 fixed
   rare_train_sizes:                     # 批量对比实验中稀有细胞已标注样本规模列表
     - 0.01                              # 代表标注该稀有细胞训练样本的 1%
     - 0.05                              # 代表标注该稀有细胞训练样本的 5%

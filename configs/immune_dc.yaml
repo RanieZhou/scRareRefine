@@ -14,6 +14,7 @@ dataset:
 experiment:
   rare_class: ASDC                      # 目标稀有细胞类型的名称（例如树突状细胞亚群中的 ASDC）
   split_mode: batch_heldout             # 样本切分模式，默认 batch_heldout (批次/供体外泛化划分)，可选 cell_stratified (随机分层划分)
+  separability_gate_mode: adaptive      # S<1.3 时启用 validation 5-fold OOF 安全审计；可用 CLI 切回 fixed
   rare_train_sizes:                     # 批量对比实验中稀有细胞已标注样本规模列表
     - 0.01                              # 代表标注该稀有细胞训练样本的 1%
     - 0.05                              # 代表标注该稀有细胞训练样本的 5%

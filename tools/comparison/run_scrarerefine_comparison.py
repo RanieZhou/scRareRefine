@@ -28,7 +28,8 @@ from src.utils import (
 )
 from src.rescue import (
     PrototypeRescuer,
-    conformal_rescue,
+    rescue_with_separability_gate,
+    stable_adaptive_decision_seed,
     DEFAULT_CONFORMAL_ALPHA,
     CONFORMAL_LOW_SEP,
 )
@@ -100,18 +101,30 @@ def _lat(df: pd.DataFrame) -> np.ndarray:
     return df[[c for c in df.columns if c.startswith("latent_")]].to_numpy()
 
 
-def _conformal_rescue(proto, base_pred, val_pred_labels, val_lat, val_true, test_lat):
+def _conformal_rescue(
+    proto,
+    base_pred,
+    val_pred_labels,
+    val_lat,
+    val_true,
+    test_lat,
+    *,
+    gate_mode,
+    decision_seed,
+):
     # 单一来源：necessity 守门 + val-自适应候选 rank + conformal tau（见 src.rescue.conformal_rescue）
-    final, _ = conformal_rescue(
+    final, summary = rescue_with_separability_gate(
         proto,
         base_pred,
         val_pred_labels,
         val_true,
         val_lat,
         test_lat,
+        gate_mode=gate_mode,
         alpha=CONFORMAL_ALPHA,
+        decision_seed=decision_seed,
     )
-    return final
+    return final, summary
 
 
 def _metrics(y_true, pred, base_pred, rare_class) -> dict:
@@ -191,6 +204,7 @@ def main():
         exp = config.get("experiment", {})
         rare_class = exp.get("rare_class")
         split_mode = exp.get("split_mode", "batch_heldout")
+        gate_mode = exp.get("separability_gate_mode", "fixed")
         size = parse_rare_train_size(rts_str)
         run_dir = make_run_dir(config, split_mode, seed, rare_class, size)
         emb_dir = run_dir / "embeddings"
@@ -237,8 +251,15 @@ def main():
         )
 
         val_base = val_pred["predicted_label"].astype(str)
-        srr_pred = _conformal_rescue(
-            proto, base_pred, val_base, val_lat, val_true, test_lat
+        srr_pred, gate_summary = _conformal_rescue(
+            proto,
+            base_pred,
+            val_base,
+            val_lat,
+            val_true,
+            test_lat,
+            gate_mode=gate_mode,
+            decision_seed=stable_adaptive_decision_seed(dataset, seed, rts_str),
         )
 
         mres = _metrics(y_true, srr_pred.to_numpy(), base_pred.to_numpy(), rare_class)
@@ -255,6 +276,9 @@ def main():
                 "rare_class": rare_class,
                 "method": METHOD_NAME,
                 "status": "ok",
+                "separability_gate_mode": gate_mode,
+                "adaptive_pass": gate_summary.get("adaptive_pass"),
+                "adaptive_reason": gate_summary.get("adaptive_reason", ""),
                 "sep": round(proto.separability_ratio, 4),
                 "best_k": None,
                 **mres,
@@ -269,6 +293,9 @@ def main():
         "rare_class",
         "method",
         "status",
+        "separability_gate_mode",
+        "adaptive_pass",
+        "adaptive_reason",
         "sep",
         "best_k",
         "rare_f1",
