@@ -1,6 +1,6 @@
 """Evaluate the unchanged scRareRefine rescue on native TOSICA embeddings.
 
-This is a single-seed backbone-portability experiment. TOSICA is trained only
+This is a seed-aware backbone-portability experiment. TOSICA is trained only
 on cells carrying the frozen ``is_labeled_for_scanvi`` permission. Its native
 48-dimensional CLS representation and its own predictions are extracted for
 the labeled training reference, validation cells, and test cells. The existing
@@ -23,7 +23,7 @@ Run from the TOSICA environment, for example::
 
 The default grid is eight datasets x seed 42 x four rare-label budgets = 32
 runs. CLI overrides are intentionally supported so seeds 43/44 can be added
-without editing this file.
+to the existing ledger without editing this file.
 """
 
 from __future__ import annotations
@@ -731,7 +731,9 @@ def _write_final_outputs(
         "- No scANVI latent, probability, or predicted label entered training, prototypes, rank selection, tau calibration, or test rescue.\n"
         f"- Rare-F1 wins/ties/losses after fixed rescue: {wins}/{ties}/{losses}.\n"
         f"- Empirical alpha violations: {int(successes.get('alpha_violation', pd.Series(dtype=bool)).sum())}.\n"
-        "- This is a seed-42, eight-dataset portability screen and does not establish universal backbone independence.\n",
+        f"- This portability screen covers {len(args.configs)} datasets and seeds "
+        f"{sorted(successes['seed'].astype(int).unique().tolist()) if not successes.empty else []}; "
+        "it does not establish universal backbone independence.\n",
         encoding="utf-8",
     )
 

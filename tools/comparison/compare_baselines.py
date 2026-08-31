@@ -247,8 +247,8 @@ def _metrics(y_true, pred, base_pred, rare_class):
 
     - rare_fp_rate：标准稀有假阳性率 = (pred==rare & y_true!=rare) / n_nonrare。
       所有方法可比，是 baseline 应看的误报指标。
-    - incremental_fpr：增量 FPR = 相对 base_pred 被改判为 rare 且真值非 rare的数量 / n_nonrare。
-    - rescue_ffr：`incremental_fpr` 的历史兼容别名，不是 rescued-set FDP。
+    - incremental_fpr：iFPR（incremental false-positive rate）= 相对 base_pred 被改判为 rare 且真值非 rare 的数量 / n_nonrare。
+    - rescue_ffr：`incremental_fpr` 的历史兼容别名，不是 rescued-set FDP；论文不再使用 FFR 作为指标名。
       只对在 base_pred(=scANVI) 基础上做改判的方法（scRareRefine）有意义；
       对独立预测的 baseline（kNN/CellTypist/scBalance）不可解释，仅供参考。
     """

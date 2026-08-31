@@ -222,10 +222,11 @@ def plot_facets(df, variants, out_name, title, has_std=True):
     for txt, (*_, h) in zip(leg.get_texts(), variants):
         if h:
             txt.set_fontweight("bold")
-    fig.suptitle(title, fontsize=11, y=0.995)
+    # Publication captions carry the figure title; keep the rendered panels title-free.
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_DIR / f"{out_name}.png", bbox_inches="tight")
+    fig.savefig(OUT_DIR / f"{out_name}.pdf", bbox_inches="tight")
     plt.close(fig)
     print(f"[saved] {OUT_DIR / (out_name + '.png')}")
 
