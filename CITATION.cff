@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "scRareRefine: selective refinement of rare cell-type annotations under limited supervision"
+message: "If you use scRareRefine, please cite this repository."
+type: software
+authors:
+  - family-names: Zhou
+    given-names: Jiahao
+    affiliation: Xinjiang University
+version: 0.1.0
+date-released: 2026-08-31
+repository-code: "https://github.com/RanieZhou/scRareRefine"
+url: "https://github.com/RanieZhou/scRareRefine"
+license: MIT
+keywords:
+  - single-cell RNA sequencing
+  - cell-type annotation
+  - rare cell types
+  - limited supervision
+  - post-hoc refinement
